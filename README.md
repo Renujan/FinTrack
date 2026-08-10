@@ -77,30 +77,21 @@ Copy `.env.example` to `.env` and fill in your PostgreSQL credentials:
 ```bash
 cp .env.example .env
 ```
-Example `.env`:
-```env
-SECRET_KEY=your-django-secret-key
-DEBUG=True
-ALLOWED_HOSTS=127.0.0.1,localhost
 
-DB_NAME=finance_tracker_db
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_HOST=127.0.0.1
-DB_PORT=5432
-```
+---
 
-### 7. Run Database Migrations
-```bash
-python manage.py migrate
-```
+## 🔑 Environment Variables Reference
 
-### 8. Verify Project & Run Development Server
-```bash
-python manage.py check
-python manage.py runserver
-```
-The Django development server will start at `http://127.0.0.1:8000/`.
+| Variable | Default Value | Description |
+|---|---|---|
+| `SECRET_KEY` | `django-insecure-...` | Unique Django cryptographic secret key |
+| `DEBUG` | `True` | Debug mode toggle (`True`/`False`) |
+| `ALLOWED_HOSTS` | `127.0.0.1,localhost` | Comma-separated list of allowed hostnames |
+| `DB_NAME` | `finance_tracker_db` | PostgreSQL database name |
+| `DB_USER` | `postgres` | PostgreSQL database username |
+| `DB_PASSWORD` | `postgres` | PostgreSQL database password |
+| `DB_HOST` | `127.0.0.1` | PostgreSQL host address |
+| `DB_PORT` | `5432` | PostgreSQL port number |
 
 ---
 
@@ -119,6 +110,17 @@ python -m pytest -v
 # Run tests for a specific application module
 python -m pytest users/
 ```
+
+---
+
+## 🛠️ Troubleshooting & FAQ
+
+#### 1. `psycopg2.OperationalError: connection to server at localhost failed`
+- Verify PostgreSQL service is running: `Get-Service -Name *postgres*` (Windows) or `systemctl status postgresql` (Linux).
+- Check `DB_USER` and `DB_PASSWORD` in your local `.env` file.
+
+#### 2. `ModuleNotFoundError: No module named 'dotenv'`
+- Ensure virtual environment is activated and dependencies are installed: `pip install -r requirements.txt`.
 
 ---
 
