@@ -104,6 +104,32 @@ The Django development server will start at `http://127.0.0.1:8000/`.
 
 ---
 
+## 🧪 Testing Guide
+
+We use `pytest` and `pytest-django` for automated unit and integration testing.
+
+### Running the Test Suite
+```bash
+# Run all tests
+python -m pytest
+
+# Run tests with verbose output
+python -m pytest -v
+
+# Run tests for a specific application module
+python -m pytest users/
+```
+
+---
+
+## 📐 Code Quality & Git Standards
+
+- **Commit Message Convention**: All commit messages follow standard Imperative Present Tense (e.g., `Implement custom user model foundation`, `Add PostgreSQL database configuration`).
+- **Single Responsibility Commits**: Each commit represents a distinct, logical development step without combining unrelated changes.
+- **PEP 8 Compliance**: Code formatted according to standard Python style guidelines.
+
+---
+
 ## 📂 Project Structure
 
 ```text
