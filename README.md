@@ -4,6 +4,16 @@ A scalable, secure Personal Finance Tracker SaaS backend application built with 
 
 ---
 
+## 🏗️ Architecture Overview
+
+The system follows clean modular monolithic architecture designed for SaaS scalability:
+- **Custom Authentication Layer**: Built on top of Django's `AbstractUser` to support flexible multi-currency financial profiles.
+- **Database Architecture**: Powered by PostgreSQL for relational data integrity, transactional safety, and index-optimized queries.
+- **RESTful API Infrastructure**: Built with Django REST Framework (DRF) preparing standard JSON endpoints for React frontend integration.
+- **Environment Isolation**: Configured using `python-dotenv` for zero hardcoded secrets across development and production environments.
+
+---
+
 ## 🛠️ Tech Stack
 
 - **Backend Framework**: Django 5.x / Django REST Framework
@@ -12,6 +22,16 @@ A scalable, secure Personal Finance Tracker SaaS backend application built with 
 - **Environment Management**: `python-dotenv`
 - **Testing Framework**: `pytest`, `pytest-django`
 - **Version Control**: Git
+
+---
+
+## 🗺️ Multi-Day Development Roadmap
+
+- [x] **Day 1**: Backend Foundation (Django structure, PostgreSQL integration, custom User model, pytest configuration, environment setup).
+- [ ] **Day 2**: Authentication & User Management APIs (JWT auth with SimpleJWT, registration, login, profile endpoints, Swagger/OpenAPI docs).
+- [ ] **Day 3**: Core Financial Models (Wallets, Accounts, Categories, Income & Expense Transactions).
+- [ ] **Day 4**: Financial Analytics & Budgeting APIs (Monthly budgeting, category breakdown, spending trends, summary reports).
+- [ ] **Day 5**: Frontend Integration (React + Tailwind CSS SaaS dashboard).
 
 ---
 
@@ -93,6 +113,7 @@ FinTrack/
 ├── manage.py                   # Django management script
 ├── requirements.txt            # Python dependencies
 ├── pytest.ini                  # Pytest configuration
+├── README.md                   # Project documentation & roadmap
 ├── finance_tracker/            # Main Django project package
 │   ├── __init__.py
 │   ├── asgi.py
