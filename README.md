@@ -28,7 +28,7 @@ The system follows clean modular monolithic architecture designed for SaaS scala
 ## 🗺️ Multi-Day Development Roadmap
 
 - [x] **Day 1**: Backend Foundation (Django structure, PostgreSQL integration, custom User model, pytest configuration, environment setup).
-- [ ] **Day 2**: Authentication & User Management APIs (JWT auth with SimpleJWT, registration, login, profile endpoints, Swagger/OpenAPI docs).
+- [x] **Day 2**: Authentication & User Management (JWT auth with SimpleJWT, registration, login, logout token blacklist, user profile API, automated tests).
 - [ ] **Day 3**: Core Financial Models (Wallets, Accounts, Categories, Income & Expense Transactions).
 - [ ] **Day 4**: Financial Analytics & Budgeting APIs (Monthly budgeting, category breakdown, spending trends, summary reports).
 - [ ] **Day 5**: Frontend Integration (React + Tailwind CSS SaaS dashboard).
@@ -95,6 +95,130 @@ cp .env.example .env
 
 ---
 
+## 🔐 Authentication API Documentation
+
+Base URL: `/api/auth/`
+
+### Endpoints Overview
+
+| Method | Endpoint | Auth Required | Description |
+|---|---|---|---|
+| `POST` | `/api/auth/register/` | No | Register a new user account |
+| `POST` | `/api/auth/login/` | No | Authenticate user and receive JWT access/refresh tokens |
+| `POST` | `/api/auth/token/refresh/` | No | Refresh an expired access token using valid refresh token |
+| `POST` | `/api/auth/logout/` | Yes (`Bearer`) | Blacklist refresh token for secure logout |
+| `GET` | `/api/auth/profile/` | Yes (`Bearer`) | Retrieve current user's profile details |
+| `PUT` / `PATCH` | `/api/auth/profile/` | Yes (`Bearer`) | Update current user's username, email, or primary currency |
+
+---
+
+### Request & Response Examples
+
+#### 1. User Registration
+`POST /api/auth/register/`
+
+**Request Body:**
+```json
+{
+  "username": "john_doe",
+  "email": "john@example.com",
+  "password": "SecurePassword123!",
+  "password_confirm": "SecurePassword123!",
+  "currency": "USD"
+}
+```
+
+**Response (`201 Created`):**
+```json
+{
+  "message": "User registered successfully",
+  "user": {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john@example.com",
+    "currency": "USD"
+  }
+}
+```
+
+#### 2. User Login
+`POST /api/auth/login/`
+
+**Request Body:**
+```json
+{
+  "username": "john_doe",
+  "password": "SecurePassword123!"
+}
+```
+
+**Response (`200 OK`):**
+```json
+{
+  "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+#### 3. Token Refresh
+`POST /api/auth/token/refresh/`
+
+**Request Body:**
+```json
+{
+  "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Response (`200 OK`):**
+```json
+{
+  "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+#### 4. Secure Logout
+`POST /api/auth/logout/`  
+**Header:** `Authorization: Bearer <access_token>`
+
+**Request Body:**
+```json
+{
+  "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Response (`200 OK`):**
+```json
+{
+  "message": "Successfully logged out"
+}
+```
+
+#### 5. Profile Management
+`GET /api/auth/profile/`  
+`PATCH /api/auth/profile/`  
+**Header:** `Authorization: Bearer <access_token>`
+
+**PATCH Request Body:**
+```json
+{
+  "currency": "EUR"
+}
+```
+
+**Response (`200 OK`):**
+```json
+{
+  "username": "john_doe",
+  "email": "john@example.com",
+  "currency": "EUR",
+  "created_at": "2026-08-11T09:50:00Z"
+}
+```
+
+---
+
 ## 🧪 Testing Guide
 
 We use `pytest` and `pytest-django` for automated unit and integration testing.
@@ -142,10 +266,20 @@ FinTrack/
 ├── requirements.txt            # Python dependencies
 ├── pytest.ini                  # Pytest configuration
 ├── README.md                   # Project documentation & roadmap
+├── authentication/             # JWT Authentication application module
+│   ├── __init__.py
+│   ├── apps.py                 # App configuration
+│   ├── permissions.py          # DRF permission rules
+│   ├── serializers.py          # Registration & UserProfile serializers
+│   ├── urls.py                 # Auth endpoints routing
+│   ├── views.py                # Register, Logout & Profile views
+│   └── tests/                  # Authentication test suite
+│       ├── __init__.py
+│       └── test_authentication.py
 ├── finance_tracker/            # Main Django project package
 │   ├── __init__.py
 │   ├── asgi.py
-│   ├── settings.py            # Project settings & PostgreSQL config
+│   ├── settings.py            # Project settings & JWT config
 │   ├── urls.py                # Main URL configuration
 │   └── wsgi.py
 └── users/                      # User management application module
@@ -153,7 +287,7 @@ FinTrack/
     ├── admin.py                # CustomUserAdmin configuration
     ├── apps.py                 # App configuration
     ├── models.py               # Custom User model (AbstractUser)
-    ├── tests.py                # Unit test suite
+    ├── tests.py                # User model unit test suite
     ├── urls.py                 # Users module routes
     └── views.py                # Users module views
 ```
