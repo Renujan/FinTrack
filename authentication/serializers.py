@@ -50,3 +50,17 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = ('username', 'email', 'currency', 'created_at')
         read_only_fields = ('created_at',)
+
+    def validate_email(self, value):
+        request = self.context.get('request')
+        user = request.user if request else None
+        if User.objects.filter(email__iexact=value).exclude(pk=user.pk if user else None).exists():
+            raise serializers.ValidationError("This email is already in use by another user.")
+        return value
+
+    def validate_username(self, value):
+        request = self.context.get('request')
+        user = request.user if request else None
+        if User.objects.filter(username__iexact=value).exclude(pk=user.pk if user else None).exists():
+            raise serializers.ValidationError("This username is already taken.")
+        return value
