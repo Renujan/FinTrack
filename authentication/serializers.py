@@ -43,3 +43,10 @@ class RegisterSerializer(serializers.ModelSerializer):
             currency=validated_data.get('currency', 'LKR')
         )
         return user
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'currency', 'created_at')
+        read_only_fields = ('created_at',)
