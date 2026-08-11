@@ -19,7 +19,7 @@ from django.urls import include, path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # API endpoints namespace prepared for Day 2 REST API development
+    path('api/auth/', include('authentication.urls', namespace='auth')),
     path('api/v1/users/', include('users.urls', namespace='users')),
 ]
 
