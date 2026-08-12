@@ -1,5 +1,8 @@
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, permissions
+from .filters import TransactionFilter
 from .models import Category, Transaction
+from .pagination import StandardResultsSetPagination
 from .permissions import IsOwner
 from .serializers import CategorySerializer, TransactionSerializer
 
@@ -26,6 +29,9 @@ class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
 class TransactionListCreateView(generics.ListCreateAPIView):
     serializer_class = TransactionSerializer
     permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = TransactionFilter
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         return Transaction.objects.filter(user=self.request.user)
