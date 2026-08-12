@@ -71,3 +71,72 @@ class TransactionListCreateAPITests(APITestCase):
         }
         response = self.client.post(self.list_url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class TransactionDetailAPITests(APITestCase):
+    def setUp(self):
+        self.user1 = User.objects.create_user(email='detail1@example.com', password='Password123!', username='detail1')
+        self.user2 = User.objects.create_user(email='detail2@example.com', password='Password123!', username='detail2')
+        self.category1 = Category.objects.create(user=self.user1, name='Groceries')
+        self.category2 = Category.objects.create(user=self.user2, name='Utilities')
+
+        self.txn1 = Transaction.objects.create(
+            user=self.user1,
+            category=self.category1,
+            transaction_type=TransactionType.EXPENSE,
+            amount=Decimal('45.50'),
+            description='Supermarket',
+            date='2026-08-10'
+        )
+        self.detail_url_1 = reverse('transactions:transaction-detail', kwargs={'pk': self.txn1.pk})
+
+    def test_get_detail_owner_success(self):
+        self.client.force_authenticate(user=self.user1)
+        response = self.client.get(self.detail_url_1)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], self.txn1.id)
+
+    def test_get_detail_cross_user_returns_404(self):
+        self.client.force_authenticate(user=self.user2)
+        response = self.client.get(self.detail_url_1)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_put_transaction_success(self):
+        self.client.force_authenticate(user=self.user1)
+        data = {
+            'category': self.category1.id,
+            'transaction_type': TransactionType.EXPENSE,
+            'amount': '60.00',
+            'description': 'Supermarket updated',
+            'date': '2026-08-11'
+        }
+        response = self.client.put(self.detail_url_1, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.txn1.refresh_from_db()
+        self.assertEqual(self.txn1.amount, Decimal('60.00'))
+
+    def test_patch_transaction_success(self):
+        self.client.force_authenticate(user=self.user1)
+        data = {'description': 'Partially updated description'}
+        response = self.client.patch(self.detail_url_1, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.txn1.refresh_from_db()
+        self.assertEqual(self.txn1.description, 'Partially updated description')
+
+    def test_delete_transaction_success(self):
+        self.client.force_authenticate(user=self.user1)
+        response = self.client.delete(self.detail_url_1)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Transaction.objects.filter(pk=self.txn1.pk).exists())
+
+    def test_update_cross_user_returns_404(self):
+        self.client.force_authenticate(user=self.user2)
+        data = {'description': 'Unauthorized update'}
+        response = self.client.patch(self.detail_url_1, data)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_delete_cross_user_returns_404(self):
+        self.client.force_authenticate(user=self.user2)
+        response = self.client.delete(self.detail_url_1)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertTrue(Transaction.objects.filter(pk=self.txn1.pk).exists())
