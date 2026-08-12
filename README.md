@@ -29,7 +29,7 @@ The system follows clean modular monolithic architecture designed for SaaS scala
 
 - [x] **Day 1**: Backend Foundation (Django structure, PostgreSQL integration, custom User model, pytest configuration, environment setup).
 - [x] **Day 2**: Authentication & User Management (JWT auth with SimpleJWT, registration, login, logout token blacklist, user profile API, automated tests).
-- [ ] **Day 3**: Core Financial Models (Wallets, Accounts, Categories, Income & Expense Transactions).
+- [x] **Day 3**: Transaction & Category Management (Categories, Income & Expense Transactions, ownership permissions, filtering, pagination, tests).
 - [ ] **Day 4**: Financial Analytics & Budgeting APIs (Monthly budgeting, category breakdown, spending trends, summary reports).
 - [ ] **Day 5**: Frontend Integration (React + Tailwind CSS SaaS dashboard).
 
@@ -216,6 +216,34 @@ Base URL: `/api/auth/`
   "created_at": "2026-08-11T09:50:00Z"
 }
 ```
+
+---
+
+## 💸 Transaction & Category API Documentation
+
+Base URL: `/api/`
+
+### Endpoints Overview
+
+| Method | Endpoint | Auth Required | Description |
+|---|---|---|---|
+| `GET` | `/api/categories/` | Yes (`Bearer`) | List all categories owned by authenticated user |
+| `POST` | `/api/categories/` | Yes (`Bearer`) | Create a new category for authenticated user |
+| `GET` | `/api/categories/<id>/` | Yes (`Bearer`) | Retrieve a specific category |
+| `PUT` / `PATCH` | `/api/categories/<id>/` | Yes (`Bearer`) | Update a specific category |
+| `DELETE` | `/api/categories/<id>/` | Yes (`Bearer`) | Delete a specific category |
+| `GET` | `/api/transactions/` | Yes (`Bearer`) | List and filter authenticated user's transactions with pagination |
+| `POST` | `/api/transactions/` | Yes (`Bearer`) | Create an income or expense transaction |
+| `GET` | `/api/transactions/<id>/` | Yes (`Bearer`) | Retrieve a specific transaction |
+| `PUT` / `PATCH` | `/api/transactions/<id>/` | Yes (`Bearer`) | Update a specific transaction |
+| `DELETE` | `/api/transactions/<id>/` | Yes (`Bearer`) | Delete a specific transaction |
+
+### Transaction Filtering Parameters
+
+- `type`: Filter by transaction type (`INCOME`, `EXPENSE`). Example: `/api/transactions/?type=expense`
+- `category`: Filter by category name or ID. Example: `/api/transactions/?category=Food`
+- `date`: Filter by exact date. Example: `/api/transactions/?date=2026-08-12`
+- `start_date` / `end_date`: Filter by date range. Example: `/api/transactions/?start_date=2026-08-01&end_date=2026-08-31`
 
 ---
 
