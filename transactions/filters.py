@@ -38,6 +38,11 @@ class TransactionFilter(django_filters.FilterSet):
 
 
 def validate_filter_params(params):
+    """
+    Validates query parameters for transaction filtering, including date formats,
+    date ranges (start_date <= end_date), amount ranges (min_amount <= max_amount),
+    transaction types, and ordering fields.
+    """
     errors = {}
 
     parsed_start_date = None
