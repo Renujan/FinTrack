@@ -11,8 +11,14 @@ class CategorySerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
 
     def validate_name(self, value):
+        if value is None or not str(value).strip():
+            raise serializers.ValidationError("Category name is required and cannot be empty.")
+        value = str(value).strip()
+        if len(value) > 100:
+            raise serializers.ValidationError("Category name cannot exceed 100 characters.")
+
         request = self.context.get('request')
-        if request and hasattr(request, 'user'):
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
             user = request.user
             qs = Category.objects.filter(user=user, name__iexact=value)
             if self.instance:
