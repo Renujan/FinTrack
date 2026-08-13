@@ -20,6 +20,10 @@ class CategoryListCreateView(generics.ListCreateAPIView):
 
 
 class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Retrieve, update (PUT/PATCH), or delete a category owned by the authenticated user.
+    Protects category deletion if associated transactions exist.
+    """
     serializer_class = CategorySerializer
     permission_classes = [permissions.IsAuthenticated, IsOwner]
 
