@@ -43,6 +43,10 @@ class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class TransactionListCreateView(generics.ListCreateAPIView):
+    """
+    List and create transactions for the authenticated user.
+    Supports case-insensitive search by description and category name.
+    """
     serializer_class = TransactionSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
