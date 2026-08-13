@@ -60,6 +60,9 @@ class TransactionListCreateView(generics.ListCreateAPIView):
         return Transaction.objects.filter(user=self.request.user)
 
     def filter_queryset(self, queryset):
+        """
+        Applies filter parameter validation and custom field mappings for sorting (e.g. transaction_date -> date).
+        """
         validate_filter_params(self.request.query_params)
 
         ordering_param = self.request.query_params.get('ordering')
