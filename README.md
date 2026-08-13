@@ -29,8 +29,8 @@ The system follows clean modular monolithic architecture designed for SaaS scala
 
 - [x] **Day 1**: Backend Foundation (Django structure, PostgreSQL integration, custom User model, pytest configuration, environment setup).
 - [x] **Day 2**: Authentication & User Management (JWT auth with SimpleJWT, registration, login, logout token blacklist, user profile API, automated tests).
-- [x] **Day 3**: Transaction & Category Management (Categories, Income & Expense Transactions, ownership permissions, filtering, pagination, tests).
-- [ ] **Day 4**: Financial Analytics & Budgeting APIs (Monthly budgeting, category breakdown, spending trends, summary reports).
+- [x] **Day 3**: Transaction & Category Foundation (Categories, Income & Expense Transactions, ownership permissions, filtering, pagination, tests).
+- [x] **Day 4**: Category Management & Advanced Transaction Filtering (Category CRUD, category protection, search, type/category/date/amount filters, sorting, pagination, validation, security, tests, docs).
 - [ ] **Day 5**: Frontend Integration (React + Tailwind CSS SaaS dashboard).
 
 ---
@@ -160,90 +160,109 @@ Base URL: `/api/auth/`
 }
 ```
 
-#### 3. Token Refresh
-`POST /api/auth/token/refresh/`
+---
 
-**Request Body:**
+## 💸 Category & Transaction Management API Documentation
+
+Base URL: `/api/`
+
+### 🏷️ Categories API
+
+All Category endpoints require `Authorization: Bearer <access_token>` header.
+
+| Method | Endpoint | Auth Required | Description |
+|---|---|---|---|
+| `GET` | `/api/categories/` | Yes (`Bearer`) | List all categories belonging to the authenticated user |
+| `POST` | `/api/categories/` | Yes (`Bearer`) | Create a category for the authenticated user |
+| `GET` | `/api/categories/<id>/` | Yes (`Bearer`) | Retrieve a specific category owned by user |
+| `PUT` | `/api/categories/<id>/` | Yes (`Bearer`) | Full update of a category name |
+| `PATCH` | `/api/categories/<id>/` | Yes (`Bearer`) | Partial update of a category name |
+| `DELETE` | `/api/categories/<id>/` | Yes (`Bearer`) | Delete a category (protected if used in transactions) |
+
+#### Category Examples
+
+**Create Category (`POST /api/categories/`)**:
 ```json
 {
-  "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "name": "Groceries"
 }
 ```
 
-**Response (`200 OK`):**
+**Response (`201 Created`)**:
 ```json
 {
-  "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-#### 4. Secure Logout
-`POST /api/auth/logout/`  
-**Header:** `Authorization: Bearer <access_token>`
-
-**Request Body:**
-```json
-{
-  "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-**Response (`200 OK`):**
-```json
-{
-  "message": "Successfully logged out"
-}
-```
-
-#### 5. Profile Management
-`GET /api/auth/profile/`  
-`PATCH /api/auth/profile/`  
-**Header:** `Authorization: Bearer <access_token>`
-
-**PATCH Request Body:**
-```json
-{
-  "currency": "EUR"
-}
-```
-
-**Response (`200 OK`):**
-```json
-{
-  "username": "john_doe",
-  "email": "john@example.com",
-  "currency": "EUR",
-  "created_at": "2026-08-11T09:50:00Z"
+  "id": 1,
+  "name": "Groceries",
+  "created_at": "2026-08-13T09:40:00Z",
+  "updated_at": "2026-08-13T09:40:00Z"
 }
 ```
 
 ---
 
-## 💸 Transaction & Category API Documentation
+### 💳 Transactions API
 
-Base URL: `/api/`
-
-### Endpoints Overview
+All Transaction endpoints require `Authorization: Bearer <access_token>` header.
 
 | Method | Endpoint | Auth Required | Description |
 |---|---|---|---|
-| `GET` | `/api/categories/` | Yes (`Bearer`) | List all categories owned by authenticated user |
-| `POST` | `/api/categories/` | Yes (`Bearer`) | Create a new category for authenticated user |
-| `GET` | `/api/categories/<id>/` | Yes (`Bearer`) | Retrieve a specific category |
-| `PUT` / `PATCH` | `/api/categories/<id>/` | Yes (`Bearer`) | Update a specific category |
-| `DELETE` | `/api/categories/<id>/` | Yes (`Bearer`) | Delete a specific category |
-| `GET` | `/api/transactions/` | Yes (`Bearer`) | List and filter authenticated user's transactions with pagination |
-| `POST` | `/api/transactions/` | Yes (`Bearer`) | Create an income or expense transaction |
-| `GET` | `/api/transactions/<id>/` | Yes (`Bearer`) | Retrieve a specific transaction |
-| `PUT` / `PATCH` | `/api/transactions/<id>/` | Yes (`Bearer`) | Update a specific transaction |
-| `DELETE` | `/api/transactions/<id>/` | Yes (`Bearer`) | Delete a specific transaction |
+| `GET` | `/api/transactions/` | Yes (`Bearer`) | List, search, filter, sort, and paginate transactions |
+| `POST` | `/api/transactions/` | Yes (`Bearer`) | Create a new transaction (income/expense) |
+| `GET` | `/api/transactions/<id>/` | Yes (`Bearer`) | Retrieve transaction detail |
+| `PUT` | `/api/transactions/<id>/` | Yes (`Bearer`) | Full update of a transaction |
+| `PATCH` | `/api/transactions/<id>/` | Yes (`Bearer`) | Partial update of a transaction |
+| `DELETE` | `/api/transactions/<id>/` | Yes (`Bearer`) | Delete a transaction |
 
-### Transaction Filtering Parameters
+#### Query Parameters Reference
 
+##### 1. Search Parameter (`search`)
+Search transactions by description or category name (case-insensitive).
+- Example: `/api/transactions/?search=supermarket`
+
+##### 2. Filter Parameters
 - `type`: Filter by transaction type (`INCOME`, `EXPENSE`). Example: `/api/transactions/?type=expense`
-- `category`: Filter by category name or ID. Example: `/api/transactions/?category=Food`
-- `date`: Filter by exact date. Example: `/api/transactions/?date=2026-08-12`
+- `category`: Filter by category name or category ID. Example: `/api/transactions/?category=Groceries`
+- `date`: Filter by exact date (YYYY-MM-DD). Example: `/api/transactions/?date=2026-08-12`
 - `start_date` / `end_date`: Filter by date range. Example: `/api/transactions/?start_date=2026-08-01&end_date=2026-08-31`
+- `min_amount` / `max_amount`: Filter by amount range. Example: `/api/transactions/?min_amount=100&max_amount=500`
+
+Multiple filters can be combined:
+- Example: `/api/transactions/?type=expense&category=Groceries&min_amount=50&start_date=2026-08-01`
+
+##### 3. Sorting Parameter (`ordering`)
+Allowed ordering fields: `date`, `transaction_date`, `amount`, `created_at` (prefix with `-` for descending).
+- Ascending date: `/api/transactions/?ordering=date` or `/api/transactions/?ordering=transaction_date`
+- Descending date: `/api/transactions/?ordering=-date` or `/api/transactions/?ordering=-transaction_date`
+- Ascending amount: `/api/transactions/?ordering=amount`
+- Descending amount: `/api/transactions/?ordering=-amount`
+- Default ordering: `['-date', '-created_at']`
+
+##### 4. Pagination Parameters (`page`, `page_size`)
+- Default page size: `10`
+- Maximum page size: `100`
+- Example: `/api/transactions/?page=1&page_size=20`
+
+#### Paginated Response Example (`200 OK`)
+```json
+{
+  "count": 45,
+  "next": "http://127.0.0.1:8000/api/transactions/?page=2",
+  "previous": null,
+  "results": [
+    {
+      "id": 12,
+      "category": 1,
+      "category_name": "Groceries",
+      "transaction_type": "EXPENSE",
+      "amount": "125.50",
+      "description": "Weekly supermarket shopping",
+      "date": "2026-08-12",
+      "created_at": "2026-08-12T14:30:00Z",
+      "updated_at": "2026-08-12T14:30:00Z"
+    }
+  ]
+}
+```
 
 ---
 
@@ -259,8 +278,8 @@ python -m pytest
 # Run tests with verbose output
 python -m pytest -v
 
-# Run tests for a specific application module
-python -m pytest users/
+# Run tests for transactions app
+python -m pytest transactions/
 ```
 
 ---
@@ -310,6 +329,20 @@ FinTrack/
 │   ├── settings.py            # Project settings & JWT config
 │   ├── urls.py                # Main URL configuration
 │   └── wsgi.py
+├── transactions/               # Category & Transaction management module
+│   ├── __init__.py
+│   ├── admin.py
+│   ├── apps.py
+│   ├── choices.py
+│   ├── filters.py             # Advanced transaction filters & validation
+│   ├── migrations/
+│   ├── models.py              # Category & Transaction models
+│   ├── pagination.py          # DRF Pagination configuration
+│   ├── permissions.py         # DRF IsOwner permission class
+│   ├── serializers.py         # Category & Transaction serializers
+│   ├── urls.py                # Categories & Transactions routes
+│   ├── views.py                # Category & Transaction views
+│   └── tests/                  # Category & Transaction test suite
 └── users/                      # User management application module
     ├── __init__.py
     ├── admin.py                # CustomUserAdmin configuration
