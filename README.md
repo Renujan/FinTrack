@@ -278,9 +278,19 @@ python -m pytest
 # Run tests with verbose output
 python -m pytest -v
 
-# Run tests for transactions app
-python -m pytest transactions/
+# Run tests for Day 5 integration test suite
+python -m pytest transactions/tests/test_day5_api_integration.py
 ```
+
+### Day 5 Standardized Error Handling Architecture
+
+All API endpoints utilize a centralized custom DRF exception handler (`finance_tracker.exceptions.custom_exception_handler`) to return consistent, clean error payloads without exposing internal debug tracebacks:
+
+- **400 Bad Request**: Returned for serializer validation errors, invalid parameter types, date format violations, and negative amount input.
+- **401 Unauthorized**: Returned for missing, invalid, or expired Bearer authentication tokens.
+- **403 Forbidden**: Returned for access attempts on unowned resources.
+- **404 Not Found**: Returned for non-existent endpoint URLs or unowned database records (scraped for security).
+- **500 Internal Server Error**: Gracefully logged without exposing stack traces to clients.
 
 ---
 
