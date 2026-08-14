@@ -7,6 +7,10 @@ from .models import Transaction
 
 
 class TransactionFilter(django_filters.FilterSet):
+    """
+    Advanced filter set supporting transaction type, category ID/name, date exact/range,
+    and min/max amount parameters.
+    """
     type = django_filters.CharFilter(method='filter_by_type')
     category = django_filters.CharFilter(method='filter_by_category')
     date = django_filters.DateFilter(field_name='date')
