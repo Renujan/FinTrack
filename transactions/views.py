@@ -70,7 +70,7 @@ class TransactionListCreateView(generics.ListCreateAPIView):
 
     def filter_queryset(self, queryset):
         """
-        Applies filter parameter validation and custom field mappings for sorting (e.g. transaction_date -> date).
+        Applies filter parameter validation and custom field mappings for sorting (e.g. transaction_date -> date, amount, created_at).
         """
         validate_filter_params(self.request.query_params)
 
