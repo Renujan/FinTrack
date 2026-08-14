@@ -9,11 +9,20 @@ from .serializers import CategorySerializer, TransactionSerializer
 
 
 class CategoryListCreateView(generics.ListCreateAPIView):
+    """
+    List and create categories for the authenticated user.
+    Supports case-insensitive search by category name, ordering, and pagination.
+    """
     serializer_class = CategorySerializer
     permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name']
+    ordering_fields = ['name', 'created_at']
+    ordering = ['name']
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        return Category.objects.filter(user=self.request.user).order_by('name')
+        return Category.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
