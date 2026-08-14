@@ -31,7 +31,7 @@ The system follows clean modular monolithic architecture designed for SaaS scala
 - [x] **Day 2**: Authentication & User Management (JWT auth with SimpleJWT, registration, login, logout token blacklist, user profile API, automated tests).
 - [x] **Day 3**: Transaction & Category Foundation (Categories, Income & Expense Transactions, ownership permissions, filtering, pagination, tests).
 - [x] **Day 4**: Category Management & Advanced Transaction Filtering (Category CRUD, category protection, search, type/category/date/amount filters, sorting, pagination, validation, security, tests, docs).
-- [ ] **Day 5**: Frontend Integration (React + Tailwind CSS SaaS dashboard).
+- [x] **Day 5**: Backend API Layer & Quality Enhancements (Custom DRF exception handling, standardized API error formatting, category validation, transaction validation, category & transaction filtering, search, ordering, pagination, and integration tests).
 
 ---
 
@@ -326,6 +326,7 @@ FinTrack/
 ├── finance_tracker/            # Main Django project package
 │   ├── __init__.py
 │   ├── asgi.py
+│   ├── exceptions.py          # Custom DRF exception handler
 │   ├── settings.py            # Project settings & JWT config
 │   ├── urls.py                # Main URL configuration
 │   └── wsgi.py
