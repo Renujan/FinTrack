@@ -66,7 +66,12 @@ class TransactionSerializer(serializers.ModelSerializer):
 
     def validate_category(self, value):
         request = self.context.get('request')
-        if request and hasattr(request, 'user'):
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
             if value.user != request.user:
                 raise serializers.ValidationError("Category does not belong to the authenticated user.")
+        return value
+
+    def validate_date(self, value):
+        if value is None:
+            raise serializers.ValidationError("Transaction date is required.")
         return value
