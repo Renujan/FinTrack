@@ -3,7 +3,7 @@ from rest_framework.pagination import PageNumberPagination
 
 class StandardResultsSetPagination(PageNumberPagination):
     """
-    Standard pagination for API querysets with a default page size of 10
+    Standard pagination for Transaction API querysets with configurable page size (default 10)
     and maximum limit of 100 per page.
     """
     page_size = 10
