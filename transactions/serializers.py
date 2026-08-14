@@ -29,6 +29,10 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class TransactionSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Transaction model with strict validation on amount, transaction_type,
+    user-owned category validation, and required transaction date formatting.
+    """
     category_name = serializers.ReadOnlyField(source='category.name')
 
     class Meta:
