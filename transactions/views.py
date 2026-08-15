@@ -22,6 +22,9 @@ class CategoryListCreateView(generics.ListCreateAPIView):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
+        """
+        Enforce strict user data isolation by scoping category querysets to authenticated user.
+        """
         return Category.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
