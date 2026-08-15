@@ -69,7 +69,10 @@ class TransactionListCreateView(generics.ListCreateAPIView):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        return Transaction.objects.filter(user=self.request.user)
+        """
+        Enforce strict user data isolation and optimize database query with select_related('category').
+        """
+        return Transaction.objects.filter(user=self.request.user).select_related('category')
 
     def filter_queryset(self, queryset):
         """
@@ -107,4 +110,7 @@ class TransactionDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated, IsOwner]
 
     def get_queryset(self):
-        return Transaction.objects.filter(user=self.request.user)
+        """
+        Enforce strict user data isolation and optimize database query with select_related('category').
+        """
+        return Transaction.objects.filter(user=self.request.user).select_related('category')
