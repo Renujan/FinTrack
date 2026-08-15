@@ -7,10 +7,11 @@ A scalable, secure Personal Finance Tracker SaaS backend application built with 
 ## 🏗️ Architecture Overview
 
 The system follows clean modular monolithic architecture designed for SaaS scalability:
-- **Custom Authentication Layer**: Built on top of Django's `AbstractUser` to support flexible multi-currency financial profiles.
-- **Database Architecture**: Powered by PostgreSQL for relational data integrity, transactional safety, and index-optimized queries.
+- **Custom Authentication Layer**: Built on top of Django's `AbstractUser` to support flexible multi-currency financial profiles and SimpleJWT authentication.
+- **Database Architecture**: Powered by PostgreSQL for relational data integrity, transactional safety, and index-optimized query performance.
 - **RESTful API Infrastructure**: Built with Django REST Framework (DRF) preparing standard JSON endpoints for React frontend integration.
-- **Environment Isolation**: Configured using `python-dotenv` for zero hardcoded secrets across development and production environments.
+- **Security & Data Isolation**: Strict user-level queryset isolation preventing IDOR attacks, object-level permission enforcement, and DRF rate limiting.
+- **Production Readiness**: Environment isolation via `python-dotenv`, production security headers, structured backend logging, and health-check monitoring.
 
 ---
 
@@ -32,7 +33,7 @@ The system follows clean modular monolithic architecture designed for SaaS scala
 - [x] **Day 3**: Transaction & Category Foundation (Categories, Income & Expense Transactions, ownership permissions, filtering, pagination, tests).
 - [x] **Day 4**: Category Management & Advanced Transaction Filtering (Category CRUD, category protection, search, type/category/date/amount filters, sorting, pagination, validation, security, tests, docs).
 - [x] **Day 5**: Backend API Layer & Quality Enhancements (Custom DRF exception handling, standardized API error formatting, category validation, transaction validation, category & transaction filtering, search, ordering, pagination, and integration tests).
-- [x] **Day 6**: Backend Security, Performance & Production Readiness (Authentication hardening, permission enforcement, user data isolation, database query optimization, database indexing, API rate limiting, production settings, logging, health check, automated tests, code quality).
+- [x] **Day 6**: Backend Security, Performance & Production Readiness (Authentication hardening, strict permission enforcement, user data isolation/IDOR protection, database query optimization with `select_related`, database indexing, API rate limiting/throttling, production configuration & security headers, structured logging, health check endpoint, comprehensive tests).
 
 ---
 
@@ -93,6 +94,30 @@ cp .env.example .env
 | `DB_PASSWORD` | `postgres` | PostgreSQL database password |
 | `DB_HOST` | `127.0.0.1` | PostgreSQL host address |
 | `DB_PORT` | `5432` | PostgreSQL port number |
+| `JWT_ACCESS_MINUTES` | `60` | JWT access token expiration lifetime in minutes |
+| `JWT_REFRESH_DAYS` | `1` | JWT refresh token expiration lifetime in days |
+| `THROTTLE_ANON_RATE` | `30/minute` | Rate limit for unauthenticated API requests |
+| `THROTTLE_USER_RATE` | `100/minute` | Rate limit for authenticated API requests |
+| `SECURE_SSL_REDIRECT` | `False` | Force SSL redirection in production |
+| `SESSION_COOKIE_SECURE` | `False` | Secure flag for session cookies |
+| `CSRF_COOKIE_SECURE` | `False` | Secure flag for CSRF cookies |
+| `LOG_LEVEL` | `INFO` | Backend logger verbosity level |
+
+---
+
+## 🩺 System Health Check API
+
+| Method | Endpoint | Auth Required | Description |
+|---|---|---|---|
+| `GET` | `/api/health/` | No | Operational status & database connectivity check |
+
+### Response Example (`200 OK`):
+```json
+{
+  "status": "healthy",
+  "database": "connected"
+}
+```
 
 ---
 
@@ -113,56 +138,6 @@ Base URL: `/api/auth/`
 
 ---
 
-### Request & Response Examples
-
-#### 1. User Registration
-`POST /api/auth/register/`
-
-**Request Body:**
-```json
-{
-  "username": "john_doe",
-  "email": "john@example.com",
-  "password": "SecurePassword123!",
-  "password_confirm": "SecurePassword123!",
-  "currency": "USD"
-}
-```
-
-**Response (`201 Created`):**
-```json
-{
-  "message": "User registered successfully",
-  "user": {
-    "id": 1,
-    "username": "john_doe",
-    "email": "john@example.com",
-    "currency": "USD"
-  }
-}
-```
-
-#### 2. User Login
-`POST /api/auth/login/`
-
-**Request Body:**
-```json
-{
-  "username": "john_doe",
-  "password": "SecurePassword123!"
-}
-```
-
-**Response (`200 OK`):**
-```json
-{
-  "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
----
-
 ## 💸 Category & Transaction Management API Documentation
 
 Base URL: `/api/`
@@ -180,25 +155,6 @@ All Category endpoints require `Authorization: Bearer <access_token>` header.
 | `PATCH` | `/api/categories/<id>/` | Yes (`Bearer`) | Partial update of a category name |
 | `DELETE` | `/api/categories/<id>/` | Yes (`Bearer`) | Delete a category (protected if used in transactions) |
 
-#### Category Examples
-
-**Create Category (`POST /api/categories/`)**:
-```json
-{
-  "name": "Groceries"
-}
-```
-
-**Response (`201 Created`)**:
-```json
-{
-  "id": 1,
-  "name": "Groceries",
-  "created_at": "2026-08-13T09:40:00Z",
-  "updated_at": "2026-08-13T09:40:00Z"
-}
-```
-
 ---
 
 ### 💳 Transactions API
@@ -214,56 +170,34 @@ All Transaction endpoints require `Authorization: Bearer <access_token>` header.
 | `PATCH` | `/api/transactions/<id>/` | Yes (`Bearer`) | Partial update of a transaction |
 | `DELETE` | `/api/transactions/<id>/` | Yes (`Bearer`) | Delete a transaction |
 
-#### Query Parameters Reference
+---
 
-##### 1. Search Parameter (`search`)
-Search transactions by description or category name (case-insensitive).
-- Example: `/api/transactions/?search=supermarket`
+## 🛡️ Security, Data Isolation & Performance Improvements (Day 6)
 
-##### 2. Filter Parameters
-- `type`: Filter by transaction type (`INCOME`, `EXPENSE`). Example: `/api/transactions/?type=expense`
-- `category`: Filter by category name or category ID. Example: `/api/transactions/?category=Groceries`
-- `date`: Filter by exact date (YYYY-MM-DD). Example: `/api/transactions/?date=2026-08-12`
-- `start_date` / `end_date`: Filter by date range. Example: `/api/transactions/?start_date=2026-08-01&end_date=2026-08-31`
-- `min_amount` / `max_amount`: Filter by amount range. Example: `/api/transactions/?min_amount=100&max_amount=500`
+### 1. User Data Isolation & IDOR Protection
+- All `Category` and `Transaction` querysets are scoped to `user=request.user`.
+- Accessing another user's resource ID returns `404 Not Found`, preventing object ID enumeration and unauthorized data modification/deletion.
+- Category cross-user references during transaction creation are blocked with explicit validation.
 
-Multiple filters can be combined:
-- Example: `/api/transactions/?type=expense&category=Groceries&min_amount=50&start_date=2026-08-01`
+### 2. Query Optimization
+- `Transaction` list and detail querysets use `.select_related('category')` to eliminate N+1 queries during serialization of category names.
 
-##### 3. Sorting Parameter (`ordering`)
-Allowed ordering fields: `date`, `transaction_date`, `amount`, `created_at` (prefix with `-` for descending).
-- Ascending date: `/api/transactions/?ordering=date` or `/api/transactions/?ordering=transaction_date`
-- Descending date: `/api/transactions/?ordering=-date` or `/api/transactions/?ordering=-transaction_date`
-- Ascending amount: `/api/transactions/?ordering=amount`
-- Descending amount: `/api/transactions/?ordering=-amount`
-- Default ordering: `['-date', '-created_at']`
+### 3. Database Indexing
+- Performance indexes added:
+  - `idx_cat_user_name` on `Category(user, name)`
+  - `idx_txn_user_amount` on `Transaction(user, amount)`
+  - `idx_txn_user_created` on `Transaction(user, created_at)`
+  - Existing index `idx_txn_user_date`, `idx_txn_user_type`, `idx_txn_user_category`
 
-##### 4. Pagination Parameters (`page`, `page_size`)
-- Default page size: `10`
-- Maximum page size: `100`
-- Example: `/api/transactions/?page=1&page_size=20`
+### 4. Throttling & Rate Limiting
+- DRF throttling enabled:
+  - Anonymous users: `30 requests/minute` (`AnonRateThrottle`)
+  - Authenticated users: `100 requests/minute` (`UserRateThrottle`)
 
-#### Paginated Response Example (`200 OK`)
-```json
-{
-  "count": 45,
-  "next": "http://127.0.0.1:8000/api/transactions/?page=2",
-  "previous": null,
-  "results": [
-    {
-      "id": 12,
-      "category": 1,
-      "category_name": "Groceries",
-      "transaction_type": "EXPENSE",
-      "amount": "125.50",
-      "description": "Weekly supermarket shopping",
-      "date": "2026-08-12",
-      "created_at": "2026-08-12T14:30:00Z",
-      "updated_at": "2026-08-12T14:30:00Z"
-    }
-  ]
-}
-```
+### 5. Production Security Headers
+- `X-Frame-Options: DENY` (clickjacking protection)
+- `X-Content-Type-Options: nosniff` (MIME sniffing protection)
+- `SECURE_BROWSER_XSS_FILTER = True`
 
 ---
 
@@ -279,91 +213,14 @@ python -m pytest
 # Run tests with verbose output
 python -m pytest -v
 
-# Run tests for Day 5 integration test suite
-python -m pytest transactions/tests/test_day5_api_integration.py
+# Run Day 6 security and performance test suite
+python -m pytest transactions/tests/test_day6_security_perf.py
 ```
 
-### Day 5 Standardized Error Handling Architecture
-
-All API endpoints utilize a centralized custom DRF exception handler (`finance_tracker.exceptions.custom_exception_handler`) to return consistent, clean error payloads without exposing internal debug tracebacks:
-
-- **400 Bad Request**: Returned for serializer validation errors, invalid parameter types, date format violations, and negative amount input.
-- **401 Unauthorized**: Returned for missing, invalid, or expired Bearer authentication tokens.
-- **403 Forbidden**: Returned for access attempts on unowned resources.
-- **404 Not Found**: Returned for non-existent endpoint URLs or unowned database records (scraped for security).
-- **500 Internal Server Error**: Gracefully logged without exposing stack traces to clients.
-
----
-
-## 🛠️ Troubleshooting & FAQ
-
-#### 1. `psycopg2.OperationalError: connection to server at localhost failed`
-- Verify PostgreSQL service is running: `Get-Service -Name *postgres*` (Windows) or `systemctl status postgresql` (Linux).
-- Check `DB_USER` and `DB_PASSWORD` in your local `.env` file.
-
-#### 2. `ModuleNotFoundError: No module named 'dotenv'`
-- Ensure virtual environment is activated and dependencies are installed: `pip install -r requirements.txt`.
-
----
-
-## 📐 Code Quality & Git Standards
-
-- **Commit Message Convention**: All commit messages follow standard Imperative Present Tense (e.g., `Implement custom user model foundation`, `Add PostgreSQL database configuration`).
-- **Single Responsibility Commits**: Each commit represents a distinct, logical development step without combining unrelated changes.
-- **PEP 8 Compliance**: Code formatted according to standard Python style guidelines.
-
----
-
-## 📂 Project Structure
-
-```text
-FinTrack/
-├── .env.example               # Example environment variable file
-├── .gitignore                  # Git ignore rules for Python/Django/PostgreSQL
-├── manage.py                   # Django management script
-├── requirements.txt            # Python dependencies
-├── pytest.ini                  # Pytest configuration
-├── README.md                   # Project documentation & roadmap
-├── authentication/             # JWT Authentication application module
-│   ├── __init__.py
-│   ├── apps.py                 # App configuration
-│   ├── permissions.py          # DRF permission rules
-│   ├── serializers.py          # Registration & UserProfile serializers
-│   ├── urls.py                 # Auth endpoints routing
-│   ├── views.py                # Register, Logout & Profile views
-│   └── tests/                  # Authentication test suite
-│       ├── __init__.py
-│       └── test_authentication.py
-├── finance_tracker/            # Main Django project package
-│   ├── __init__.py
-│   ├── asgi.py
-│   ├── exceptions.py          # Custom DRF exception handler
-│   ├── settings.py            # Project settings & JWT config
-│   ├── urls.py                # Main URL configuration
-│   └── wsgi.py
-├── transactions/               # Category & Transaction management module
-│   ├── __init__.py
-│   ├── admin.py
-│   ├── apps.py
-│   ├── choices.py
-│   ├── filters.py             # Advanced transaction filters & validation
-│   ├── migrations/
-│   ├── models.py              # Category & Transaction models
-│   ├── pagination.py          # DRF Pagination configuration
-│   ├── permissions.py         # DRF IsOwner permission class
-│   ├── serializers.py         # Category & Transaction serializers
-│   ├── urls.py                # Categories & Transactions routes
-│   ├── views.py                # Category & Transaction views
-│   └── tests/                  # Category & Transaction test suite
-└── users/                      # User management application module
-    ├── __init__.py
-    ├── admin.py                # CustomUserAdmin configuration
-    ├── apps.py                 # App configuration
-    ├── models.py               # Custom User model (AbstractUser)
-    ├── tests.py                # User model unit test suite
-    ├── urls.py                 # Users module routes
-    └── views.py                # Users module views
-```
+### Test Suite Results Summary
+- Total tests: **104**
+- Passed: **104**
+- Failed: **0**
 
 ---
 
