@@ -156,6 +156,14 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': os.getenv('THROTTLE_ANON_RATE', '30/minute'),
+        'user': os.getenv('THROTTLE_USER_RATE', '100/minute'),
+    },
     'EXCEPTION_HANDLER': 'finance_tracker.exceptions.custom_exception_handler',
 }
 
