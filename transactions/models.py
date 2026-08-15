@@ -18,6 +18,9 @@ class Category(models.Model):
     class Meta:
         verbose_name_plural = 'categories'
         ordering = ['name']
+        indexes = [
+            models.Index(fields=['user', 'name'], name='idx_cat_user_name'),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'name'],
@@ -60,6 +63,8 @@ class Transaction(models.Model):
             models.Index(fields=['user', 'date'], name='idx_txn_user_date'),
             models.Index(fields=['user', 'transaction_type'], name='idx_txn_user_type'),
             models.Index(fields=['user', 'category'], name='idx_txn_user_category'),
+            models.Index(fields=['user', 'amount'], name='idx_txn_user_amount'),
+            models.Index(fields=['user', 'created_at'], name='idx_txn_user_created'),
         ]
         constraints = [
             models.CheckConstraint(
