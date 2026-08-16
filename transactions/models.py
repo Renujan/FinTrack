@@ -128,6 +128,13 @@ class Budget(models.Model):
     def is_overall(self):
         return self.category_id is None
 
+    def get_budget_type(self):
+        """
+        Distinguishes between a category-specific budget and an overall budget.
+        """
+        return 'Overall' if self.is_overall else f"Category: {self.category.name}"
+
     def __str__(self):
         return f"{self.name} - {self.amount} ({self.user})"
+
 
