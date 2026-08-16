@@ -1,7 +1,8 @@
 from decimal import Decimal
 from rest_framework import serializers
-from .choices import TransactionType
-from .models import Category, Transaction
+from .choices import TransactionType, BudgetPeriod
+from .models import Category, Transaction, Budget
+from .services import BudgetCalculationService
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -79,3 +80,103 @@ class TransactionSerializer(serializers.ModelSerializer):
         if value is None:
             raise serializers.ValidationError("Transaction date is required.")
         return value
+
+
+class BudgetSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Budget model with calculation status metrics, category ownership validation,
+    date-range validation, and budget period validation.
+    """
+    category_name = serializers.SerializerMethodField()
+    is_overall = serializers.ReadOnlyField()
+    budget_amount = serializers.DecimalField(source='amount', max_digits=12, decimal_places=2, read_only=True)
+    spent_amount = serializers.SerializerMethodField()
+    remaining_amount = serializers.SerializerMethodField()
+    percentage_used = serializers.SerializerMethodField()
+    is_exceeded = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Budget
+        fields = [
+            'id',
+            'name',
+            'category',
+            'category_name',
+            'is_overall',
+            'amount',
+            'budget_amount',
+            'period',
+            'start_date',
+            'end_date',
+            'spent_amount',
+            'remaining_amount',
+            'percentage_used',
+            'is_exceeded',
+            'created_at',
+            'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        request = self.context.get('request')
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
+            self.fields['category'].queryset = Category.objects.filter(user=request.user)
+
+    def get_category_name(self, obj):
+        return obj.category.name if obj.category else None
+
+    def _get_metrics(self, obj):
+        if not hasattr(obj, '_cached_metrics'):
+            obj._cached_metrics = BudgetCalculationService.calculate_budget_metrics(obj)
+        return obj._cached_metrics
+
+    def get_spent_amount(self, obj):
+        return self._get_metrics(obj)['spent_amount']
+
+    def get_remaining_amount(self, obj):
+        return self._get_metrics(obj)['remaining_amount']
+
+    def get_percentage_used(self, obj):
+        return self._get_metrics(obj)['percentage_used']
+
+    def get_is_exceeded(self, obj):
+        return self._get_metrics(obj)['is_exceeded']
+
+    def validate_name(self, value):
+        if value is None or not str(value).strip():
+            raise serializers.ValidationError("Budget name is required and cannot be empty.")
+        value = str(value).strip()
+        if len(value) > 100:
+            raise serializers.ValidationError("Budget name cannot exceed 100 characters.")
+        return value
+
+    def validate_amount(self, value):
+        if value is None or value <= Decimal('0.00'):
+            raise serializers.ValidationError("Amount must be greater than zero.")
+        return value
+
+    def validate_period(self, value):
+        if value not in BudgetPeriod.values:
+            raise serializers.ValidationError(
+                f"Invalid budget period. Choices are: {', '.join(BudgetPeriod.values)}"
+            )
+        return value
+
+    def validate_category(self, value):
+        if value is not None:
+            request = self.context.get('request')
+            if request and hasattr(request, 'user') and request.user.is_authenticated:
+                if value.user != request.user:
+                    raise serializers.ValidationError("Category does not belong to the authenticated user.")
+        return value
+
+    def validate(self, attrs):
+        start_date = attrs.get('start_date') or (self.instance.start_date if self.instance else None)
+        end_date = attrs.get('end_date') or (self.instance.end_date if self.instance else None)
+
+        if start_date and end_date and end_date < start_date:
+            raise serializers.ValidationError({"end_date": "End date cannot be before start date."})
+
+        return attrs
+
