@@ -2,8 +2,9 @@ import datetime
 from decimal import Decimal, InvalidOperation
 import django_filters
 from rest_framework import serializers
-from .choices import TransactionType
-from .models import Transaction
+from .choices import TransactionType, BudgetPeriod
+from .models import Transaction, Budget
+from .services import BudgetCalculationService
 
 
 class TransactionFilter(django_filters.FilterSet):
@@ -39,6 +40,50 @@ class TransactionFilter(django_filters.FilterSet):
         if value.isdigit():
             return queryset.filter(category_id=int(value))
         return queryset.filter(category__name__iexact=value)
+
+
+class BudgetFilter(django_filters.FilterSet):
+    """
+    Advanced filter set for Budget queries supporting category (ID or name), budget period,
+    start_date / end_date filters, overall budget indicator, and exceeded status filter.
+    """
+    category = django_filters.CharFilter(method='filter_by_category')
+    period = django_filters.CharFilter(method='filter_by_period')
+    start_date = django_filters.DateFilter(field_name='start_date', lookup_expr='gte')
+    end_date = django_filters.DateFilter(field_name='end_date', lookup_expr='lte')
+    is_overall = django_filters.BooleanFilter(field_name='category', lookup_expr='isnull')
+    is_exceeded = django_filters.BooleanFilter(method='filter_by_exceeded')
+
+    class Meta:
+        model = Budget
+        fields = ['category', 'period', 'start_date', 'end_date', 'is_overall', 'is_exceeded']
+
+    def filter_by_category(self, queryset, name, value):
+        if not value:
+            return queryset
+        if value.isdigit():
+            return queryset.filter(category_id=int(value))
+        return queryset.filter(category__name__iexact=value)
+
+    def filter_by_period(self, queryset, name, value):
+        if not value:
+            return queryset
+        val_upper = value.upper()
+        if val_upper not in BudgetPeriod.values:
+            raise serializers.ValidationError({
+                'period': f"Invalid budget period '{value}'. Allowed choices are: {', '.join(BudgetPeriod.values)}."
+            })
+        return queryset.filter(period=val_upper)
+
+    def filter_by_exceeded(self, queryset, name, value):
+        if value is None:
+            return queryset
+        matching_ids = []
+        for budget in queryset:
+            metrics = BudgetCalculationService.calculate_budget_metrics(budget)
+            if metrics['is_exceeded'] == value:
+                matching_ids.append(budget.id)
+        return queryset.filter(id__in=matching_ids)
 
 
 def validate_filter_params(params):
@@ -104,3 +149,51 @@ def validate_filter_params(params):
 
     if errors:
         raise serializers.ValidationError(errors)
+
+
+def validate_budget_filter_params(params):
+    """
+    Validates query parameters for budget filtering and ordering.
+    """
+    errors = {}
+
+    parsed_start_date = None
+    parsed_end_date = None
+
+    for field in ['start_date', 'end_date']:
+        val = params.get(field)
+        if val:
+            try:
+                dt = datetime.datetime.strptime(val, '%Y-%m-%d').date()
+                if field == 'start_date':
+                    parsed_start_date = dt
+                elif field == 'end_date':
+                    parsed_end_date = dt
+            except ValueError:
+                errors[field] = [f"Invalid date format for {field}. Expected YYYY-MM-DD."]
+
+    if parsed_start_date and parsed_end_date and parsed_start_date > parsed_end_date:
+        errors['start_date'] = ["start_date cannot be greater than end_date."]
+
+    period_val = params.get('period')
+    if period_val and period_val.upper() not in BudgetPeriod.values:
+        errors['period'] = [f"Invalid budget period '{period_val}'. Allowed choices: {', '.join(BudgetPeriod.values)}."]
+
+    ordering_val = params.get('ordering')
+    if ordering_val:
+        allowed_ordering = {
+            'start_date', '-start_date',
+            'end_date', '-end_date',
+            'amount', '-amount',
+            'created_at', '-created_at',
+            'percentage_used', '-percentage_used',
+            'name', '-name'
+        }
+        requested_fields = [f.strip() for f in ordering_val.split(',') if f.strip()]
+        invalid_fields = [f for f in requested_fields if f not in allowed_ordering]
+        if invalid_fields:
+            errors['ordering'] = [f"Invalid ordering field(s): {', '.join(invalid_fields)}."]
+
+    if errors:
+        raise serializers.ValidationError(errors)
+
