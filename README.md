@@ -36,7 +36,6 @@ The system follows clean modular monolithic architecture designed for SaaS scala
 - [x] **Day 6**: Backend Security, Performance & Production Readiness (Authentication hardening, strict permission enforcement, user data isolation/IDOR protection, database query optimization with `select_related`, database indexing, API rate limiting/throttling, production configuration & security headers, structured logging, health check endpoint, comprehensive tests).
 - [x] **Day 7**: Budget Management & Financial Limits (Budget model, category vs overall budgets, period validation, spending calculation service, transaction integration, filtering, search, ordering, pagination, comprehensive tests, 14 Git commits).
 
-
 ---
 
 ## 📋 Day 1 Project Setup & Local Development
@@ -174,22 +173,86 @@ All Transaction endpoints require `Authorization: Bearer <access_token>` header.
 
 ---
 
+## 🎯 Budget Management API Documentation (Day 7)
+
+Base URL: `/api/`
+
+All Budget endpoints require `Authorization: Bearer <access_token>` header.
+
+| Method | Endpoint | Auth Required | Description |
+|---|---|---|---|
+| `GET` | `/api/budgets/` | Yes (`Bearer`) | List, search, filter, sort, and paginate budgets |
+| `POST` | `/api/budgets/` | Yes (`Bearer`) | Create a category or overall budget |
+| `GET` | `/api/budgets/<id>/` | Yes (`Bearer`) | Retrieve budget details with calculated metrics |
+| `PUT` | `/api/budgets/<id>/` | Yes (`Bearer`) | Full update of budget parameters |
+| `PATCH` | `/api/budgets/<id>/` | Yes (`Bearer`) | Partial update of budget parameters |
+| `DELETE` | `/api/budgets/<id>/` | Yes (`Bearer`) | Delete a budget |
+
+### 💡 Category vs. Overall Budgets
+- **Category Budget**: Set `category` to a valid category ID owned by the user. Only expense transactions for that specific category within the budget date range are counted toward spending.
+- **Overall Budget**: Set `category` to `null`. All expense transactions for the user within the budget date range are aggregated across all categories.
+
+### 📅 Supported Budget Periods
+- `WEEKLY`: Weekly budget cycle
+- `MONTHLY`: Monthly budget cycle
+- `CUSTOM`: Custom date range budget
+
+### 🧮 Budget Calculation & Metrics
+For each budget, the calculation engine dynamically evaluates matching `EXPENSE` transactions in the date range `[start_date, end_date]`:
+- `spent_amount`: Total sum of expenses matching budget scope and date window.
+- `remaining_amount`: `amount - spent_amount`
+- `percentage_used`: `(spent_amount / amount) * 100` (rounded to 2 decimal places).
+- `is_exceeded`: `True` if `spent_amount > amount`, `False` otherwise.
+
+### Response Example (`200 OK` / `201 Created`):
+```json
+{
+  "id": 1,
+  "name": "August Dining Out",
+  "category": 3,
+  "category_name": "Dining Out",
+  "is_overall": false,
+  "amount": "500.00",
+  "budget_amount": "500.00",
+  "period": "MONTHLY",
+  "start_date": "2026-08-01",
+  "end_date": "2026-08-31",
+  "spent_amount": "350.00",
+  "remaining_amount": "150.00",
+  "percentage_used": 70.0,
+  "is_exceeded": false,
+  "created_at": "2026-08-16T09:00:00Z",
+  "updated_at": "2026-08-16T09:00:00Z"
+}
+```
+
+### 🛡️ Validation Rules
+- **Amount**: Must be positive (`> 0.00`).
+- **Dates**: `start_date` and `end_date` are required. `end_date` must not be before `start_date`.
+- **Category**: Optional. If provided, category must belong to the authenticated request user.
+- **Period**: Must be one of `WEEKLY`, `MONTHLY`, `CUSTOM`.
+
+---
+
 ## 🛡️ Security, Data Isolation & Performance Improvements (Day 6)
 
 ### 1. User Data Isolation & IDOR Protection
-- All `Category` and `Transaction` querysets are scoped to `user=request.user`.
+- All `Category`, `Transaction`, and `Budget` querysets are scoped to `user=request.user`.
 - Accessing another user's resource ID returns `404 Not Found`, preventing object ID enumeration and unauthorized data modification/deletion.
-- Category cross-user references during transaction creation are blocked with explicit validation.
+- Category cross-user references during transaction/budget creation are blocked with explicit validation.
 
 ### 2. Query Optimization
 - `Transaction` list and detail querysets use `.select_related('category')` to eliminate N+1 queries during serialization of category names.
+- `Budget` list and detail querysets use `.select_related('category')` to optimize database performance.
 
 ### 3. Database Indexing
 - Performance indexes added:
   - `idx_cat_user_name` on `Category(user, name)`
   - `idx_txn_user_amount` on `Transaction(user, amount)`
   - `idx_txn_user_created` on `Transaction(user, created_at)`
-  - Existing index `idx_txn_user_date`, `idx_txn_user_type`, `idx_txn_user_category`
+  - `idx_budget_user_dates` on `Budget(user, start_date, end_date)`
+  - `idx_budget_user_category` on `Budget(user, category)`
+  - `idx_budget_user_period` on `Budget(user, period)`
 
 ### 4. Throttling & Rate Limiting
 - DRF throttling enabled:
@@ -215,16 +278,17 @@ python -m pytest
 # Run tests with verbose output
 python -m pytest -v
 
-# Run Day 6 security and performance test suite
-python -m pytest transactions/tests/test_day6_security_perf.py
+# Run Day 7 budget test suite specifically
+python -m pytest transactions/tests/test_budgets.py
 ```
 
 ### Test Suite Results Summary
-- Total tests: **104**
-- Passed: **104**
+- Total tests: **132**
+- Passed: **132**
 - Failed: **0**
 
 ---
 
 ## 📄 License
 MIT License
+
