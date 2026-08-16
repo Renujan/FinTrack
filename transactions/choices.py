@@ -12,3 +12,8 @@ class BudgetPeriod(models.TextChoices):
     MONTHLY = 'MONTHLY', _('Monthly')
     CUSTOM = 'CUSTOM', _('Custom')
 
+    @classmethod
+    def is_valid_period(cls, value):
+        return value in cls.values if value else False
+
+
