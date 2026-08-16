@@ -13,9 +13,9 @@ class BudgetCalculationService:
     """
 
     @staticmethod
-    def calculate_spent_amount(budget):
+    def get_budget_transactions(budget):
         """
-        Calculates total expense spending for a specific budget instance.
+        Returns the queryset of expense transactions contributing to a budget's spending.
         """
         filters = Q(
             user=budget.user,
@@ -25,10 +25,17 @@ class BudgetCalculationService:
         )
         if budget.category_id is not None:
             filters &= Q(category_id=budget.category_id)
+        return Transaction.objects.filter(filters)
 
-        result = Transaction.objects.filter(filters).aggregate(total=Sum('amount'))
+    @classmethod
+    def calculate_spent_amount(cls, budget):
+        """
+        Calculates total expense spending for a specific budget instance.
+        """
+        result = cls.get_budget_transactions(budget).aggregate(total=Sum('amount'))
         total_spent = result['total'] if result['total'] is not None else Decimal('0.00')
         return total_spent
+
 
     @classmethod
     def calculate_budget_metrics(cls, budget):
