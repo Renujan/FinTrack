@@ -2,7 +2,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
-from .choices import TransactionType
+from .choices import TransactionType, BudgetPeriod
 
 
 class Category(models.Model):
@@ -75,3 +75,59 @@ class Transaction(models.Model):
 
     def __str__(self):
         return f"{self.transaction_type} - {self.amount} ({self.user})"
+
+
+class Budget(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='budgets'
+    )
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='budgets'
+    )
+    name = models.CharField(max_length=100)
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))]
+    )
+    period = models.CharField(
+        max_length=20,
+        choices=BudgetPeriod.choices,
+        default=BudgetPeriod.MONTHLY
+    )
+    start_date = models.DateField()
+    end_date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-start_date', '-created_at']
+        indexes = [
+            models.Index(fields=['user', 'start_date', 'end_date'], name='idx_budget_user_dates'),
+            models.Index(fields=['user', 'category'], name='idx_budget_user_category'),
+            models.Index(fields=['user', 'period'], name='idx_budget_user_period'),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0),
+                name='budget_amount_positive'
+            ),
+            models.CheckConstraint(
+                condition=models.Q(end_date__gte=models.F('start_date')),
+                name='budget_start_lte_end_date'
+            )
+        ]
+
+    @property
+    def is_overall(self):
+        return self.category_id is None
+
+    def __str__(self):
+        return f"{self.name} - {self.amount} ({self.user})"
+
