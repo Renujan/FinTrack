@@ -35,7 +35,6 @@ The system follows clean modular monolithic architecture designed for SaaS scala
 - [x] **Day 5**: Backend API Layer & Quality Enhancements (Custom DRF exception handling, standardized API error formatting, category validation, transaction validation, category & transaction filtering, search, ordering, pagination, and integration tests).
 - [x] **Day 6**: Backend Security, Performance & Production Readiness (Authentication hardening, strict permission enforcement, user data isolation/IDOR protection, database query optimization with `select_related`, database indexing, API rate limiting/throttling, production configuration & security headers, structured logging, health check endpoint, comprehensive tests).
 - [x] **Day 7**: Budget Management & Financial Limits (Budget model, category vs overall budgets, period validation, spending calculation service, transaction integration, filtering, search, ordering, pagination, comprehensive tests, 14 Git commits).
-- [x] **Day 8**: Financial Analytics & Summary APIs (Dashboard summary, trends, monthly, category, comparison, budget analytics, user isolation, tests, docs).
 - [x] **Day 8**: Financial Analytics & Summary APIs (Dashboard financial summary, income/expense totals, net balance, transaction counts, category spending breakdown, income/expense trends, date-range analytics, monthly summaries, daily/weekly/monthly trends, top spending categories, period comparison, budget analytics integration, user data isolation, 156 total automated tests, 14 Git commits).
 
 ---
@@ -235,4 +234,112 @@ For each budget, the calculation engine dynamically evaluates matching `EXPENSE`
 - **Period**: Must be one of `WEEKLY`, `MONTHLY`, `CUSTOM`.
 
 ---
+
+## 📊 Financial Analytics & Summary API Documentation (Day 8)
+
+Base URL: `/api/analytics/`
+
+All Analytics endpoints require `Authorization: Bearer <access_token>` header.
+
+### Endpoints Overview
+
+| Method | Endpoint | Auth Required | Description |
+|---|---|---|---|
+| `GET` | `/api/analytics/summary/` | Yes (`Bearer`) | Dashboard overall financial summary (income, expenses, net balance, counts, averages) |
+| `GET` | `/api/analytics/trends/` | Yes (`Bearer`) | Financial trends grouped by period (`daily`, `weekly`, `monthly`) |
+| `GET` | `/api/analytics/monthly/` | Yes (`Bearer`) | Monthly financial summaries ordered chronologically |
+| `GET` | `/api/analytics/categories/` | Yes (`Bearer`) | Category spending analytics for expense transactions (supports `limit` param) |
+| `GET` | `/api/analytics/comparison/` | Yes (`Bearer`) | Period comparison against previous comparable period with percentage changes |
+| `GET` | `/api/analytics/budgets/` | Yes (`Bearer`) | Budget analytics integration (active, exceeded, total budgeted, total spending, utilization) |
+
+### 📅 Date Range Filtering Across Analytics
+All analytics endpoints support optional date filtering query parameters:
+- `start_date`: `YYYY-MM-DD`
+- `end_date`: `YYYY-MM-DD`
+
+**Validation**:
+- Format must strictly follow `YYYY-MM-DD`.
+- `start_date` must be less than or equal to `end_date`.
+- Returns `400 Bad Request` with structured DRF validation error if parameters are invalid.
+
+### 📈 Financial Trends Grouping
+The `/api/analytics/trends/` endpoint supports grouping via `group_by` query parameter:
+- `daily`: Group trends by day (`YYYY-MM-DD`)
+- `weekly`: Group trends by week start date (`YYYY-MM-DD`)
+- `monthly`: Group trends by month (`YYYY-MM`) (Default)
+
+### 🏷️ Category Analytics & Top Spending Categories
+The `/api/analytics/categories/` endpoint aggregates expense spending by category:
+- `limit`: Optional positive integer (1 to 100) to return top spending categories ordered by total amount spent descending.
+- Calculates spending, transaction count, and `percentage_of_total` spending.
+
+### 🔄 Period Comparison Calculation
+The `/api/analytics/comparison/` endpoint compares the selected period against an immediately preceding period of equal duration:
+- Computes percentage changes (`income_change`, `expense_change`, `net_change`).
+- Handles zero previous values safely without division by zero errors.
+
+### 💰 Budget Analytics Integration
+The `/api/analytics/budgets/` endpoint integrates Day 7 budget calculation logic:
+- Evaluates active budgets, exceeded budgets, total budgeted amount, total spent across budgets, and overall utilization rate.
+
+---
+
+## 🛡️ Security, Data Isolation & Performance Improvements (Day 6)
+
+### 1. User Data Isolation & IDOR Protection
+- All `Category`, `Transaction`, and `Budget` querysets are scoped to `user=request.user`.
+- Accessing another user's resource ID returns `404 Not Found`, preventing object ID enumeration and unauthorized data modification/deletion.
+- Category cross-user references during transaction/budget creation are blocked with explicit validation.
+
+### 2. Query Optimization
+- `Transaction` list and detail querysets use `.select_related('category')` to eliminate N+1 queries during serialization of category names.
+- `Budget` list and detail querysets use `.select_related('category')` to optimize database performance.
+
+### 3. Database Indexing
+- Performance indexes added:
+  - `idx_cat_user_name` on `Category(user, name)`
+  - `idx_txn_user_amount` on `Transaction(user, amount)`
+  - `idx_txn_user_created` on `Transaction(user, created_at)`
+  - `idx_budget_user_dates` on `Budget(user, start_date, end_date)`
+  - `idx_budget_user_category` on `Budget(user, category)`
+  - `idx_budget_user_period` on `Budget(user, period)`
+
+### 4. Throttling & Rate Limiting
+- DRF throttling enabled:
+  - Anonymous users: `30 requests/minute` (`AnonRateThrottle`)
+  - Authenticated users: `100 requests/minute` (`UserRateThrottle`)
+
+### 5. Production Security Headers
+- `X-Frame-Options: DENY` (clickjacking protection)
+- `X-Content-Type-Options: nosniff` (MIME sniffing protection)
+- `SECURE_BROWSER_XSS_FILTER = True`
+
+---
+
+## 🧪 Testing Guide
+
+We use `pytest` and `pytest-django` for automated unit and integration testing.
+
+### Running the Test Suite
+```bash
+# Run all tests
+python -m pytest
+
+# Run tests with verbose output
+python -m pytest -v
+
+# Run Day 8 analytics test suite specifically
+python -m pytest transactions/tests/test_analytics.py
+```
+
+### Test Suite Results Summary
+- Total tests: **156**
+- Passed: **156**
+- Failed: **0**
+
+
+---
+
+## 📄 License
+MIT License
 
