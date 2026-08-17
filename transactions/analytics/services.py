@@ -193,3 +193,62 @@ class AnalyticsService:
             })
 
         return monthly
+
+    @classmethod
+    def get_category_analytics(cls, user, start_date=None, end_date=None, limit=None):
+        """
+        Calculates category spending analytics for expense transactions.
+        Ordered by spending amount descending. Supports an optional limit parameter.
+        """
+        if limit is not None:
+            try:
+                limit_int = int(limit)
+                if limit_int <= 0 or limit_int > 100:
+                    raise ValueError()
+            except (ValueError, TypeError):
+                raise serializers.ValidationError({
+                    'limit': ["limit must be a positive integer between 1 and 100."]
+                })
+        else:
+            limit_int = None
+
+        qs = cls.get_user_transactions(user, start_date, end_date).filter(
+            transaction_type=TransactionType.EXPENSE
+        )
+
+        total_expenses_val = qs.aggregate(
+            total=Coalesce(Sum('amount'), Value(Decimal('0.00')))
+        )['total']
+
+        aggregated = (
+            qs.values('category_id', 'category__name')
+            .annotate(
+                spent=Coalesce(Sum('amount'), Value(Decimal('0.00'))),
+                transaction_count=Count('id')
+            )
+            .order_by('-spent')
+        )
+
+        if limit_int:
+            aggregated = aggregated[:limit_int]
+
+        results = []
+        for row in aggregated:
+            cat_id = row['category_id']
+            cat_name = row['category__name'] or "Uncategorized"
+            spent_amt = row['spent']
+
+            if total_expenses_val > Decimal('0.00'):
+                pct = round(float((spent_amt / total_expenses_val) * 100), 2)
+            else:
+                pct = 0.0
+
+            results.append({
+                'category': cat_name,
+                'category_id': cat_id,
+                'spent': f"{spent_amt:.2f}",
+                'transaction_count': row['transaction_count'],
+                'percentage_of_total': pct,
+            })
+
+        return results
