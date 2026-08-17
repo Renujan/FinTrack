@@ -1,3 +1,36 @@
+def parse_and_validate_date_range(params):
+    """
+    Parses and validates start_date and end_date query parameters.
+    Returns a tuple (start_date_obj, end_date_obj).
+    Raises DRF ValidationError if dates are malformed or start_date > end_date.
+    """
+    errors = {}
+    parsed_start = None
+    parsed_end = None
+
+    start_str = params.get('start_date')
+    if start_str:
+        try:
+            parsed_start = datetime.datetime.strptime(start_str, '%Y-%m-%d').date()
+        except ValueError:
+            errors['start_date'] = ["Invalid date format for start_date. Expected YYYY-MM-DD."]
+
+    end_str = params.get('end_date')
+    if end_str:
+        try:
+            parsed_end = datetime.datetime.strptime(end_str, '%Y-%m-%d').date()
+        except ValueError:
+            errors['end_date'] = ["Invalid date format for end_date. Expected YYYY-MM-DD."]
+
+    if parsed_start and parsed_end and parsed_start > parsed_end:
+        errors['start_date'] = ["start_date cannot be greater than end_date."]
+
+    if errors:
+        raise serializers.ValidationError(errors)
+
+    return parsed_start, parsed_end
+
+
 import datetime
 from decimal import Decimal
 from django.db.models import Sum, Count, Avg, Q, Value
