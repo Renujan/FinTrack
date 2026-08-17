@@ -1,3 +1,13 @@
+import datetime
+from decimal import Decimal
+from django.db.models import Sum, Count, Avg, Q, Value
+from django.db.models.functions import TruncDay, TruncWeek, TruncMonth, Coalesce
+from rest_framework import serializers
+from transactions.choices import TransactionType
+from transactions.models import Transaction, Budget
+from transactions.services import BudgetCalculationService
+
+
 def parse_and_validate_date_range(params):
     """
     Parses and validates start_date and end_date query parameters.
@@ -31,16 +41,6 @@ def parse_and_validate_date_range(params):
     return parsed_start, parsed_end
 
 
-import datetime
-from decimal import Decimal
-from django.db.models import Sum, Count, Avg, Q, Value
-from django.db.models.functions import TruncDay, TruncWeek, TruncMonth, Coalesce
-from rest_framework import serializers
-from transactions.choices import TransactionType
-from transactions.models import Transaction, Budget
-from transactions.services import BudgetCalculationService
-
-
 class AnalyticsService:
     """
     Service layer providing database-level aggregation and logic for financial analytics.
@@ -63,6 +63,8 @@ class AnalyticsService:
     def get_summary(cls, user, start_date=None, end_date=None):
         """
         Calculates overall financial summary statistics for the user.
+        Returns total_income, total_expenses, net_balance, transaction_count,
+        income_transaction_count, expense_transaction_count, avg_income_transaction, avg_expense_transaction.
         """
         qs = cls.get_user_transactions(user, start_date, end_date)
 
@@ -320,4 +322,62 @@ class AnalyticsService:
             'income_change': calc_change_pct(curr_inc, prev_inc),
             'expense_change': calc_change_pct(curr_exp, prev_exp),
             'net_change': calc_change_pct(curr_net, prev_net),
+        }
+
+    @classmethod
+    def get_budget_analytics(cls, user, start_date=None, end_date=None):
+        """
+        Calculates user-scoped budget analytics by integrating Day 7 Budget metrics.
+        """
+        budgets_qs = Budget.objects.filter(user=user).select_related('category')
+        if start_date:
+            budgets_qs = budgets_qs.filter(end_date__gte=start_date)
+        if end_date:
+            budgets_qs = budgets_qs.filter(start_date__lte=end_date)
+
+        today = datetime.date.today()
+
+        total_budgets = budgets_qs.count()
+        active_budgets_count = 0
+        exceeded_budgets_count = 0
+
+        total_budgeted_amount = Decimal('0.00')
+        total_budget_spending = Decimal('0.00')
+        budgets_summary = []
+
+        for b in budgets_qs:
+            metrics = BudgetCalculationService.calculate_budget_metrics(b)
+            if b.start_date <= today <= b.end_date:
+                active_budgets_count += 1
+            if metrics['is_exceeded']:
+                exceeded_budgets_count += 1
+
+            total_budgeted_amount += b.amount
+            total_budget_spending += metrics['spent_amount']
+
+            budgets_summary.append({
+                'id': b.id,
+                'name': b.name,
+                'category_name': b.category.name if b.category else None,
+                'is_overall': b.is_overall,
+                'budget_amount': f"{b.amount:.2f}",
+                'spent_amount': f"{metrics['spent_amount']:.2f}",
+                'remaining_amount': f"{metrics['remaining_amount']:.2f}",
+                'percentage_used': metrics['percentage_used'],
+                'is_exceeded': metrics['is_exceeded'],
+            })
+
+        if total_budgeted_amount > Decimal('0.00'):
+            overall_utilization = round(float((total_budget_spending / total_budgeted_amount) * 100), 2)
+        else:
+            overall_utilization = 0.0
+
+        return {
+            'total_budgets': total_budgets,
+            'active_budgets_count': active_budgets_count,
+            'exceeded_budgets_count': exceeded_budgets_count,
+            'total_budgeted_amount': f"{total_budgeted_amount:.2f}",
+            'total_budget_spending': f"{total_budget_spending:.2f}",
+            'overall_budget_utilization': overall_utilization,
+            'budgets_summary': budgets_summary,
         }
