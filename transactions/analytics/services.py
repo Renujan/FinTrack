@@ -93,3 +93,61 @@ class AnalyticsService:
             'avg_income_transaction': f"{metrics['avg_income']:.2f}",
             'avg_expense_transaction': f"{metrics['avg_expense']:.2f}",
         }
+
+    @classmethod
+    def get_trends(cls, user, start_date=None, end_date=None, group_by='monthly'):
+        """
+        Returns financial trends aggregated by period (daily, weekly, monthly).
+        Chronologically ordered.
+        """
+        group_by_lower = (group_by or 'monthly').lower()
+        if group_by_lower in ('daily', 'day'):
+            trunc_func = TruncDay
+            fmt = '%Y-%m-%d'
+        elif group_by_lower in ('weekly', 'week'):
+            trunc_func = TruncWeek
+            fmt = '%Y-%m-%d'
+        elif group_by_lower in ('monthly', 'month'):
+            trunc_func = TruncMonth
+            fmt = '%Y-%m'
+        else:
+            raise serializers.ValidationError({
+                'group_by': [f"Invalid group_by parameter '{group_by}'. Allowed choices are: daily, weekly, monthly."]
+            })
+
+        qs = cls.get_user_transactions(user, start_date, end_date)
+
+        income_filter = Q(transaction_type=TransactionType.INCOME)
+        expense_filter = Q(transaction_type=TransactionType.EXPENSE)
+
+        aggregated = (
+            qs.annotate(period_dt=trunc_func('date'))
+            .values('period_dt')
+            .annotate(
+                income=Coalesce(Sum('amount', filter=income_filter), Value(Decimal('0.00'))),
+                expenses=Coalesce(Sum('amount', filter=expense_filter), Value(Decimal('0.00'))),
+                transaction_count=Count('id')
+            )
+            .order_by('period_dt')
+        )
+
+        trends = []
+        for row in aggregated:
+            period_dt = row['period_dt']
+            if isinstance(period_dt, datetime.datetime):
+                period_dt = period_dt.date()
+
+            period_str = period_dt.strftime(fmt) if period_dt else ""
+            inc = row['income']
+            exp = row['expenses']
+            net = inc - exp
+
+            trends.append({
+                'period': period_str,
+                'income': f"{inc:.2f}",
+                'expenses': f"{exp:.2f}",
+                'net': f"{net:.2f}",
+                'transaction_count': row['transaction_count'],
+            })
+
+        return trends
