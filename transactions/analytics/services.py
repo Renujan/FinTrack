@@ -151,3 +151,45 @@ class AnalyticsService:
             })
 
         return trends
+
+    @classmethod
+    def get_monthly_summary(cls, user, start_date=None, end_date=None):
+        """
+        Returns financial summaries grouped by month chronologically.
+        """
+        qs = cls.get_user_transactions(user, start_date, end_date)
+
+        income_filter = Q(transaction_type=TransactionType.INCOME)
+        expense_filter = Q(transaction_type=TransactionType.EXPENSE)
+
+        aggregated = (
+            qs.annotate(month_dt=TruncMonth('date'))
+            .values('month_dt')
+            .annotate(
+                income=Coalesce(Sum('amount', filter=income_filter), Value(Decimal('0.00'))),
+                expenses=Coalesce(Sum('amount', filter=expense_filter), Value(Decimal('0.00'))),
+                transaction_count=Count('id')
+            )
+            .order_by('month_dt')
+        )
+
+        monthly = []
+        for row in aggregated:
+            m_dt = row['month_dt']
+            if isinstance(m_dt, datetime.datetime):
+                m_dt = m_dt.date()
+
+            month_str = m_dt.strftime('%Y-%m') if m_dt else ""
+            inc = row['income']
+            exp = row['expenses']
+            net = inc - exp
+
+            monthly.append({
+                'month': month_str,
+                'income': f"{inc:.2f}",
+                'expenses': f"{exp:.2f}",
+                'net_balance': f"{net:.2f}",
+                'transaction_count': row['transaction_count'],
+            })
+
+        return monthly
