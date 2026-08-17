@@ -252,3 +252,72 @@ class AnalyticsService:
             })
 
         return results
+
+    @classmethod
+    def get_period_comparison(cls, user, start_date=None, end_date=None):
+        """
+        Compares financial metrics for selected period with the immediately preceding equal-length period.
+        Handles zero previous values safely without division by zero.
+        """
+        if start_date and end_date:
+            curr_start = start_date
+            curr_end = end_date
+        elif start_date and not end_date:
+            curr_start = start_date
+            curr_end = datetime.date.today()
+        elif not start_date and end_date:
+            curr_end = end_date
+            curr_start = curr_end.replace(day=1)
+        else:
+            curr_end = datetime.date.today()
+            curr_start = curr_end.replace(day=1)
+
+        if curr_start > curr_end:
+            curr_start, curr_end = curr_end, curr_start
+
+        days_count = (curr_end - curr_start).days + 1
+        prev_end = curr_start - datetime.timedelta(days=1)
+        prev_start = prev_end - datetime.timedelta(days=days_count - 1)
+
+        curr_summary = cls.get_summary(user, curr_start, curr_end)
+        prev_summary = cls.get_summary(user, prev_start, prev_end)
+
+        curr_inc = Decimal(curr_summary['total_income'])
+        prev_inc = Decimal(prev_summary['total_income'])
+        curr_exp = Decimal(curr_summary['total_expenses'])
+        prev_exp = Decimal(prev_summary['total_expenses'])
+        curr_net = Decimal(curr_summary['net_balance'])
+        prev_net = Decimal(prev_summary['net_balance'])
+
+        def calc_change_pct(curr, prev):
+            if prev == Decimal('0.00'):
+                if curr > Decimal('0.00'):
+                    return "100.00"
+                elif curr < Decimal('0.00'):
+                    return "-100.00"
+                else:
+                    return "0.00"
+            change = ((curr - prev) / abs(prev)) * Decimal('100')
+            return f"{change:.2f}"
+
+        return {
+            'current_period': {
+                'start_date': curr_start.strftime('%Y-%m-%d'),
+                'end_date': curr_end.strftime('%Y-%m-%d'),
+                'income': curr_summary['total_income'],
+                'expenses': curr_summary['total_expenses'],
+                'net_balance': curr_summary['net_balance'],
+                'transaction_count': curr_summary['transaction_count'],
+            },
+            'previous_period': {
+                'start_date': prev_start.strftime('%Y-%m-%d'),
+                'end_date': prev_end.strftime('%Y-%m-%d'),
+                'income': prev_summary['total_income'],
+                'expenses': prev_summary['total_expenses'],
+                'net_balance': prev_summary['net_balance'],
+                'transaction_count': prev_summary['transaction_count'],
+            },
+            'income_change': calc_change_pct(curr_inc, prev_inc),
+            'expense_change': calc_change_pct(curr_exp, prev_exp),
+            'net_change': calc_change_pct(curr_net, prev_net),
+        }
