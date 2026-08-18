@@ -1,12 +1,26 @@
+from django.shortcuts import get_object_or_404
 from django.db.models import ProtectedError, Case, When
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, permissions, filters, status, response
-from .filters import TransactionFilter, BudgetFilter, validate_filter_params, validate_budget_filter_params
-from .models import Category, Transaction, Budget
-from .pagination import StandardResultsSetPagination
+from rest_framework.views import APIView
+from .filters import (
+    TransactionFilter,
+    BudgetFilter,
+    RecurringTransactionFilter,
+    validate_filter_params,
+    validate_budget_filter_params,
+    validate_recurring_filter_params,
+)
+from .models import Category, Transaction, Budget, RecurringTransaction
+from .pagination import StandardResultsSetPagination, RecurringTransactionResultsSetPagination
 from .permissions import IsOwner
-from .serializers import CategorySerializer, TransactionSerializer, BudgetSerializer
-from .services import BudgetCalculationService
+from .serializers import (
+    CategorySerializer,
+    TransactionSerializer,
+    BudgetSerializer,
+    RecurringTransactionSerializer,
+)
+from .services import BudgetCalculationService, RecurringTransactionService
 
 
 class CategoryListCreateView(generics.ListCreateAPIView):
@@ -177,4 +191,73 @@ class BudgetDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return Budget.objects.filter(user=self.request.user).select_related('category')
+
+
+class RecurringTransactionListCreateView(generics.ListCreateAPIView):
+    """
+    List and create recurring transactions for the authenticated user.
+    Supports search across name, description, and category name, filtering, ordering, and pagination.
+    """
+    serializer_class = RecurringTransactionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = RecurringTransactionFilter
+    search_fields = ['name', 'description', 'category__name']
+    ordering_fields = ['amount', 'start_date', 'next_run_date', 'created_at', 'frequency', 'name']
+    ordering = ['next_run_date', '-created_at']
+    pagination_class = RecurringTransactionResultsSetPagination
+
+    def get_queryset(self):
+        """
+        Enforce strict user data isolation and optimize database query with select_related('category').
+        """
+        return RecurringTransaction.objects.filter(user=self.request.user).select_related('category')
+
+    def filter_queryset(self, queryset):
+        """
+        Applies filter parameter validation for recurring transactions before executing backend queries.
+        """
+        validate_recurring_filter_params(self.request.query_params)
+        return super().filter_queryset(queryset)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class RecurringTransactionDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Retrieve, update (PUT/PATCH), or delete a recurring transaction owned by the authenticated user.
+    """
+    serializer_class = RecurringTransactionSerializer
+    permission_classes = [permissions.IsAuthenticated, IsOwner]
+
+    def get_queryset(self):
+        return RecurringTransaction.objects.filter(user=self.request.user).select_related('category')
+
+
+class RecurringTransactionPauseView(APIView):
+    """
+    Pause an active recurring transaction schedule for the authenticated user.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        recurring_tx = get_object_or_404(RecurringTransaction, pk=pk, user=request.user)
+        paused_tx = RecurringTransactionService.pause_schedule(recurring_tx)
+        serializer = RecurringTransactionSerializer(paused_tx, context={'request': request})
+        return response.Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class RecurringTransactionResumeView(APIView):
+    """
+    Resume a paused recurring transaction schedule for the authenticated user.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        recurring_tx = get_object_or_404(RecurringTransaction, pk=pk, user=request.user)
+        resumed_tx = RecurringTransactionService.resume_schedule(recurring_tx)
+        serializer = RecurringTransactionSerializer(resumed_tx, context={'request': request})
+        return response.Response(serializer.data, status=status.HTTP_200_OK)
+
 

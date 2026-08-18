@@ -6,6 +6,10 @@ from .views import (
     TransactionDetailView,
     BudgetListCreateView,
     BudgetDetailView,
+    RecurringTransactionListCreateView,
+    RecurringTransactionDetailView,
+    RecurringTransactionPauseView,
+    RecurringTransactionResumeView,
 )
 from .analytics.views import (
     DashboardSummaryAPIView,
@@ -25,6 +29,10 @@ urlpatterns = [
     path('transactions/<int:pk>/', TransactionDetailView.as_view(), name='transaction-detail'),
     path('budgets/', BudgetListCreateView.as_view(), name='budget-list-create'),
     path('budgets/<int:pk>/', BudgetDetailView.as_view(), name='budget-detail'),
+    path('recurring-transactions/', RecurringTransactionListCreateView.as_view(), name='recurring-transaction-list-create'),
+    path('recurring-transactions/<int:pk>/', RecurringTransactionDetailView.as_view(), name='recurring-transaction-detail'),
+    path('recurring-transactions/<int:pk>/pause/', RecurringTransactionPauseView.as_view(), name='recurring-transaction-pause'),
+    path('recurring-transactions/<int:pk>/resume/', RecurringTransactionResumeView.as_view(), name='recurring-transaction-resume'),
     path('analytics/summary/', DashboardSummaryAPIView.as_view(), name='analytics-summary'),
     path('analytics/trends/', FinancialTrendsAPIView.as_view(), name='analytics-trends'),
     path('analytics/monthly/', MonthlySummaryAPIView.as_view(), name='analytics-monthly'),
