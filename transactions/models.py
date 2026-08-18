@@ -2,7 +2,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
-from .choices import TransactionType, BudgetPeriod
+from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency
 
 
 class Category(models.Model):
@@ -32,6 +32,63 @@ class Category(models.Model):
         return f"{self.name} ({self.user})"
 
 
+class RecurringTransaction(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='recurring_transactions'
+    )
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.PROTECT,
+        related_name='recurring_transactions'
+    )
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, default='')
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))]
+    )
+    transaction_type = models.CharField(
+        max_length=10,
+        choices=TransactionType.choices
+    )
+    frequency = models.CharField(
+        max_length=10,
+        choices=RecurrenceFrequency.choices
+    )
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    next_run_date = models.DateField()
+    last_run_date = models.DateField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['next_run_date', '-created_at']
+        indexes = [
+            models.Index(fields=['user', 'is_active', 'next_run_date'], name='idx_rec_user_act_next'),
+            models.Index(fields=['user', 'category'], name='idx_rec_user_category'),
+            models.Index(fields=['user', 'transaction_type'], name='idx_rec_user_type'),
+            models.Index(fields=['user', 'frequency'], name='idx_rec_user_freq'),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0),
+                name='recurring_amount_positive'
+            ),
+            models.CheckConstraint(
+                condition=models.Q(end_date__isnull=True) | models.Q(end_date__gte=models.F('start_date')),
+                name='recurring_start_lte_end_date'
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.name} - {self.frequency} - {self.amount} ({self.user})"
+
+
 class Transaction(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -43,6 +100,14 @@ class Transaction(models.Model):
         on_delete=models.PROTECT,
         related_name='transactions'
     )
+    recurring_transaction = models.ForeignKey(
+        RecurringTransaction,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='generated_transactions'
+    )
+    recurring_schedule_date = models.DateField(null=True, blank=True)
     transaction_type = models.CharField(
         max_length=10,
         choices=TransactionType.choices
@@ -70,11 +135,16 @@ class Transaction(models.Model):
             models.CheckConstraint(
                 condition=models.Q(amount__gt=0),
                 name='transaction_amount_positive'
+            ),
+            models.UniqueConstraint(
+                fields=['recurring_transaction', 'recurring_schedule_date'],
+                name='unique_recurring_occurrence'
             )
         ]
 
     def __str__(self):
         return f"{self.transaction_type} - {self.amount} ({self.user})"
+
 
 
 class Budget(models.Model):
