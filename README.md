@@ -36,6 +36,7 @@ The system follows clean modular monolithic architecture designed for SaaS scala
 - [x] **Day 6**: Backend Security, Performance & Production Readiness (Authentication hardening, strict permission enforcement, user data isolation/IDOR protection, database query optimization with `select_related`, database indexing, API rate limiting/throttling, production configuration & security headers, structured logging, health check endpoint, comprehensive tests).
 - [x] **Day 7**: Budget Management & Financial Limits (Budget model, category vs overall budgets, period validation, spending calculation service, transaction integration, filtering, search, ordering, pagination, comprehensive tests, 14 Git commits).
 - [x] **Day 8**: Financial Analytics & Summary APIs (Dashboard financial summary, income/expense totals, net balance, transaction counts, category spending breakdown, income/expense trends, date-range analytics, monthly summaries, daily/weekly/monthly trends, top spending categories, period comparison, budget analytics integration, user data isolation, 156 total automated tests, 14 Git commits).
+- [x] **Day 9**: Recurring Transactions & Scheduled Finance Operations (RecurringTransaction model, daily/weekly/monthly/yearly recurrence choices, schedule date validation, user ownership, CRUD API, pause/resume endpoints, transaction generation service, scheduled management command, duplicate protection, filtering, search, ordering, pagination, budget & analytics integration, 177 total automated tests, 13 Git commits).
 
 ---
 
@@ -284,16 +285,53 @@ The `/api/analytics/budgets/` endpoint integrates Day 7 budget calculation logic
 
 ---
 
+## 🔄 Recurring Transactions & Scheduled Operations API Documentation (Day 9)
+
+Base URL: `/api/recurring-transactions/`
+
+All Recurring Transaction endpoints require `Authorization: Bearer <access_token>` header.
+
+### Endpoints Overview
+
+| Method | Endpoint | Auth Required | Description |
+|---|---|---|---|
+| `GET` | `/api/recurring-transactions/` | Yes (`Bearer`) | List, search, filter, sort, and paginate recurring transaction schedules |
+| `POST` | `/api/recurring-transactions/` | Yes (`Bearer`) | Create a new recurring income or expense schedule |
+| `GET` | `/api/recurring-transactions/<id>/` | Yes (`Bearer`) | Retrieve recurring transaction schedule details |
+| `PUT` | `/api/recurring-transactions/<id>/` | Yes (`Bearer`) | Full update of a recurring transaction schedule |
+| `PATCH` | `/api/recurring-transactions/<id>/` | Yes (`Bearer`) | Partial update of a recurring transaction schedule |
+| `DELETE` | `/api/recurring-transactions/<id>/` | Yes (`Bearer`) | Delete a recurring transaction schedule |
+| `POST` | `/api/recurring-transactions/<id>/pause/` | Yes (`Bearer`) | Pause an active schedule (`is_active = False`) |
+| `POST` | `/api/recurring-transactions/<id>/resume/` | Yes (`Bearer`) | Resume a paused schedule (`is_active = True`) |
+
+### 🗓️ Recurrence Frequencies & Next Occurrence Calculation
+- `DAILY`: Advances by 1 day.
+- `WEEKLY`: Advances by 7 days.
+- `MONTHLY`: Advances by 1 month, handling month-end boundaries (e.g. Jan 31 -> Feb 28/29).
+- `YEARLY`: Advances by 1 year, handling leap year edge cases (e.g. Feb 29 -> Feb 28 in non-leap year).
+
+### ⚙️ Scheduled Transaction Generation
+- **Management Command**: `python manage.py process_recurring_transactions [--date YYYY-MM-DD]`
+- **Generation Service**: `RecurringTransactionService.process_due_recurring_transactions(target_date)`
+- Scans active schedules where `next_run_date <= target_date`, generates `Transaction` records, updates `last_run_date`, computes `next_run_date`, and deactivates expired schedules (`end_date`).
+
+### 🛡️ Duplicate Prevention & Idempotency
+- Uses a unique database constraint `unique_recurring_occurrence` on `Transaction(recurring_transaction, recurring_schedule_date)`.
+- Re-running the generation service or management command multiple times on the same date is 100% idempotent and safe.
+
+---
+
 ## 🛡️ Security, Data Isolation & Performance Improvements (Day 6)
 
 ### 1. User Data Isolation & IDOR Protection
-- All `Category`, `Transaction`, and `Budget` querysets are scoped to `user=request.user`.
+- All `Category`, `Transaction`, `Budget`, and `RecurringTransaction` querysets are scoped to `user=request.user`.
 - Accessing another user's resource ID returns `404 Not Found`, preventing object ID enumeration and unauthorized data modification/deletion.
-- Category cross-user references during transaction/budget creation are blocked with explicit validation.
+- Category cross-user references during creation are blocked with explicit validation.
 
 ### 2. Query Optimization
 - `Transaction` list and detail querysets use `.select_related('category')` to eliminate N+1 queries during serialization of category names.
 - `Budget` list and detail querysets use `.select_related('category')` to optimize database performance.
+- `RecurringTransaction` querysets use `.select_related('category')` to optimize database query speed.
 
 ### 3. Database Indexing
 - Performance indexes added:
@@ -303,6 +341,10 @@ The `/api/analytics/budgets/` endpoint integrates Day 7 budget calculation logic
   - `idx_budget_user_dates` on `Budget(user, start_date, end_date)`
   - `idx_budget_user_category` on `Budget(user, category)`
   - `idx_budget_user_period` on `Budget(user, period)`
+  - `idx_rec_user_act_next` on `RecurringTransaction(user, is_active, next_run_date)`
+  - `idx_rec_user_category` on `RecurringTransaction(user, category)`
+  - `idx_rec_user_type` on `RecurringTransaction(user, transaction_type)`
+  - `idx_rec_user_freq` on `RecurringTransaction(user, frequency)`
 
 ### 4. Throttling & Rate Limiting
 - DRF throttling enabled:
@@ -328,13 +370,13 @@ python -m pytest
 # Run tests with verbose output
 python -m pytest -v
 
-# Run Day 8 analytics test suite specifically
-python -m pytest transactions/tests/test_analytics.py
+# Run Day 9 recurring transaction test suite specifically
+python -m pytest transactions/tests/test_recurring_transactions.py
 ```
 
 ### Test Suite Results Summary
-- Total tests: **156**
-- Passed: **156**
+- Total tests: **177**
+- Passed: **177**
 - Failed: **0**
 
 
