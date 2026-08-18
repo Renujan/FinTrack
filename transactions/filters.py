@@ -2,8 +2,8 @@ import datetime
 from decimal import Decimal, InvalidOperation
 import django_filters
 from rest_framework import serializers
-from .choices import TransactionType, BudgetPeriod
-from .models import Transaction, Budget
+from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency
+from .models import Transaction, Budget, RecurringTransaction
 from .services import BudgetCalculationService
 
 
@@ -196,4 +196,101 @@ def validate_budget_filter_params(params):
 
     if errors:
         raise serializers.ValidationError(errors)
+
+
+class RecurringTransactionFilter(django_filters.FilterSet):
+    """
+    FilterSet for RecurringTransaction list querysets.
+    Supports type, category, frequency, is_active, start_date, end_date, next_run_date range filters.
+    """
+    type = django_filters.CharFilter(method='filter_by_type')
+    category = django_filters.CharFilter(method='filter_by_category')
+    frequency = django_filters.CharFilter(method='filter_by_frequency')
+    is_active = django_filters.BooleanFilter(field_name='is_active')
+    start_date = django_filters.DateFilter(field_name='start_date', lookup_expr='gte')
+    end_date = django_filters.DateFilter(field_name='end_date', lookup_expr='lte')
+    next_run_date = django_filters.DateFilter(field_name='next_run_date')
+
+    class Meta:
+        model = RecurringTransaction
+        fields = ['type', 'category', 'frequency', 'is_active', 'start_date', 'end_date', 'next_run_date']
+
+    def filter_by_type(self, queryset, name, value):
+        if not value:
+            return queryset
+        val_upper = value.upper()
+        if val_upper not in TransactionType.values:
+            raise serializers.ValidationError({
+                'type': f"Invalid transaction type '{value}'. Allowed choices are: {', '.join(TransactionType.values)}."
+            })
+        return queryset.filter(transaction_type=val_upper)
+
+    def filter_by_category(self, queryset, name, value):
+        if not value:
+            return queryset
+        if value.isdigit():
+            return queryset.filter(category_id=int(value))
+        return queryset.filter(category__name__iexact=value)
+
+    def filter_by_frequency(self, queryset, name, value):
+        if not value:
+            return queryset
+        val_upper = value.upper()
+        if val_upper not in RecurrenceFrequency.values:
+            raise serializers.ValidationError({
+                'frequency': f"Invalid recurrence frequency '{value}'. Allowed choices are: {', '.join(RecurrenceFrequency.values)}."
+            })
+        return queryset.filter(frequency=val_upper)
+
+
+def validate_recurring_filter_params(params):
+    """
+    Validates query parameters for recurring transaction filtering and ordering.
+    """
+    errors = {}
+
+    parsed_start_date = None
+    parsed_end_date = None
+
+    for field in ['start_date', 'end_date', 'next_run_date']:
+        val = params.get(field)
+        if val:
+            try:
+                dt = datetime.datetime.strptime(val, '%Y-%m-%d').date()
+                if field == 'start_date':
+                    parsed_start_date = dt
+                elif field == 'end_date':
+                    parsed_end_date = dt
+            except ValueError:
+                errors[field] = [f"Invalid date format for {field}. Expected YYYY-MM-DD."]
+
+    if parsed_start_date and parsed_end_date and parsed_start_date > parsed_end_date:
+        errors['start_date'] = ["start_date cannot be greater than end_date."]
+
+    type_val = params.get('type')
+    if type_val and type_val.upper() not in TransactionType.values:
+        errors['type'] = [f"Invalid transaction type '{type_val}'. Allowed choices: {', '.join(TransactionType.values)}."]
+
+    freq_val = params.get('frequency')
+    if freq_val and freq_val.upper() not in RecurrenceFrequency.values:
+        errors['frequency'] = [f"Invalid recurrence frequency '{freq_val}'. Allowed choices: {', '.join(RecurrenceFrequency.values)}."]
+
+    ordering_val = params.get('ordering')
+    if ordering_val:
+        allowed_ordering = {
+            'amount', '-amount',
+            'start_date', '-start_date',
+            'next_run_date', '-next_run_date',
+            'created_at', '-created_at',
+            'frequency', '-frequency',
+            'name', '-name'
+        }
+        requested_fields = [f.strip() for f in ordering_val.split(',') if f.strip()]
+        invalid_fields = [f for f in requested_fields if f not in allowed_ordering]
+        if invalid_fields:
+            errors['ordering'] = [f"Invalid ordering field(s): {', '.join(invalid_fields)}."]
+
+    if errors:
+        raise serializers.ValidationError(errors)
+
 

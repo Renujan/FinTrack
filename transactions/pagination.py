@@ -29,3 +29,14 @@ class BudgetResultsSetPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
     max_page_size = 100
 
+
+class RecurringTransactionResultsSetPagination(PageNumberPagination):
+    """
+    Pagination configuration specifically tailored for RecurringTransaction list endpoints.
+    Default page size is 10, max page size is 100.
+    """
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
