@@ -108,6 +108,21 @@ class RecurringTransactionService:
             raise ValueError(f"Unsupported recurrence frequency: {frequency}")
 
     @classmethod
+    def get_due_schedules(cls, target_date=None):
+        """
+        Queries all active recurring schedules due on or before target_date.
+        """
+        if target_date is None:
+            target_date = timezone.now().date()
+        elif isinstance(target_date, datetime.datetime):
+            target_date = target_date.date()
+
+        return RecurringTransaction.objects.filter(
+            is_active=True,
+            next_run_date__lte=target_date
+        ).select_related('category', 'user')
+
+    @classmethod
     def process_due_recurring_transactions(cls, target_date=None):
         """
         Scans for all active recurring transactions due on or before target_date (defaults to today).
