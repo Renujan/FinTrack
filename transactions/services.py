@@ -158,6 +158,16 @@ class RecurringTransactionService:
         }
 
     @classmethod
+    def check_duplicate_occurrence(cls, schedule, schedule_date):
+        """
+        Checks if a transaction has already been generated for a specific recurring schedule and occurrence date.
+        """
+        return Transaction.objects.filter(
+            recurring_transaction=schedule,
+            recurring_schedule_date=schedule_date
+        ).exists()
+
+    @classmethod
     def _process_single_schedule(cls, schedule, target_date):
         """
         Processes a single recurring schedule up to target_date.
