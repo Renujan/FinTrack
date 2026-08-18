@@ -17,3 +17,15 @@ class BudgetPeriod(models.TextChoices):
         return value in cls.values if value else False
 
 
+class RecurrenceFrequency(models.TextChoices):
+    DAILY = 'DAILY', _('Daily')
+    WEEKLY = 'WEEKLY', _('Weekly')
+    MONTHLY = 'MONTHLY', _('Monthly')
+    YEARLY = 'YEARLY', _('Yearly')
+
+    @classmethod
+    def is_valid_frequency(cls, value):
+        return value in cls.values if value else False
+
+
+
