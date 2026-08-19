@@ -1,8 +1,8 @@
 from decimal import Decimal
 from rest_framework import serializers
-from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency
-from .models import Category, Transaction, Budget, RecurringTransaction
-from .services import BudgetCalculationService
+from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency, GoalStatus
+from .models import Category, Transaction, Budget, RecurringTransaction, FinancialGoal
+from .services import BudgetCalculationService, GoalCalculationService
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -272,5 +272,90 @@ class RecurringTransactionSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"next_run_date": "Next run date cannot be after end date."})
 
         return attrs
+
+
+class FinancialGoalSerializer(serializers.ModelSerializer):
+    """
+    Serializer for FinancialGoal model with calculation status metrics, category ownership validation,
+    target amount validation, and dynamic goal status calculation.
+    """
+    category_name = serializers.SerializerMethodField()
+    target_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    current_amount = serializers.SerializerMethodField()
+    remaining_amount = serializers.SerializerMethodField()
+    percentage_complete = serializers.SerializerMethodField()
+    is_completed = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FinancialGoal
+        fields = [
+            'id',
+            'name',
+            'description',
+            'category',
+            'category_name',
+            'target_amount',
+            'target_date',
+            'is_active',
+            'current_amount',
+            'remaining_amount',
+            'percentage_complete',
+            'is_completed',
+            'status',
+            'created_at',
+            'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        request = self.context.get('request')
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
+            self.fields['category'].queryset = Category.objects.filter(user=request.user)
+
+    def get_category_name(self, obj):
+        return obj.category.name if obj.category else None
+
+    def _get_metrics(self, obj):
+        if not hasattr(obj, '_cached_metrics'):
+            obj._cached_metrics = GoalCalculationService.calculate_goal_metrics(obj)
+        return obj._cached_metrics
+
+    def get_current_amount(self, obj):
+        return self._get_metrics(obj)['current_amount']
+
+    def get_remaining_amount(self, obj):
+        return self._get_metrics(obj)['remaining_amount']
+
+    def get_percentage_complete(self, obj):
+        return self._get_metrics(obj)['percentage_complete']
+
+    def get_is_completed(self, obj):
+        return self._get_metrics(obj)['is_completed']
+
+    def get_status(self, obj):
+        return self._get_metrics(obj)['status']
+
+    def validate_name(self, value):
+        if value is None or not str(value).strip():
+            raise serializers.ValidationError("Goal name is required and cannot be empty.")
+        value = str(value).strip()
+        if len(value) > 100:
+            raise serializers.ValidationError("Goal name cannot exceed 100 characters.")
+        return value
+
+    def validate_target_amount(self, value):
+        if value is None or value <= Decimal('0.00'):
+            raise serializers.ValidationError("Target amount must be greater than zero.")
+        return value
+
+    def validate_category(self, value):
+        if value is not None:
+            request = self.context.get('request')
+            if request and hasattr(request, 'user') and request.user.is_authenticated:
+                if value.user != request.user:
+                    raise serializers.ValidationError("Category does not belong to the authenticated user.")
+        return value
 
 
