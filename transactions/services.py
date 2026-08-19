@@ -1,6 +1,6 @@
 from decimal import Decimal
 from django.db.models import Sum, Q
-from .choices import TransactionType
+from .choices import TransactionType, GoalStatus
 from .models import Transaction
 
 
@@ -61,6 +61,72 @@ class BudgetCalculationService:
             'remaining_amount': remaining_amount,
             'percentage_used': percentage_used,
             'is_exceeded': is_exceeded,
+        }
+
+
+class GoalCalculationService:
+    """
+    Service layer for calculating progress metrics and dynamic status for financial goals.
+    Calculates current_amount, remaining_amount, percentage_complete, is_completed, and status.
+    Goal progress is based on INCOME transactions belonging to the goal's user with date <= target_date.
+    If the goal specifies a category, contributions are restricted to that category.
+    """
+
+    @staticmethod
+    def get_goal_transactions(goal):
+        """
+        Returns the queryset of income transactions contributing to a financial goal.
+        """
+        filters = Q(
+            user=goal.user,
+            transaction_type=TransactionType.INCOME,
+            date__lte=goal.target_date
+        )
+        if goal.category_id is not None:
+            filters &= Q(category_id=goal.category_id)
+        return Transaction.objects.filter(filters)
+
+    @classmethod
+    def calculate_current_amount(cls, goal):
+        """
+        Calculates total income saved towards a specific financial goal.
+        """
+        result = cls.get_goal_transactions(goal).aggregate(total=Sum('amount'))
+        return result['total'] if result['total'] is not None else Decimal('0.00')
+
+    @classmethod
+    def calculate_goal_metrics(cls, goal):
+        """
+        Calculates all usage metrics and dynamic status for a goal instance.
+        """
+        target_amount = goal.target_amount
+        current_amount = cls.calculate_current_amount(goal)
+        remaining_amount = max(Decimal('0.00'), target_amount - current_amount)
+
+        if target_amount > Decimal('0.00'):
+            percentage_complete = round(float((current_amount / target_amount) * 100), 2)
+        else:
+            percentage_complete = 0.0
+
+        is_completed = current_amount >= target_amount
+
+        today = timezone.now().date()
+        if is_completed:
+            status_val = GoalStatus.COMPLETED
+        elif not goal.is_active:
+            status_val = GoalStatus.PAUSED
+        elif goal.target_date < today:
+            status_val = GoalStatus.OVERDUE
+        else:
+            status_val = GoalStatus.ACTIVE
+
+        return {
+            'target_amount': target_amount,
+            'current_amount': current_amount,
+            'remaining_amount': remaining_amount,
+            'percentage_complete': percentage_complete,
+            'is_completed': is_completed,
+            'status': status_val,
         }
 
 
