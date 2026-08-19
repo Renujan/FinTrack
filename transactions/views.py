@@ -280,7 +280,8 @@ class FinancialGoalListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         """
-        Enforce strict user data isolation and optimize database query with select_related('category').
+        Enforce strict user data isolation and optimize database performance using select_related('category')
+        to eliminate N+1 database queries during serialization.
         """
         return FinancialGoal.objects.filter(user=self.request.user).select_related('category')
 
