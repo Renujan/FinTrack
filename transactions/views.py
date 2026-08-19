@@ -7,11 +7,13 @@ from .filters import (
     TransactionFilter,
     BudgetFilter,
     RecurringTransactionFilter,
+    FinancialGoalFilter,
     validate_filter_params,
     validate_budget_filter_params,
     validate_recurring_filter_params,
+    validate_goal_filter_params,
 )
-from .models import Category, Transaction, Budget, RecurringTransaction
+from .models import Category, Transaction, Budget, RecurringTransaction, FinancialGoal
 from .pagination import StandardResultsSetPagination, RecurringTransactionResultsSetPagination
 from .permissions import IsOwner
 from .serializers import (
@@ -19,8 +21,9 @@ from .serializers import (
     TransactionSerializer,
     BudgetSerializer,
     RecurringTransactionSerializer,
+    FinancialGoalSerializer,
 )
-from .services import BudgetCalculationService, RecurringTransactionService
+from .services import BudgetCalculationService, RecurringTransactionService, GoalCalculationService
 
 
 class CategoryListCreateView(generics.ListCreateAPIView):
@@ -258,6 +261,98 @@ class RecurringTransactionResumeView(APIView):
         recurring_tx = get_object_or_404(RecurringTransaction, pk=pk, user=request.user)
         resumed_tx = RecurringTransactionService.resume_schedule(recurring_tx)
         serializer = RecurringTransactionSerializer(resumed_tx, context={'request': request})
+        return response.Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class FinancialGoalListCreateView(generics.ListCreateAPIView):
+    """
+    List and create financial goals for the authenticated user.
+    Supports search across goal name, description, and category name, filtering, ordering, and pagination.
+    """
+    serializer_class = FinancialGoalSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = FinancialGoalFilter
+    search_fields = ['name', 'description', 'category__name']
+    ordering_fields = ['target_amount', 'target_date', 'created_at', 'name']
+    ordering = ['target_date', '-created_at']
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        """
+        Enforce strict user data isolation and optimize database query with select_related('category').
+        """
+        return FinancialGoal.objects.filter(user=self.request.user).select_related('category')
+
+    def filter_queryset(self, queryset):
+        """
+        Applies filter parameter validation and custom ordering for goal calculation metrics.
+        """
+        validate_goal_filter_params(self.request.query_params)
+
+        ordering_param = self.request.query_params.get('ordering')
+        if ordering_param and ('percentage_complete' in ordering_param or '-percentage_complete' in ordering_param or 'progress_percentage' in ordering_param or '-progress_percentage' in ordering_param):
+            for backend in list(self.filter_backends):
+                if backend is filters.OrderingFilter:
+                    continue
+                queryset = backend().filter_queryset(self.request, queryset, self)
+
+            items = list(queryset)
+            reverse = '-percentage_complete' in ordering_param or '-progress_percentage' in ordering_param
+            items.sort(
+                key=lambda g: GoalCalculationService.calculate_goal_metrics(g)['percentage_complete'],
+                reverse=reverse
+            )
+            ids = [g.id for g in items]
+            if not ids:
+                return queryset.none()
+            preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
+            return FinancialGoal.objects.filter(pk__in=ids).order_by(preserved)
+
+        return super().filter_queryset(queryset)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class FinancialGoalDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Retrieve, update (PUT/PATCH), or delete a financial goal owned by the authenticated user.
+    """
+    serializer_class = FinancialGoalSerializer
+    permission_classes = [permissions.IsAuthenticated, IsOwner]
+
+    def get_queryset(self):
+        return FinancialGoal.objects.filter(user=self.request.user).select_related('category')
+
+
+class FinancialGoalPauseView(APIView):
+    """
+    Pause an active financial goal for the authenticated user.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        goal = get_object_or_404(FinancialGoal, pk=pk, user=request.user)
+        if goal.is_active:
+            goal.is_active = False
+            goal.save(update_fields=['is_active', 'updated_at'])
+        serializer = FinancialGoalSerializer(goal, context={'request': request})
+        return response.Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class FinancialGoalResumeView(APIView):
+    """
+    Resume a paused financial goal for the authenticated user.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        goal = get_object_or_404(FinancialGoal, pk=pk, user=request.user)
+        if not goal.is_active:
+            goal.is_active = True
+            goal.save(update_fields=['is_active', 'updated_at'])
+        serializer = FinancialGoalSerializer(goal, context={'request': request})
         return response.Response(serializer.data, status=status.HTTP_200_OK)
 
 

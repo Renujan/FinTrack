@@ -10,6 +10,10 @@ from .views import (
     RecurringTransactionDetailView,
     RecurringTransactionPauseView,
     RecurringTransactionResumeView,
+    FinancialGoalListCreateView,
+    FinancialGoalDetailView,
+    FinancialGoalPauseView,
+    FinancialGoalResumeView,
 )
 from .analytics.views import (
     DashboardSummaryAPIView,
@@ -33,6 +37,10 @@ urlpatterns = [
     path('recurring-transactions/<int:pk>/', RecurringTransactionDetailView.as_view(), name='recurring-transaction-detail'),
     path('recurring-transactions/<int:pk>/pause/', RecurringTransactionPauseView.as_view(), name='recurring-transaction-pause'),
     path('recurring-transactions/<int:pk>/resume/', RecurringTransactionResumeView.as_view(), name='recurring-transaction-resume'),
+    path('goals/', FinancialGoalListCreateView.as_view(), name='financial-goal-list-create'),
+    path('goals/<int:pk>/', FinancialGoalDetailView.as_view(), name='financial-goal-detail'),
+    path('goals/<int:pk>/pause/', FinancialGoalPauseView.as_view(), name='financial-goal-pause'),
+    path('goals/<int:pk>/resume/', FinancialGoalResumeView.as_view(), name='financial-goal-resume'),
     path('analytics/summary/', DashboardSummaryAPIView.as_view(), name='analytics-summary'),
     path('analytics/trends/', FinancialTrendsAPIView.as_view(), name='analytics-trends'),
     path('analytics/monthly/', MonthlySummaryAPIView.as_view(), name='analytics-monthly'),
