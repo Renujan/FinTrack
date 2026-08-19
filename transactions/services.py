@@ -76,6 +76,7 @@ class GoalCalculationService:
     def get_goal_transactions(goal):
         """
         Returns the queryset of income transactions contributing to a financial goal.
+        Integrates goal tracking with authenticated user transaction records.
         """
         filters = Q(
             user=goal.user,
@@ -85,6 +86,13 @@ class GoalCalculationService:
         if goal.category_id is not None:
             filters &= Q(category_id=goal.category_id)
         return Transaction.objects.filter(filters)
+
+    @classmethod
+    def get_contributing_transactions(cls, goal):
+        """
+        Retrieves user transaction records contributing to progress for this goal.
+        """
+        return cls.get_goal_transactions(goal).select_related('category')
 
     @classmethod
     def calculate_current_amount(cls, goal):
