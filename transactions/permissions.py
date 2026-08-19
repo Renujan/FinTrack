@@ -4,7 +4,7 @@ from rest_framework import permissions
 class IsOwner(permissions.BasePermission):
     """
     Object-level permission enforcement to only allow owners of Category, Transaction, Budget,
-    or RecurringTransaction objects to access, edit, or delete them. Prevents unauthorized cross-user access.
+    RecurringTransaction, or FinancialGoal objects to access, edit, or delete them. Prevents unauthorized cross-user access.
     """
 
     def has_object_permission(self, request, view, obj):
