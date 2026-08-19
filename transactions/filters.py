@@ -2,9 +2,9 @@ import datetime
 from decimal import Decimal, InvalidOperation
 import django_filters
 from rest_framework import serializers
-from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency
-from .models import Transaction, Budget, RecurringTransaction
-from .services import BudgetCalculationService
+from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency, GoalStatus
+from .models import Transaction, Budget, RecurringTransaction, FinancialGoal
+from .services import BudgetCalculationService, GoalCalculationService
 
 
 class TransactionFilter(django_filters.FilterSet):
@@ -283,6 +283,115 @@ def validate_recurring_filter_params(params):
             'next_run_date', '-next_run_date',
             'created_at', '-created_at',
             'frequency', '-frequency',
+            'name', '-name'
+        }
+        requested_fields = [f.strip() for f in ordering_val.split(',') if f.strip()]
+        invalid_fields = [f for f in requested_fields if f not in allowed_ordering]
+        if invalid_fields:
+            errors['ordering'] = [f"Invalid ordering field(s): {', '.join(invalid_fields)}."]
+
+    if errors:
+        raise serializers.ValidationError(errors)
+
+
+class FinancialGoalFilter(django_filters.FilterSet):
+    """
+    FilterSet for FinancialGoal list querysets.
+    Supports category (ID or name), is_active, status, target_date, start_target_date, end_target_date,
+    is_completed, and is_overdue filters.
+    """
+    category = django_filters.CharFilter(method='filter_by_category')
+    is_active = django_filters.BooleanFilter(field_name='is_active')
+    status = django_filters.CharFilter(method='filter_by_status')
+    target_date = django_filters.DateFilter(field_name='target_date')
+    start_target_date = django_filters.DateFilter(field_name='target_date', lookup_expr='gte')
+    end_target_date = django_filters.DateFilter(field_name='target_date', lookup_expr='lte')
+    is_completed = django_filters.BooleanFilter(method='filter_by_is_completed')
+    is_overdue = django_filters.BooleanFilter(method='filter_by_is_overdue')
+
+    class Meta:
+        model = FinancialGoal
+        fields = ['category', 'is_active', 'status', 'target_date', 'start_target_date', 'end_target_date', 'is_completed', 'is_overdue']
+
+    def filter_by_category(self, queryset, name, value):
+        if not value:
+            return queryset
+        if value.isdigit():
+            return queryset.filter(category_id=int(value))
+        return queryset.filter(category__name__iexact=value)
+
+    def filter_by_status(self, queryset, name, value):
+        if not value:
+            return queryset
+        val_upper = value.upper()
+        if val_upper not in GoalStatus.values:
+            raise serializers.ValidationError({
+                'status': f"Invalid goal status '{value}'. Allowed choices are: {', '.join(GoalStatus.values)}."
+            })
+        matching_ids = []
+        for goal in queryset:
+            metrics = GoalCalculationService.calculate_goal_metrics(goal)
+            if metrics['status'] == val_upper:
+                matching_ids.append(goal.id)
+        return queryset.filter(id__in=matching_ids)
+
+    def filter_by_is_completed(self, queryset, name, value):
+        if value is None:
+            return queryset
+        matching_ids = []
+        for goal in queryset:
+            metrics = GoalCalculationService.calculate_goal_metrics(goal)
+            if metrics['is_completed'] == value:
+                matching_ids.append(goal.id)
+        return queryset.filter(id__in=matching_ids)
+
+    def filter_by_is_overdue(self, queryset, name, value):
+        if value is None:
+            return queryset
+        matching_ids = []
+        for goal in queryset:
+            metrics = GoalCalculationService.calculate_goal_metrics(goal)
+            if (metrics['status'] == GoalStatus.OVERDUE) == value:
+                matching_ids.append(goal.id)
+        return queryset.filter(id__in=matching_ids)
+
+
+def validate_goal_filter_params(params):
+    """
+    Validates query parameters for goal filtering and ordering.
+    """
+    errors = {}
+
+    parsed_start = None
+    parsed_end = None
+
+    for field in ['target_date', 'start_target_date', 'end_target_date']:
+        val = params.get(field)
+        if val:
+            try:
+                dt = datetime.datetime.strptime(val, '%Y-%m-%d').date()
+                if field == 'start_target_date':
+                    parsed_start = dt
+                elif field == 'end_target_date':
+                    parsed_end = dt
+            except ValueError:
+                errors[field] = [f"Invalid date format for {field}. Expected YYYY-MM-DD."]
+
+    if parsed_start and parsed_end and parsed_start > parsed_end:
+        errors['start_target_date'] = ["start_target_date cannot be greater than end_target_date."]
+
+    status_val = params.get('status')
+    if status_val and status_val.upper() not in GoalStatus.values:
+        errors['status'] = [f"Invalid goal status '{status_val}'. Allowed choices: {', '.join(GoalStatus.values)}."]
+
+    ordering_val = params.get('ordering')
+    if ordering_val:
+        allowed_ordering = {
+            'target_amount', '-target_amount',
+            'target_date', '-target_date',
+            'created_at', '-created_at',
+            'percentage_complete', '-percentage_complete',
+            'progress_percentage', '-progress_percentage',
             'name', '-name'
         }
         requested_fields = [f.strip() for f in ordering_val.split(',') if f.strip()]
