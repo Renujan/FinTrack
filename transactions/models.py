@@ -2,7 +2,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
-from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency
+from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency, GoalStatus
 
 
 class Category(models.Model):
@@ -206,5 +206,48 @@ class Budget(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.amount} ({self.user})"
+
+
+class FinancialGoal(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='financial_goals'
+    )
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='financial_goals'
+    )
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, default='')
+    target_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))]
+    )
+    target_date = models.DateField()
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['target_date', '-created_at']
+        indexes = [
+            models.Index(fields=['user', 'target_date'], name='idx_goal_user_target_date'),
+            models.Index(fields=['user', 'category'], name='idx_goal_user_category'),
+            models.Index(fields=['user', 'is_active'], name='idx_goal_user_is_active'),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(target_amount__gt=0),
+                name='goal_target_amount_positive'
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.name} - {self.target_amount} ({self.user})"
 
 

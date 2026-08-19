@@ -28,4 +28,9 @@ class RecurrenceFrequency(models.TextChoices):
         return value in cls.values if value else False
 
 
+class GoalStatus(models.TextChoices):
+    ACTIVE = 'ACTIVE', _('Active')
+    COMPLETED = 'COMPLETED', _('Completed')
+    OVERDUE = 'OVERDUE', _('Overdue')
+    PAUSED = 'PAUSED', _('Paused')
 

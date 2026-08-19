@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Transaction, Budget
+from .models import Category, Transaction, Budget, FinancialGoal
 
 
 @admin.register(Category)
@@ -21,4 +21,11 @@ class BudgetAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'user', 'category', 'amount', 'period', 'start_date', 'end_date', 'created_at')
     list_filter = ('period', 'user', 'category')
     search_fields = ('name', 'user__email')
+
+
+@admin.register(FinancialGoal)
+class FinancialGoalAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'user', 'category', 'target_amount', 'target_date', 'is_active', 'created_at')
+    list_filter = ('is_active', 'user', 'category')
+    search_fields = ('name', 'description', 'user__email')
 
