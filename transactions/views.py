@@ -329,6 +329,7 @@ class FinancialGoalDetailView(generics.RetrieveUpdateDestroyAPIView):
 class FinancialGoalPauseView(APIView):
     """
     Pause an active financial goal for the authenticated user.
+    Updates goal status to PAUSED while preserving accumulated contributions.
     """
     permission_classes = [permissions.IsAuthenticated]
 
@@ -344,6 +345,7 @@ class FinancialGoalPauseView(APIView):
 class FinancialGoalResumeView(APIView):
     """
     Resume a paused financial goal for the authenticated user.
+    Restores active goal monitoring and status recalculation.
     """
     permission_classes = [permissions.IsAuthenticated]
 
