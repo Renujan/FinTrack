@@ -322,10 +322,67 @@ All Recurring Transaction endpoints require `Authorization: Bearer <access_token
 
 ---
 
-## 🛡️ Security, Data Isolation & Performance Improvements (Day 6)
+## 🎯 Financial Goals & Savings Targets API Documentation (Day 10)
+
+Base URL: `/api/goals/`
+
+All Financial Goal endpoints require `Authorization: Bearer <access_token>` header.
+
+### Endpoints Overview
+
+| Method | Endpoint | Auth Required | Description |
+|---|---|---|---|
+| `GET` | `/api/goals/` | Yes (`Bearer`) | List, search, filter, sort, and paginate financial goals |
+| `POST` | `/api/goals/` | Yes (`Bearer`) | Create a new financial goal |
+| `GET` | `/api/goals/<id>/` | Yes (`Bearer`) | Retrieve financial goal details with progress metrics |
+| `PUT` | `/api/goals/<id>/` | Yes (`Bearer`) | Full update of a financial goal |
+| `PATCH` | `/api/goals/<id>/` | Yes (`Bearer`) | Partial update of a financial goal |
+| `DELETE` | `/api/goals/<id>/` | Yes (`Bearer`) | Delete a financial goal |
+| `POST` | `/api/goals/<id>/pause/` | Yes (`Bearer`) | Pause an active goal (`is_active = False`) |
+| `POST` | `/api/goals/<id>/resume/` | Yes (`Bearer`) | Resume a paused goal (`is_active = True`) |
+
+### 💰 Progress Calculation & Contribution Rules
+Goal metrics are computed dynamically via `GoalCalculationService`:
+- **Contributions**: `INCOME` transactions belonging to `goal.user` with `date <= target_date`.
+- **Category Filter**: If `goal.category` is set, contributions are restricted to that specific category.
+- `current_amount`: Sum of eligible income transactions.
+- `remaining_amount`: `max(0, target_amount - current_amount)`.
+- `percentage_complete`: `(current_amount / target_amount) * 100` (rounded to 2 decimal places).
+- `is_completed`: `current_amount >= target_amount`.
+
+### 📊 Dynamic Goal Statuses
+- `COMPLETED`: Calculated when `current_amount >= target_amount`.
+- `PAUSED`: Set when `is_active = False`.
+- `OVERDUE`: Evaluated when `target_date < today` and not completed and active.
+- `ACTIVE`: Evaluated when `target_date >= today` and not completed and active.
+
+### Response Example (`200 OK` / `201 Created`):
+```json
+{
+  "id": 1,
+  "name": "Emergency Savings",
+  "description": "6 months of living expenses",
+  "category": 2,
+  "category_name": "Savings",
+  "target_amount": "5000.00",
+  "target_date": "2026-12-31",
+  "is_active": true,
+  "current_amount": "3250.00",
+  "remaining_amount": "1750.00",
+  "percentage_complete": 65.0,
+  "is_completed": false,
+  "status": "ACTIVE",
+  "created_at": "2026-08-19T10:00:00Z",
+  "updated_at": "2026-08-19T10:00:00Z"
+}
+```
+
+---
+
+## 🛡️ Security, Data Isolation & Performance Improvements (Day 6 - Day 10)
 
 ### 1. User Data Isolation & IDOR Protection
-- All `Category`, `Transaction`, `Budget`, and `RecurringTransaction` querysets are scoped to `user=request.user`.
+- All `Category`, `Transaction`, `Budget`, `RecurringTransaction`, and `FinancialGoal` querysets are scoped to `user=request.user`.
 - Accessing another user's resource ID returns `404 Not Found`, preventing object ID enumeration and unauthorized data modification/deletion.
 - Category cross-user references during creation are blocked with explicit validation.
 
@@ -333,6 +390,7 @@ All Recurring Transaction endpoints require `Authorization: Bearer <access_token
 - `Transaction` list and detail querysets use `.select_related('category')` to eliminate N+1 queries during serialization of category names.
 - `Budget` list and detail querysets use `.select_related('category')` to optimize database performance.
 - `RecurringTransaction` querysets use `.select_related('category')` to optimize database query speed.
+- `FinancialGoal` querysets use `.select_related('category')` to eliminate N+1 database queries.
 
 ### 3. Database Indexing
 - Performance indexes added:
@@ -346,6 +404,9 @@ All Recurring Transaction endpoints require `Authorization: Bearer <access_token
   - `idx_rec_user_category` on `RecurringTransaction(user, category)`
   - `idx_rec_user_type` on `RecurringTransaction(user, transaction_type)`
   - `idx_rec_user_freq` on `RecurringTransaction(user, frequency)`
+  - `idx_goal_user_target_date` on `FinancialGoal(user, target_date)`
+  - `idx_goal_user_category` on `FinancialGoal(user, category)`
+  - `idx_goal_user_is_active` on `FinancialGoal(user, is_active)`
 
 ### 4. Throttling & Rate Limiting
 - DRF throttling enabled:
@@ -371,13 +432,13 @@ python -m pytest
 # Run tests with verbose output
 python -m pytest -v
 
-# Run Day 9 recurring transaction test suite specifically
-python -m pytest transactions/tests/test_recurring_transactions.py
+# Run Day 10 financial goal test suite specifically
+python -m pytest transactions/tests/test_financial_goals.py
 ```
 
 ### Test Suite Results Summary
-- Total tests: **177**
-- Passed: **177**
+- Total tests: **204**
+- Passed: **204**
 - Failed: **0**
 
 
