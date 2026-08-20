@@ -34,3 +34,18 @@ class GoalStatus(models.TextChoices):
     OVERDUE = 'OVERDUE', _('Overdue')
     PAUSED = 'PAUSED', _('Paused')
 
+
+class NotificationType(models.TextChoices):
+    BUDGET_EXCEEDED = 'BUDGET_EXCEEDED', _('Budget Exceeded')
+    BUDGET_WARNING = 'BUDGET_WARNING', _('Budget Warning')
+    GOAL_COMPLETED = 'GOAL_COMPLETED', _('Goal Completed')
+    GOAL_WARNING = 'GOAL_WARNING', _('Goal Warning')
+    RECURRING_DUE = 'RECURRING_DUE', _('Recurring Transaction Due')
+    RECURRING_GENERATED = 'RECURRING_GENERATED', _('Recurring Transaction Generated')
+    RECURRING_EXPIRED = 'RECURRING_EXPIRED', _('Recurring Schedule Expired')
+
+    @classmethod
+    def is_valid_type(cls, value):
+        return value in cls.values if value else False
+
+
