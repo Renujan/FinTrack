@@ -409,6 +409,74 @@ Goal metrics are computed dynamically via `GoalCalculationService`:
   - `idx_goal_user_target_date` on `FinancialGoal(user, target_date)`
   - `idx_goal_user_category` on `FinancialGoal(user, category)`
   - `idx_goal_user_is_active` on `FinancialGoal(user, is_active)`
+  - `idx_notif_user_is_read` on `Notification(user, is_read)`
+  - `idx_notif_user_type` on `Notification(user, notification_type)`
+  - `idx_notif_user_created` on `Notification(user, created_at)`
+
+### 4. Throttling & Rate Limiting
+- DRF throttling enabled:
+  - Anonymous users: `30 requests/minute` (`AnonRateThrottle`)
+  - Authenticated users: `100 requests/minute` (`UserRateThrottle`)
+
+### 5. Production Security Headers
+- `X-Frame-Options: DENY` (clickjacking protection)
+- `X-Content-Type-Options: nosniff` (MIME sniffing protection)
+- `SECURE_BROWSER_XSS_FILTER = True`
+
+---
+
+## 🔔 Notifications & Financial Alerts Architecture (Day 11)
+
+### 1. Notification Model & Choices
+The `Notification` model provides user-isolated alerts:
+- `user`: Authenticated owner.
+- `notification_type`: One of:
+  - `BUDGET_EXCEEDED`
+  - `BUDGET_WARNING`
+  - `GOAL_COMPLETED`
+  - `GOAL_WARNING`
+  - `RECURRING_DUE`
+  - `RECURRING_GENERATED`
+  - `RECURRING_EXPIRED`
+- `title` & `message`: Human-readable summary text.
+- `is_read` & `read_at`: Status tracking (`is_read=True` sets timestamp `read_at=now()`).
+- `metadata`: JSON payload containing context references (`budget_id`, `goal_id`, `recurring_transaction_id`, etc.).
+
+### 2. Alert Rules & Thresholds
+- **Budget Alerts**:
+  - `BUDGET_WARNING`: Triggered when expense spending reaches 80% or more of budget limit.
+  - `BUDGET_EXCEEDED`: Triggered when expense spending exceeds 100% of budget limit.
+- **Financial Goal Alerts**:
+  - `GOAL_WARNING`: Triggered when saved income reaches 80% or more of goal target amount.
+  - `GOAL_COMPLETED`: Triggered when saved income reaches or exceeds 100% of target amount.
+- **Recurring Transaction Alerts**:
+  - `RECURRING_DUE`: Triggered for active schedules approaching their next run date.
+  - `RECURRING_GENERATED`: Triggered automatically when a transaction is generated for a schedule.
+  - `RECURRING_EXPIRED`: Triggered when a recurring schedule reaches its end date.
+
+### 3. Service Layer & Duplicate Prevention
+- `NotificationService` handles notification generation with built-in metadata-level duplicate protection:
+  - Budget warnings/exceeded alerts check for existing notifications per budget and period.
+  - Goal alerts check for existing notifications per goal milestone.
+  - Recurring alerts check for existing notifications per schedule occurrence/event.
+  - Paused recurring transaction schedules (`is_active=False`) are automatically skipped for due alerts.
+
+### 4. API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/notifications/` | List notifications (search, filter, pagination, ordering) |
+| `GET` | `/api/notifications/<id>/` | Retrieve notification detail |
+| `PATCH` | `/api/notifications/<id>/` | Mark single notification as read/unread |
+| `DELETE` | `/api/notifications/<id>/` | Delete single notification |
+| `POST` | `/api/notifications/mark-all-read/` | Bulk mark all user notifications as read |
+
+### 5. Automated Financial Processing Command
+Execute financial alert checking across budgets, goals, and recurring transactions:
+```bash
+python manage.py process_financial_notifications
+```
+
 ---
 
 ## 🧪 Testing Guide
@@ -423,13 +491,13 @@ python -m pytest
 # Run tests with verbose output
 python -m pytest -v
 
-# Run Day 10 financial goal test suite specifically
-python -m pytest transactions/tests/test_financial_goals.py
+# Run Day 11 notifications test suite specifically
+python -m pytest transactions/tests/test_notifications.py
 ```
 
 ### Test Suite Results Summary
-- Total tests: **204**
-- Passed: **204**
+- Total tests: **222**
+- Passed: **222**
 - Failed: **0**
 
 
@@ -437,6 +505,7 @@ python -m pytest transactions/tests/test_financial_goals.py
 
 ## 📄 License
 MIT License
+
 
 
 
