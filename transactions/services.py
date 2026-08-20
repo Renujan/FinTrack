@@ -1,7 +1,9 @@
 from decimal import Decimal
+import datetime
 from django.db.models import Sum, Q
-from .choices import TransactionType, GoalStatus
-from .models import Transaction
+from django.utils import timezone
+from .choices import TransactionType, GoalStatus, NotificationType
+from .models import Transaction, Budget, FinancialGoal, Notification, RecurringTransaction
 
 
 class BudgetCalculationService:
@@ -256,6 +258,10 @@ class RecurringTransactionService:
                 schedule.is_active = False
                 schedule.save(update_fields=['is_active', 'updated_at'])
                 is_expired = True
+                NotificationService.create_recurring_alert(
+                    schedule,
+                    NotificationType.RECURRING_EXPIRED
+                )
                 break
 
             current_run_date = schedule.next_run_date
@@ -269,7 +275,7 @@ class RecurringTransactionService:
                 if not existing_txn:
                     description = schedule.description if schedule.description else schedule.name
                     try:
-                        Transaction.objects.create(
+                        new_txn = Transaction.objects.create(
                             user=schedule.user,
                             category=schedule.category,
                             recurring_transaction=schedule,
@@ -280,6 +286,12 @@ class RecurringTransactionService:
                             date=current_run_date
                         )
                         generated_count += 1
+                        NotificationService.create_recurring_alert(
+                            schedule,
+                            NotificationType.RECURRING_GENERATED,
+                            transaction=new_txn,
+                            schedule_date=current_run_date
+                        )
                     except IntegrityError:
                         logger.warning(
                             f"Duplicate transaction attempt for recurring schedule {schedule.id} on date {current_run_date}"
@@ -292,6 +304,10 @@ class RecurringTransactionService:
                 if schedule.end_date and schedule.next_run_date > schedule.end_date:
                     schedule.is_active = False
                     is_expired = True
+                    NotificationService.create_recurring_alert(
+                        schedule,
+                        NotificationType.RECURRING_EXPIRED
+                    )
 
                 schedule.save(update_fields=['last_run_date', 'next_run_date', 'is_active', 'updated_at'])
 
@@ -316,4 +332,327 @@ class RecurringTransactionService:
             schedule.is_active = True
             schedule.save(update_fields=['is_active', 'updated_at'])
         return schedule
+
+
+class NotificationService:
+    """
+    Service layer for notification creation, management, financial alert checking,
+    and duplicate notification prevention.
+    """
+
+    @classmethod
+    def create_notification(cls, user, notification_type, title, message, metadata=None):
+        """
+        Creates and persists a Notification record for a user.
+        """
+        if metadata is None:
+            metadata = {}
+        return Notification.objects.create(
+            user=user,
+            notification_type=notification_type,
+            title=title,
+            message=message,
+            metadata=metadata
+        )
+
+    @classmethod
+    def create_budget_alert(cls, budget, warning_threshold=Decimal('80.0')):
+        """
+        Generates budget notifications (BUDGET_EXCEEDED or BUDGET_WARNING)
+        based on BudgetCalculationService metrics.
+        Prevents duplicate alerts for the same budget period.
+        """
+        metrics = BudgetCalculationService.calculate_budget_metrics(budget)
+        spent = metrics['spent_amount']
+        budget_amt = budget.amount
+        pct = metrics['percentage_used']
+
+        if metrics['is_exceeded']:
+            exists = Notification.objects.filter(
+                user=budget.user,
+                notification_type=NotificationType.BUDGET_EXCEEDED,
+                metadata__budget_id=budget.id,
+                metadata__start_date=str(budget.start_date)
+            ).exists()
+            if not exists:
+                title = f"Budget Exceeded: {budget.name}"
+                message = f"You have exceeded your budget '{budget.name}'. Spent ${spent} of ${budget_amt} ({pct}%)."
+                metadata = {
+                    'budget_id': budget.id,
+                    'budget_name': budget.name,
+                    'start_date': str(budget.start_date),
+                    'end_date': str(budget.end_date),
+                    'spent_amount': str(spent),
+                    'budget_amount': str(budget_amt),
+                    'percentage_used': pct,
+                }
+                return cls.create_notification(
+                    user=budget.user,
+                    notification_type=NotificationType.BUDGET_EXCEEDED,
+                    title=title,
+                    message=message,
+                    metadata=metadata
+                )
+        elif pct >= float(warning_threshold):
+            exists = Notification.objects.filter(
+                user=budget.user,
+                notification_type=NotificationType.BUDGET_WARNING,
+                metadata__budget_id=budget.id,
+                metadata__start_date=str(budget.start_date)
+            ).exists()
+            if not exists:
+                title = f"Budget Warning: {budget.name}"
+                message = f"Your budget '{budget.name}' has reached {pct}% of limit. Spent ${spent} of ${budget_amt}."
+                metadata = {
+                    'budget_id': budget.id,
+                    'budget_name': budget.name,
+                    'start_date': str(budget.start_date),
+                    'end_date': str(budget.end_date),
+                    'spent_amount': str(spent),
+                    'budget_amount': str(budget_amt),
+                    'percentage_used': pct,
+                }
+                return cls.create_notification(
+                    user=budget.user,
+                    notification_type=NotificationType.BUDGET_WARNING,
+                    title=title,
+                    message=message,
+                    metadata=metadata
+                )
+        return None
+
+    @classmethod
+    def create_goal_alert(cls, goal, warning_threshold=Decimal('80.0')):
+        """
+        Generates financial goal notifications (GOAL_COMPLETED or GOAL_WARNING)
+        based on GoalCalculationService metrics.
+        Prevents duplicate alerts per goal milestone.
+        """
+        metrics = GoalCalculationService.calculate_goal_metrics(goal)
+        current = metrics['current_amount']
+        target = goal.target_amount
+        pct = metrics['percentage_complete']
+
+        if metrics['is_completed']:
+            exists = Notification.objects.filter(
+                user=goal.user,
+                notification_type=NotificationType.GOAL_COMPLETED,
+                metadata__goal_id=goal.id
+            ).exists()
+            if not exists:
+                title = f"Financial Goal Completed: {goal.name}"
+                message = f"Congratulations! You reached your target amount of ${target} for '{goal.name}'."
+                metadata = {
+                    'goal_id': goal.id,
+                    'goal_name': goal.name,
+                    'target_amount': str(target),
+                    'current_amount': str(current),
+                    'percentage_complete': pct,
+                }
+                return cls.create_notification(
+                    user=goal.user,
+                    notification_type=NotificationType.GOAL_COMPLETED,
+                    title=title,
+                    message=message,
+                    metadata=metadata
+                )
+        elif pct >= float(warning_threshold):
+            exists = Notification.objects.filter(
+                user=goal.user,
+                notification_type=NotificationType.GOAL_WARNING,
+                metadata__goal_id=goal.id
+            ).exists()
+            if not exists:
+                title = f"Goal Approaching Target: {goal.name}"
+                message = f"Your goal '{goal.name}' has reached {pct}% of target (${current} of ${target})."
+                metadata = {
+                    'goal_id': goal.id,
+                    'goal_name': goal.name,
+                    'target_amount': str(target),
+                    'current_amount': str(current),
+                    'percentage_complete': pct,
+                }
+                return cls.create_notification(
+                    user=goal.user,
+                    notification_type=NotificationType.GOAL_WARNING,
+                    title=title,
+                    message=message,
+                    metadata=metadata
+                )
+        return None
+
+    @classmethod
+    def create_recurring_alert(cls, schedule, alert_type, transaction=None, schedule_date=None):
+        """
+        Generates recurring transaction notifications:
+        - RECURRING_DUE
+        - RECURRING_GENERATED
+        - RECURRING_EXPIRED
+        Enforces duplicate protection and skips due alerts for paused schedules.
+        """
+        if not schedule.is_active and alert_type == NotificationType.RECURRING_DUE:
+            return None
+
+        if alert_type == NotificationType.RECURRING_DUE:
+            run_date_str = str(schedule.next_run_date)
+            exists = Notification.objects.filter(
+                user=schedule.user,
+                notification_type=NotificationType.RECURRING_DUE,
+                metadata__recurring_transaction_id=schedule.id,
+                metadata__next_run_date=run_date_str
+            ).exists()
+            if not exists:
+                title = f"Recurring Transaction Due Soon: {schedule.name}"
+                message = f"Your recurring transaction '{schedule.name}' of ${schedule.amount} is due on {schedule.next_run_date}."
+                metadata = {
+                    'recurring_transaction_id': schedule.id,
+                    'schedule_name': schedule.name,
+                    'amount': str(schedule.amount),
+                    'next_run_date': run_date_str,
+                }
+                return cls.create_notification(
+                    user=schedule.user,
+                    notification_type=NotificationType.RECURRING_DUE,
+                    title=title,
+                    message=message,
+                    metadata=metadata
+                )
+        elif alert_type == NotificationType.RECURRING_GENERATED:
+            s_date = schedule_date or (transaction.date if transaction else schedule.next_run_date)
+            s_date_str = str(s_date)
+            exists = Notification.objects.filter(
+                user=schedule.user,
+                notification_type=NotificationType.RECURRING_GENERATED,
+                metadata__recurring_transaction_id=schedule.id,
+                metadata__schedule_date=s_date_str
+            ).exists()
+            if not exists:
+                title = f"Recurring Transaction Generated: {schedule.name}"
+                message = f"Recurring transaction '{schedule.name}' of ${schedule.amount} was generated for {s_date_str}."
+                metadata = {
+                    'recurring_transaction_id': schedule.id,
+                    'schedule_name': schedule.name,
+                    'amount': str(schedule.amount),
+                    'schedule_date': s_date_str,
+                    'transaction_id': transaction.id if transaction else None
+                }
+                return cls.create_notification(
+                    user=schedule.user,
+                    notification_type=NotificationType.RECURRING_GENERATED,
+                    title=title,
+                    message=message,
+                    metadata=metadata
+                )
+        elif alert_type == NotificationType.RECURRING_EXPIRED:
+            exists = Notification.objects.filter(
+                user=schedule.user,
+                notification_type=NotificationType.RECURRING_EXPIRED,
+                metadata__recurring_transaction_id=schedule.id
+            ).exists()
+            if not exists:
+                title = f"Recurring Schedule Expired: {schedule.name}"
+                message = f"Recurring transaction schedule '{schedule.name}' has reached its end date and expired."
+                metadata = {
+                    'recurring_transaction_id': schedule.id,
+                    'schedule_name': schedule.name,
+                    'end_date': str(schedule.end_date) if schedule.end_date else None
+                }
+                return cls.create_notification(
+                    user=schedule.user,
+                    notification_type=NotificationType.RECURRING_EXPIRED,
+                    title=title,
+                    message=message,
+                    metadata=metadata
+                )
+        return None
+
+    @classmethod
+    def mark_as_read(cls, notification):
+        """
+        Marks a notification as read and sets read_at timestamp.
+        """
+        notification.mark_as_read()
+        return notification
+
+    @classmethod
+    def mark_as_unread(cls, notification):
+        """
+        Marks a notification as unread and resets read_at timestamp.
+        """
+        notification.mark_as_unread()
+        return notification
+
+    @classmethod
+    def mark_all_as_read(cls, user):
+        """
+        Bulk updates all unread notifications for a user to read status.
+        """
+        now = timezone.now()
+        updated_count = Notification.objects.filter(user=user, is_read=False).update(
+            is_read=True,
+            read_at=now
+        )
+        return updated_count
+
+    @classmethod
+    def process_all_financial_alerts(cls, user=None, target_date=None, budget_threshold=80.0, goal_threshold=80.0):
+        """
+        Scans budgets, goals, and recurring transactions to generate alerts.
+        Can process globally or for a specific user.
+        """
+        if target_date is None:
+            target_date = timezone.now().date()
+        elif isinstance(target_date, datetime.datetime):
+            target_date = target_date.date()
+
+        alerts_created = 0
+
+        # 1. Process Budgets
+        budgets_qs = Budget.objects.all()
+        if user:
+            budgets_qs = budgets_qs.filter(user=user)
+
+        budgets_processed = 0
+        for budget in budgets_qs.select_related('category', 'user'):
+            budgets_processed += 1
+            notif = cls.create_budget_alert(budget, warning_threshold=budget_threshold)
+            if notif:
+                alerts_created += 1
+
+        # 2. Process Financial Goals
+        goals_qs = FinancialGoal.objects.filter(is_active=True)
+        if user:
+            goals_qs = goals_qs.filter(user=user)
+
+        goals_processed = 0
+        for goal in goals_qs.select_related('category', 'user'):
+            goals_processed += 1
+            notif = cls.create_goal_alert(goal, warning_threshold=goal_threshold)
+            if notif:
+                alerts_created += 1
+
+        # 3. Process Due Recurring Transactions
+        due_window = target_date + datetime.timedelta(days=3)
+        recurring_qs = RecurringTransaction.objects.filter(
+            is_active=True,
+            next_run_date__lte=due_window
+        )
+        if user:
+            recurring_qs = recurring_qs.filter(user=user)
+
+        recurring_processed = 0
+        for schedule in recurring_qs.select_related('category', 'user'):
+            recurring_processed += 1
+            notif = cls.create_recurring_alert(schedule, NotificationType.RECURRING_DUE)
+            if notif:
+                alerts_created += 1
+
+        return {
+            'alerts_created_count': alerts_created,
+            'budgets_processed_count': budgets_processed,
+            'goals_processed_count': goals_processed,
+            'recurring_processed_count': recurring_processed,
+            'target_date': target_date
+        }
+
 
