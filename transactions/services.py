@@ -361,7 +361,9 @@ class NotificationService:
         Generates budget notifications (BUDGET_EXCEEDED or BUDGET_WARNING)
         based on BudgetCalculationService metrics.
         Prevents duplicate alerts for the same budget period.
+        Configured with configurable warning threshold (default 80%).
         """
+
         metrics = BudgetCalculationService.calculate_budget_metrics(budget)
         spent = metrics['spent_amount']
         budget_amt = budget.amount
