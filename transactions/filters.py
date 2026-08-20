@@ -2,8 +2,8 @@ import datetime
 from decimal import Decimal, InvalidOperation
 import django_filters
 from rest_framework import serializers
-from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency, GoalStatus
-from .models import Transaction, Budget, RecurringTransaction, FinancialGoal
+from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency, GoalStatus, NotificationType
+from .models import Transaction, Budget, RecurringTransaction, FinancialGoal, Notification
 from .services import BudgetCalculationService, GoalCalculationService
 
 
@@ -401,5 +401,83 @@ def validate_goal_filter_params(params):
 
     if errors:
         raise serializers.ValidationError(errors)
+
+
+class NotificationFilter(django_filters.FilterSet):
+    is_read = django_filters.BooleanFilter(field_name='is_read')
+    notification_type = django_filters.CharFilter(method='filter_by_type')
+    start_date = django_filters.DateFilter(field_name='created_at', lookup_expr='gte')
+    end_date = django_filters.DateFilter(field_name='created_at', lookup_expr='lte')
+    q = django_filters.CharFilter(method='filter_by_search')
+    search = django_filters.CharFilter(method='filter_by_search')
+
+    class Meta:
+        model = Notification
+        fields = ['is_read', 'notification_type', 'start_date', 'end_date', 'q', 'search']
+
+    def filter_by_type(self, queryset, name, value):
+        if not value:
+            return queryset
+        val_upper = value.upper()
+        if val_upper not in NotificationType.values:
+            raise serializers.ValidationError({
+                'notification_type': f"Invalid notification type '{value}'. Allowed choices are: {', '.join(NotificationType.values)}."
+            })
+        return queryset.filter(notification_type=val_upper)
+
+    def filter_by_search(self, queryset, name, value):
+        if not value:
+            return queryset
+        from django.db.models import Q
+        return queryset.filter(
+            Q(title__icontains=value) | Q(message__icontains=value)
+        )
+
+
+def validate_notification_filter_params(params):
+    """
+    Validates query parameters for notification filtering, date ranges, types, and ordering.
+    """
+    errors = {}
+
+    parsed_start = None
+    parsed_end = None
+
+    for field in ['start_date', 'end_date']:
+        val = params.get(field)
+        if val:
+            try:
+                dt = datetime.datetime.strptime(val, '%Y-%m-%d').date()
+                if field == 'start_date':
+                    parsed_start = dt
+                elif field == 'end_date':
+                    parsed_end = dt
+            except ValueError:
+                errors[field] = [f"Invalid date format for {field}. Expected YYYY-MM-DD."]
+
+    if parsed_start and parsed_end and parsed_start > parsed_end:
+        errors['start_date'] = ["start_date cannot be greater than end_date."]
+
+    type_val = params.get('notification_type')
+    if type_val and type_val.upper() not in NotificationType.values:
+        errors['notification_type'] = [f"Invalid notification type '{type_val}'. Allowed choices: {', '.join(NotificationType.values)}."]
+
+    ordering_val = params.get('ordering')
+    if ordering_val:
+        allowed_ordering = {
+            'created_at', '-created_at',
+            'is_read', '-is_read',
+            'notification_type', '-notification_type',
+            'read_at', '-read_at',
+            'title', '-title'
+        }
+        requested_fields = [f.strip() for f in ordering_val.split(',') if f.strip()]
+        invalid_fields = [f for f in requested_fields if f not in allowed_ordering]
+        if invalid_fields:
+            errors['ordering'] = [f"Invalid ordering field(s): {', '.join(invalid_fields)}."]
+
+    if errors:
+        raise serializers.ValidationError(errors)
+
 
 
