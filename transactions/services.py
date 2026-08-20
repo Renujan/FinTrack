@@ -429,7 +429,9 @@ class NotificationService:
         Generates financial goal notifications (GOAL_COMPLETED or GOAL_WARNING)
         based on GoalCalculationService metrics.
         Prevents duplicate alerts per goal milestone.
+        Monitors progress threshold against goal target amount.
         """
+
         metrics = GoalCalculationService.calculate_goal_metrics(goal)
         current = metrics['current_amount']
         target = goal.target_amount
