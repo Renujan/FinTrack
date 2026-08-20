@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Transaction, Budget, FinancialGoal
+from .models import Category, Transaction, Budget, FinancialGoal, Notification
 
 
 @admin.register(Category)
@@ -28,4 +28,13 @@ class FinancialGoalAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'user', 'category', 'target_amount', 'target_date', 'is_active', 'created_at')
     list_filter = ('is_active', 'user', 'category')
     search_fields = ('name', 'description', 'user__email')
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title', 'user', 'notification_type', 'is_read', 'created_at', 'read_at')
+    list_filter = ('notification_type', 'is_read', 'user')
+    search_fields = ('title', 'message', 'user__email')
+    readonly_fields = ('created_at', 'read_at')
+
 

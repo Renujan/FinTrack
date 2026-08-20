@@ -14,6 +14,8 @@ from .views import (
     FinancialGoalDetailView,
     FinancialGoalPauseView,
     FinancialGoalResumeView,
+    NotificationListView,
+    NotificationDetailView,
 )
 from .analytics.views import (
     DashboardSummaryAPIView,
@@ -41,6 +43,9 @@ urlpatterns = [
     path('goals/<int:pk>/', FinancialGoalDetailView.as_view(), name='financial-goal-detail'),
     path('goals/<int:pk>/pause/', FinancialGoalPauseView.as_view(), name='financial-goal-pause'),
     path('goals/<int:pk>/resume/', FinancialGoalResumeView.as_view(), name='financial-goal-resume'),
+    path('notifications/', NotificationListView.as_view(), name='notification-list'),
+    path('notifications/<int:pk>/', NotificationDetailView.as_view(), name='notification-detail'),
+
     path('analytics/summary/', DashboardSummaryAPIView.as_view(), name='analytics-summary'),
     path('analytics/trends/', FinancialTrendsAPIView.as_view(), name='analytics-trends'),
     path('analytics/monthly/', MonthlySummaryAPIView.as_view(), name='analytics-monthly'),
@@ -48,5 +53,6 @@ urlpatterns = [
     path('analytics/comparison/', PeriodComparisonAPIView.as_view(), name='analytics-comparison'),
     path('analytics/budgets/', BudgetAnalyticsAPIView.as_view(), name='analytics-budgets'),
 ]
+
 
 

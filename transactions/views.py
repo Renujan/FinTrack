@@ -8,13 +8,15 @@ from .filters import (
     BudgetFilter,
     RecurringTransactionFilter,
     FinancialGoalFilter,
+    NotificationFilter,
     validate_filter_params,
     validate_budget_filter_params,
     validate_recurring_filter_params,
     validate_goal_filter_params,
+    validate_notification_filter_params,
 )
-from .models import Category, Transaction, Budget, RecurringTransaction, FinancialGoal
-from .pagination import StandardResultsSetPagination, RecurringTransactionResultsSetPagination
+from .models import Category, Transaction, Budget, RecurringTransaction, FinancialGoal, Notification
+from .pagination import StandardResultsSetPagination, RecurringTransactionResultsSetPagination, NotificationResultsSetPagination
 from .permissions import IsOwner
 from .serializers import (
     CategorySerializer,
@@ -22,8 +24,10 @@ from .serializers import (
     BudgetSerializer,
     RecurringTransactionSerializer,
     FinancialGoalSerializer,
+    NotificationSerializer,
+    NotificationUpdateSerializer,
 )
-from .services import BudgetCalculationService, RecurringTransactionService, GoalCalculationService
+from .services import BudgetCalculationService, RecurringTransactionService, GoalCalculationService, NotificationService
 
 
 class CategoryListCreateView(generics.ListCreateAPIView):
@@ -357,5 +361,54 @@ class FinancialGoalResumeView(APIView):
             goal.save(update_fields=['is_active', 'updated_at'])
         serializer = FinancialGoalSerializer(goal, context={'request': request})
         return response.Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class NotificationListView(generics.ListAPIView):
+    """
+    List notifications for the authenticated user.
+    Supports filtering by is_read, notification_type, created_at date range, search, ordering, and pagination.
+    """
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = NotificationFilter
+    search_fields = ['title', 'message']
+    ordering_fields = ['created_at', 'is_read', 'notification_type', 'read_at', 'title']
+    ordering = ['-created_at']
+    pagination_class = NotificationResultsSetPagination
+
+    def get_queryset(self):
+        return Notification.objects.filter(user=self.request.user)
+
+    def list(self, request, *args, **kwargs):
+        validate_notification_filter_params(request.query_params)
+        return super().list(request, *args, **kwargs)
+
+
+class NotificationDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Retrieve, update (PATCH for read status), or delete a notification owned by the authenticated user.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsOwner]
+
+    def get_serializer_class(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return NotificationUpdateSerializer
+        return NotificationSerializer
+
+    def get_queryset(self):
+        return Notification.objects.filter(user=self.request.user)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        read_serializer = NotificationSerializer(instance, context={'request': request})
+        return response.Response(read_serializer.data, status=status.HTTP_200_OK)
+
+
 
 

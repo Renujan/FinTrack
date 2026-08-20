@@ -1,8 +1,8 @@
 from decimal import Decimal
 from rest_framework import serializers
-from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency, GoalStatus
-from .models import Category, Transaction, Budget, RecurringTransaction, FinancialGoal
-from .services import BudgetCalculationService, GoalCalculationService
+from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency, GoalStatus, NotificationType
+from .models import Category, Transaction, Budget, RecurringTransaction, FinancialGoal, Notification
+from .services import BudgetCalculationService, GoalCalculationService, NotificationService
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -357,5 +357,47 @@ class FinancialGoalSerializer(serializers.ModelSerializer):
                 if value.user != request.user:
                     raise serializers.ValidationError("Category does not belong to the authenticated user.")
         return value
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    notification_type_display = serializers.CharField(source='get_notification_type_display', read_only=True)
+
+    class Meta:
+        model = Notification
+        fields = [
+            'id',
+            'notification_type',
+            'notification_type_display',
+            'title',
+            'message',
+            'is_read',
+            'created_at',
+            'read_at',
+            'metadata'
+        ]
+        read_only_fields = [
+            'id',
+            'notification_type',
+            'notification_type_display',
+            'title',
+            'message',
+            'created_at',
+            'read_at',
+            'metadata'
+        ]
+
+
+class NotificationUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ['is_read']
+
+    def update(self, instance, validated_data):
+        is_read = validated_data.get('is_read', instance.is_read)
+        if is_read:
+            return NotificationService.mark_as_read(instance)
+        else:
+            return NotificationService.mark_as_unread(instance)
+
 
 
