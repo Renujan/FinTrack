@@ -489,11 +489,12 @@ class NotificationService:
     def create_recurring_alert(cls, schedule, alert_type, transaction=None, schedule_date=None):
         """
         Generates recurring transaction notifications:
-        - RECURRING_DUE
-        - RECURRING_GENERATED
-        - RECURRING_EXPIRED
+        - RECURRING_DUE (upcoming due date)
+        - RECURRING_GENERATED (auto-generated transaction)
+        - RECURRING_EXPIRED (schedule completed/expired)
         Enforces duplicate protection and skips due alerts for paused schedules.
         """
+
         if not schedule.is_active and alert_type == NotificationType.RECURRING_DUE:
             return None
 
