@@ -410,5 +410,20 @@ class NotificationDetailView(generics.RetrieveUpdateDestroyAPIView):
         return response.Response(read_serializer.data, status=status.HTTP_200_OK)
 
 
+class NotificationMarkAllReadView(APIView):
+    """
+    Mark all unread notifications as read for the authenticated user.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        count = NotificationService.mark_all_as_read(request.user)
+        return response.Response({
+            'message': 'All notifications marked as read.',
+            'updated_count': count
+        }, status=status.HTTP_200_OK)
+
+
+
 
 

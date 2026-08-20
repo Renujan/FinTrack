@@ -16,6 +16,7 @@ from .views import (
     FinancialGoalResumeView,
     NotificationListView,
     NotificationDetailView,
+    NotificationMarkAllReadView,
 )
 from .analytics.views import (
     DashboardSummaryAPIView,
@@ -44,7 +45,9 @@ urlpatterns = [
     path('goals/<int:pk>/pause/', FinancialGoalPauseView.as_view(), name='financial-goal-pause'),
     path('goals/<int:pk>/resume/', FinancialGoalResumeView.as_view(), name='financial-goal-resume'),
     path('notifications/', NotificationListView.as_view(), name='notification-list'),
+    path('notifications/mark-all-read/', NotificationMarkAllReadView.as_view(), name='notification-mark-all-read'),
     path('notifications/<int:pk>/', NotificationDetailView.as_view(), name='notification-detail'),
+
 
     path('analytics/summary/', DashboardSummaryAPIView.as_view(), name='analytics-summary'),
     path('analytics/trends/', FinancialTrendsAPIView.as_view(), name='analytics-trends'),
