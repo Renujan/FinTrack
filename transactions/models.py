@@ -2,7 +2,8 @@ from decimal import Decimal
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
-from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency, GoalStatus
+from django.utils import timezone
+from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency, GoalStatus, NotificationType
 
 
 class Category(models.Model):
@@ -249,5 +250,47 @@ class FinancialGoal(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.target_amount} ({self.user})"
+
+
+class Notification(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='notifications'
+    )
+    notification_type = models.CharField(
+        max_length=30,
+        choices=NotificationType.choices
+    )
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'is_read'], name='idx_notif_user_is_read'),
+            models.Index(fields=['user', 'notification_type'], name='idx_notif_user_type'),
+            models.Index(fields=['user', 'created_at'], name='idx_notif_user_created'),
+        ]
+
+    def mark_as_read(self):
+        if not self.is_read:
+            self.is_read = True
+            self.read_at = timezone.now()
+            self.save(update_fields=['is_read', 'read_at'])
+
+    def mark_as_unread(self):
+        if self.is_read:
+            self.is_read = False
+            self.read_at = None
+            self.save(update_fields=['is_read', 'read_at'])
+
+    def __str__(self):
+        return f"{self.notification_type} - {self.title} ({self.user})"
+
 
 
