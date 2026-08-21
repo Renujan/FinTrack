@@ -91,9 +91,7 @@ class FinancialReportAPIView(APIView):
 class TransactionImportAPIView(APIView):
     """
     POST /api/import/transactions/
-    Imports financial transactions from an uploaded CSV file for the authenticated user.
-    Validates all rows, enforces user category ownership, prevents duplicates,
-    and returns detailed error status for invalid rows.
+    Imports transaction records from an uploaded CSV file for the authenticated user.
     """
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
