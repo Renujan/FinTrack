@@ -22,6 +22,9 @@ class DataExportService:
 
     @classmethod
     def export_transactions_csv(cls, user, params=None):
+        """
+        Exports user-scoped transactions as CSV supporting date ranges, category, type, min/max amount, and search.
+        """
         params = params or {}
         validate_filter_params(params)
 
