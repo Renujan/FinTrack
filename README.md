@@ -39,11 +39,115 @@ The system follows clean modular monolithic architecture designed for SaaS scala
 - [x] **Day 9**: Recurring Transactions & Scheduled Finance Operations (RecurringTransaction model, daily/weekly/monthly/yearly recurrence choices, schedule date validation, user ownership, CRUD API, pause/resume endpoints, transaction generation service, scheduled management command, duplicate protection, filtering, search, ordering, pagination, budget & analytics integration, 177 total automated tests, 13 Git commits).
 - [x] **Day 10**: Financial Goals & Savings Targets (FinancialGoal model, target amount & date, goal progress calculation service, income transaction contributions, dynamic status logic (ACTIVE, COMPLETED, OVERDUE, PAUSED), CRUD API, pause/resume endpoints, user ownership isolation, filtering, search, ordering, pagination, 204 total automated tests, 12 Git commits).
 - [x] **Day 11**: Notifications & Financial Alerts (Notification model, notification choices, NotificationService, budget warning/exceeded alerts, goal warning/completed alerts, recurring transaction due/generated/expired alerts, duplicate protection, read/unread state management, list/retrieve/update/delete API endpoints, mark-all-read endpoint, filtering, search, pagination, process_financial_notifications management command, 222 total automated tests, 13 Git commits).
+- [x] **Day 12**: Data Export, Import & Financial Reports (Financial data export services, transaction CSV export with filters, categories/budgets/goals/recurring CSV exports, unified financial reports API, date range filtering, transaction CSV import with strict row validation, cross-user category protection, row fingerprint duplicate import protection, security & file handling, 249 total automated tests, 12 Git commits).
 
 
 ---
 
-## 📋 Day 1 Project Setup & Local Development
+## 📤 Data Export, Import & Financial Reporting API Documentation (Day 12)
+
+Base URL: `/api/`
+
+All Export, Import, and Reporting endpoints require `Authorization: Bearer <access_token>` header.
+
+### Endpoints Overview
+
+| Method | Endpoint | Auth Required | Description |
+|---|---|---|---|
+| `GET` | `/api/export/transactions/` | Yes (`Bearer`) | Export user's transactions as CSV (supports filtering & search) |
+| `GET` | `/api/export/categories/` | Yes (`Bearer`) | Export user's categories list as CSV |
+| `GET` | `/api/export/budgets/` | Yes (`Bearer`) | Export user's budgets with calculation metrics as CSV |
+| `GET` | `/api/export/goals/` | Yes (`Bearer`) | Export user's financial goals with progress metrics as CSV |
+| `GET` | `/api/export/recurring/` | Yes (`Bearer`) | Export user's recurring transaction schedules as CSV |
+| `GET` | `/api/reports/financial/` | Yes (`Bearer`) | Unified financial report JSON (income, expenses, net balance, breakdowns) |
+| `POST` | `/api/import/transactions/` | Yes (`Bearer`) | Import transaction records from uploaded CSV file |
+
+### 📤 1. CSV Data Exports
+- **Transaction Export Filters**: Supports `start_date`, `end_date`, `category`, `type` (`INCOME`/`EXPENSE`), `min_amount`, `max_amount`, `search`/`q`.
+- **Response Headers**: `Content-Type: text/csv`, `Content-Disposition: attachment; filename="<type>_export.csv"`.
+- **CSV Headers**:
+  - Transactions: `Date,Description,Amount,Transaction Type,Category,Created Date`
+  - Categories: `ID,Name,Created At,Updated At`
+  - Budgets: `ID,Name,Category,Amount,Period,Start Date,End Date,Spent Amount,Remaining Amount,Percentage Used,Is Exceeded,Created At`
+  - Goals: `ID,Name,Description,Category,Target Amount,Target Date,Current Amount,Remaining Amount,Percentage Complete,Status,Is Active,Created At`
+  - Recurring: `ID,Name,Description,Amount,Transaction Type,Category,Frequency,Start Date,End Date,Next Run Date,Last Run Date,Is Active,Created At`
+
+### 📊 2. Financial Report API (`GET /api/reports/financial/`)
+- Accepts optional `start_date` and `end_date` parameters (`YYYY-MM-DD`).
+- **Response Metrics**:
+  - `total_income`, `total_expenses`, `net_balance`, `transaction_count`
+  - `top_spending_categories`: Top 5 spending categories by expense amount.
+  - `category_spending_breakdown`: Full category expense breakdown with percentages.
+  - `monthly_totals`: Chronological monthly totals.
+  - `budget_summary`: Total budgets, active/exceeded counts, total budgeted, total spent, utilization %.
+  - `goal_summary`: Total goals, active/completed counts, total target, total saved, progress %.
+
+### 📥 3. Transaction CSV Import (`POST /api/import/transactions/`)
+- **Uploaded File**: Multipart form upload (`file` or `csv_file` field). Max size: **5MB**. Supported format: `.csv`.
+- **Supported CSV Columns**: `date`, `description`, `amount`, `transaction_type`, `category` (case-insensitive headers).
+- **Validation Rules**:
+  - `date`: Valid `YYYY-MM-DD` date.
+  - `amount`: Decimal strictly `> 0.00`.
+  - `transaction_type`: `INCOME` or `EXPENSE`.
+  - `category`: Must match an existing category ID or name owned by the authenticated user.
+- **Duplicate Protection**:
+  - Computes a SHA-256 fingerprint (`user_id`, `date`, `amount`, `transaction_type`, `category_id`, `description`).
+  - Blocks duplicate rows within the same uploaded CSV file.
+  - Checks database to prevent re-importing existing duplicate transactions.
+- **Response Format**:
+```json
+{
+  "success": true,
+  "imported": 18,
+  "failed": 0,
+  "errors": []
+}
+```
+If errors occur on specific rows:
+```json
+{
+  "success": false,
+  "imported": 16,
+  "failed": 2,
+  "errors": [
+    {
+      "row": 5,
+      "field": "amount",
+      "message": "Amount must be greater than zero."
+    }
+  ]
+}
+```
+
+---
+
+## 🧪 Testing Guide
+
+We use `pytest` and `pytest-django` for automated unit and integration testing.
+
+### Running the Test Suite
+```bash
+# Run all tests
+python -m pytest
+
+# Run tests with verbose output
+python -m pytest -v
+
+# Run Day 12 export/import/report test suite specifically
+python -m pytest transactions/tests/test_export_import.py
+```
+
+### Test Suite Results Summary
+- Total tests: **249**
+- Passed: **249**
+- Failed: **0**
+
+
+---
+
+## 📄 License
+MIT License
+
 
 Follow these step-by-step instructions to set up the backend locally:
 
