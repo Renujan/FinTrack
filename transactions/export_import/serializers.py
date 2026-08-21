@@ -18,6 +18,9 @@ class ReportDateRangeSerializer(serializers.Serializer):
 
 
 class TransactionImportFileUploadSerializer(serializers.Serializer):
+    """
+    Validates uploaded file format (.csv), non-empty payload, and enforces strict 5MB size limit.
+    """
     file = serializers.FileField(required=True)
 
     def validate_file(self, file_obj):
