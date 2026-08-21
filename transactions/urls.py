@@ -26,6 +26,15 @@ from .analytics.views import (
     PeriodComparisonAPIView,
     BudgetAnalyticsAPIView,
 )
+from .export_import.views import (
+    TransactionExportAPIView,
+    CategoryExportAPIView,
+    BudgetExportAPIView,
+    FinancialGoalExportAPIView,
+    RecurringTransactionExportAPIView,
+    FinancialReportAPIView,
+    TransactionImportAPIView,
+)
 
 app_name = 'transactions'
 
@@ -48,14 +57,24 @@ urlpatterns = [
     path('notifications/mark-all-read/', NotificationMarkAllReadView.as_view(), name='notification-mark-all-read'),
     path('notifications/<int:pk>/', NotificationDetailView.as_view(), name='notification-detail'),
 
-
     path('analytics/summary/', DashboardSummaryAPIView.as_view(), name='analytics-summary'),
     path('analytics/trends/', FinancialTrendsAPIView.as_view(), name='analytics-trends'),
     path('analytics/monthly/', MonthlySummaryAPIView.as_view(), name='analytics-monthly'),
     path('analytics/categories/', CategoryAnalyticsAPIView.as_view(), name='analytics-categories'),
     path('analytics/comparison/', PeriodComparisonAPIView.as_view(), name='analytics-comparison'),
     path('analytics/budgets/', BudgetAnalyticsAPIView.as_view(), name='analytics-budgets'),
+
+    path('export/transactions/', TransactionExportAPIView.as_view(), name='export-transactions'),
+    path('export/categories/', CategoryExportAPIView.as_view(), name='export-categories'),
+    path('export/budgets/', BudgetExportAPIView.as_view(), name='export-budgets'),
+    path('export/goals/', FinancialGoalExportAPIView.as_view(), name='export-goals'),
+    path('export/recurring/', RecurringTransactionExportAPIView.as_view(), name='export-recurring'),
+
+    path('reports/financial/', FinancialReportAPIView.as_view(), name='reports-financial'),
+
+    path('import/transactions/', TransactionImportAPIView.as_view(), name='import-transactions'),
 ]
+
 
 
 
