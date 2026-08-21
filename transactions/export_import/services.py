@@ -405,8 +405,7 @@ class TransactionImportService:
                 failed_count += 1
                 continue
 
-            # 7. Duplicate import protection
-            # Compute unique fingerprint per transaction row
+            # 7. Duplicate import protection via SHA-256 fingerprint and database checks
             row_hash = hashlib.sha256(
                 f"{user.id}:{parsed_date}:{parsed_amount}:{parsed_type}:{category_obj.id}:{desc_raw}".encode('utf-8')
             ).hexdigest()
