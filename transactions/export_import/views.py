@@ -10,8 +10,7 @@ from .services import DataExportService, FinancialReportService, TransactionImpo
 class TransactionExportAPIView(APIView):
     """
     GET /api/export/transactions/
-    Exports authenticated user's transactions as CSV file.
-    Supports filtering by date range, category, type, amount, and search.
+    Exports authenticated user's financial data (transactions, categories, budgets, goals, recurring) as CSV.
     """
     permission_classes = [permissions.IsAuthenticated]
 
