@@ -256,8 +256,8 @@ class FinancialReportService:
 
 class TransactionImportService:
     """
-    Service layer providing CSV import parsing, strict validation, duplicate detection,
-    and user isolation for financial transactions.
+    Service layer providing CSV import parsing, row-by-row validation, category ownership enforcement,
+    and structured error reporting for failed rows.
     """
 
     REQUIRED_HEADERS = {'date', 'description', 'amount', 'transaction_type', 'category'}
