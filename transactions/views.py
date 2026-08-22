@@ -9,14 +9,21 @@ from .filters import (
     RecurringTransactionFilter,
     FinancialGoalFilter,
     NotificationFilter,
+    AuditLogFilter,
     validate_filter_params,
     validate_budget_filter_params,
     validate_recurring_filter_params,
     validate_goal_filter_params,
     validate_notification_filter_params,
+    validate_audit_filter_params,
 )
-from .models import Category, Transaction, Budget, RecurringTransaction, FinancialGoal, Notification
-from .pagination import StandardResultsSetPagination, RecurringTransactionResultsSetPagination, NotificationResultsSetPagination
+from .models import Category, Transaction, Budget, RecurringTransaction, FinancialGoal, Notification, AuditLog
+from .pagination import (
+    StandardResultsSetPagination,
+    RecurringTransactionResultsSetPagination,
+    NotificationResultsSetPagination,
+    AuditLogResultsSetPagination,
+)
 from .permissions import IsOwner
 from .serializers import (
     CategorySerializer,
@@ -26,8 +33,10 @@ from .serializers import (
     FinancialGoalSerializer,
     NotificationSerializer,
     NotificationUpdateSerializer,
+    AuditLogSerializer,
 )
 from .services import BudgetCalculationService, RecurringTransactionService, GoalCalculationService, NotificationService
+from .audit_services import AuditLogService
 
 
 class CategoryListCreateView(generics.ListCreateAPIView):
@@ -50,7 +59,8 @@ class CategoryListCreateView(generics.ListCreateAPIView):
         return Category.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        instance = serializer.save(user=self.request.user)
+        AuditLogService.log_create(self.request.user, 'Category', instance.id, metadata={'name': instance.name}, request=self.request)
 
 
 class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -64,10 +74,17 @@ class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         return Category.objects.filter(user=self.request.user)
 
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        AuditLogService.log_update(self.request.user, 'Category', instance.id, metadata={'name': instance.name}, request=self.request)
+
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
+        cat_id = instance.id
+        cat_name = instance.name
         try:
             self.perform_destroy(instance)
+            AuditLogService.log_delete(request.user, 'Category', cat_id, metadata={'name': cat_name}, request=request)
         except ProtectedError:
             return response.Response(
                 {'detail': 'Cannot delete category because it is being used by existing transactions.'},
@@ -124,7 +141,8 @@ class TransactionListCreateView(generics.ListCreateAPIView):
         return super().filter_queryset(queryset)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        instance = serializer.save(user=self.request.user)
+        AuditLogService.log_create(self.request.user, 'Transaction', instance.id, metadata={'amount': str(instance.amount), 'type': instance.transaction_type}, request=self.request)
 
 
 class TransactionDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -136,6 +154,16 @@ class TransactionDetailView(generics.RetrieveUpdateDestroyAPIView):
         Enforce strict user data isolation and optimize database query with select_related('category').
         """
         return Transaction.objects.filter(user=self.request.user).select_related('category')
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        AuditLogService.log_update(self.request.user, 'Transaction', instance.id, metadata={'amount': str(instance.amount), 'type': instance.transaction_type}, request=self.request)
+
+    def perform_destroy(self, instance):
+        txn_id = instance.id
+        meta = {'amount': str(instance.amount), 'type': instance.transaction_type}
+        super().perform_destroy(instance)
+        AuditLogService.log_delete(self.request.user, 'Transaction', txn_id, metadata=meta, request=self.request)
 
 
 class BudgetListCreateView(generics.ListCreateAPIView):
@@ -186,7 +214,8 @@ class BudgetListCreateView(generics.ListCreateAPIView):
         return super().filter_queryset(queryset)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        instance = serializer.save(user=self.request.user)
+        AuditLogService.log_create(self.request.user, 'Budget', instance.id, metadata={'name': instance.name, 'amount': str(instance.amount)}, request=self.request)
 
 
 class BudgetDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -198,6 +227,16 @@ class BudgetDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return Budget.objects.filter(user=self.request.user).select_related('category')
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        AuditLogService.log_update(self.request.user, 'Budget', instance.id, metadata={'name': instance.name, 'amount': str(instance.amount)}, request=self.request)
+
+    def perform_destroy(self, instance):
+        b_id = instance.id
+        meta = {'name': instance.name, 'amount': str(instance.amount)}
+        super().perform_destroy(instance)
+        AuditLogService.log_delete(self.request.user, 'Budget', b_id, metadata=meta, request=self.request)
 
 
 class RecurringTransactionListCreateView(generics.ListCreateAPIView):
@@ -228,7 +267,8 @@ class RecurringTransactionListCreateView(generics.ListCreateAPIView):
         return super().filter_queryset(queryset)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        instance = serializer.save(user=self.request.user)
+        AuditLogService.log_create(self.request.user, 'RecurringTransaction', instance.id, metadata={'name': instance.name, 'amount': str(instance.amount)}, request=self.request)
 
 
 class RecurringTransactionDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -240,6 +280,16 @@ class RecurringTransactionDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return RecurringTransaction.objects.filter(user=self.request.user).select_related('category')
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        AuditLogService.log_update(self.request.user, 'RecurringTransaction', instance.id, metadata={'name': instance.name}, request=self.request)
+
+    def perform_destroy(self, instance):
+        r_id = instance.id
+        meta = {'name': instance.name}
+        super().perform_destroy(instance)
+        AuditLogService.log_delete(self.request.user, 'RecurringTransaction', r_id, metadata=meta, request=self.request)
 
 
 class RecurringTransactionPauseView(APIView):
@@ -317,7 +367,8 @@ class FinancialGoalListCreateView(generics.ListCreateAPIView):
         return super().filter_queryset(queryset)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        instance = serializer.save(user=self.request.user)
+        AuditLogService.log_create(self.request.user, 'Goal', instance.id, metadata={'name': instance.name, 'target_amount': str(instance.target_amount)}, request=self.request)
 
 
 class FinancialGoalDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -329,6 +380,16 @@ class FinancialGoalDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return FinancialGoal.objects.filter(user=self.request.user).select_related('category')
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        AuditLogService.log_update(self.request.user, 'Goal', instance.id, metadata={'name': instance.name}, request=self.request)
+
+    def perform_destroy(self, instance):
+        g_id = instance.id
+        meta = {'name': instance.name}
+        super().perform_destroy(instance)
+        AuditLogService.log_delete(self.request.user, 'Goal', g_id, metadata=meta, request=self.request)
 
 
 class FinancialGoalPauseView(APIView):
@@ -409,6 +470,11 @@ class NotificationDetailView(generics.RetrieveUpdateDestroyAPIView):
         read_serializer = NotificationSerializer(instance, context={'request': request})
         return response.Response(read_serializer.data, status=status.HTTP_200_OK)
 
+    def perform_destroy(self, instance):
+        n_id = instance.id
+        super().perform_destroy(instance)
+        AuditLogService.log_delete(self.request.user, 'Notification', n_id, request=self.request)
+
 
 class NotificationMarkAllReadView(APIView):
     """
@@ -418,10 +484,46 @@ class NotificationMarkAllReadView(APIView):
 
     def post(self, request):
         count = NotificationService.mark_all_as_read(request.user)
+        AuditLogService.log_update(request.user, 'Notification', resource_id='all', metadata={'action': 'mark_all_read', 'count': count}, request=request)
         return response.Response({
             'message': 'All notifications marked as read.',
             'updated_count': count
         }, status=status.HTTP_200_OK)
+
+
+class AuditLogListView(generics.ListAPIView):
+    """
+    GET /api/audit-logs/
+    List audit logs for the authenticated user with filtering, search, pagination, and ordering.
+    """
+    serializer_class = AuditLogSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = AuditLogFilter
+    search_fields = ['action', 'resource_type', 'resource_id']
+    ordering_fields = ['timestamp', 'action', 'resource_type']
+    ordering = ['-timestamp']
+    pagination_class = AuditLogResultsSetPagination
+
+    def get_queryset(self):
+        return AuditLog.objects.filter(user=self.request.user)
+
+    def list(self, request, *args, **kwargs):
+        validate_audit_filter_params(request.query_params)
+        return super().list(request, *args, **kwargs)
+
+
+class AuditLogDetailView(generics.RetrieveAPIView):
+    """
+    GET /api/audit-logs/<id>/
+    Retrieve a specific audit log entry owned by the authenticated user.
+    """
+    serializer_class = AuditLogSerializer
+    permission_classes = [permissions.IsAuthenticated, IsOwner]
+
+    def get_queryset(self):
+        return AuditLog.objects.filter(user=self.request.user)
+
 
 
 
