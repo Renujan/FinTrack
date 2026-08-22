@@ -17,6 +17,8 @@ from .views import (
     NotificationListView,
     NotificationDetailView,
     NotificationMarkAllReadView,
+    AuditLogListView,
+    AuditLogDetailView,
 )
 from .analytics.views import (
     DashboardSummaryAPIView,
@@ -56,6 +58,9 @@ urlpatterns = [
     path('notifications/', NotificationListView.as_view(), name='notification-list'),
     path('notifications/mark-all-read/', NotificationMarkAllReadView.as_view(), name='notification-mark-all-read'),
     path('notifications/<int:pk>/', NotificationDetailView.as_view(), name='notification-detail'),
+
+    path('audit-logs/', AuditLogListView.as_view(), name='audit-log-list'),
+    path('audit-logs/<int:pk>/', AuditLogDetailView.as_view(), name='audit-log-detail'),
 
     path('analytics/summary/', DashboardSummaryAPIView.as_view(), name='analytics-summary'),
     path('analytics/trends/', FinancialTrendsAPIView.as_view(), name='analytics-trends'),

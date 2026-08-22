@@ -50,5 +50,16 @@ class NotificationResultsSetPagination(PageNumberPagination):
     max_page_size = 100
 
 
+class AuditLogResultsSetPagination(PageNumberPagination):
+    """
+    Pagination configuration specifically tailored for AuditLog list endpoints.
+    Default page size is 10, max page size is 100.
+    """
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
+
 
 

@@ -1,7 +1,7 @@
 from decimal import Decimal
 from rest_framework import serializers
 from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency, GoalStatus, NotificationType
-from .models import Category, Transaction, Budget, RecurringTransaction, FinancialGoal, Notification
+from .models import Category, Transaction, Budget, RecurringTransaction, FinancialGoal, Notification, AuditLog
 from .services import BudgetCalculationService, GoalCalculationService, NotificationService
 
 
@@ -398,6 +398,23 @@ class NotificationUpdateSerializer(serializers.ModelSerializer):
             return NotificationService.mark_as_read(instance)
         else:
             return NotificationService.mark_as_unread(instance)
+
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AuditLog
+        fields = [
+            'id',
+            'user',
+            'action',
+            'resource_type',
+            'resource_id',
+            'ip_address',
+            'metadata',
+            'timestamp'
+        ]
+        read_only_fields = ['id', 'user', 'action', 'resource_type', 'resource_id', 'ip_address', 'metadata', 'timestamp']
+
 
 
 

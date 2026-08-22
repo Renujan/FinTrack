@@ -3,7 +3,7 @@ from decimal import Decimal, InvalidOperation
 import django_filters
 from rest_framework import serializers
 from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency, GoalStatus, NotificationType
-from .models import Transaction, Budget, RecurringTransaction, FinancialGoal, Notification
+from .models import Transaction, Budget, RecurringTransaction, FinancialGoal, Notification, AuditLog
 from .services import BudgetCalculationService, GoalCalculationService
 
 
@@ -478,6 +478,39 @@ def validate_notification_filter_params(params):
 
     if errors:
         raise serializers.ValidationError(errors)
+
+
+class AuditLogFilter(django_filters.FilterSet):
+    action = django_filters.CharFilter(field_name='action', lookup_expr='iexact')
+    resource_type = django_filters.CharFilter(field_name='resource_type', lookup_expr='iexact')
+    start_date = django_filters.DateFilter(field_name='timestamp', lookup_expr='date__gte')
+    end_date = django_filters.DateFilter(field_name='timestamp', lookup_expr='date__lte')
+
+    class Meta:
+        model = AuditLog
+        fields = ['action', 'resource_type', 'start_date', 'end_date']
+
+
+def validate_audit_filter_params(params):
+    """
+    Validate query parameters for AuditLog filtering and ordering.
+    """
+    errors = {}
+    ordering_val = params.get('ordering')
+    if ordering_val:
+        allowed_ordering = {
+            'timestamp', '-timestamp',
+            'action', '-action',
+            'resource_type', '-resource_type'
+        }
+        requested_fields = [f.strip() for f in ordering_val.split(',') if f.strip()]
+        invalid_fields = [f for f in requested_fields if f not in allowed_ordering]
+        if invalid_fields:
+            errors['ordering'] = [f"Invalid ordering field(s): {', '.join(invalid_fields)}."]
+
+    if errors:
+        raise serializers.ValidationError(errors)
+
 
 
 
