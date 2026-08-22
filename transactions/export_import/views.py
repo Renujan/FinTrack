@@ -3,6 +3,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 
+from finance_tracker.throttling import ImportExportRateThrottle, AnalyticsRateThrottle
+from transactions.audit_services import AuditLogService
 from .serializers import ReportDateRangeSerializer, TransactionImportFileUploadSerializer
 from .services import DataExportService, FinancialReportService, TransactionImportService
 
@@ -13,9 +15,12 @@ class TransactionExportAPIView(APIView):
     Exports authenticated user's financial data (transactions, categories, budgets, goals, recurring) as CSV.
     """
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [ImportExportRateThrottle]
 
     def get(self, request, *args, **kwargs):
-        return DataExportService.export_transactions_csv(request.user, request.query_params)
+        response_obj = DataExportService.export_transactions_csv(request.user, request.query_params)
+        AuditLogService.log_export(request.user, 'Transaction', metadata={'export_format': 'csv'}, request=request)
+        return response_obj
 
 
 class CategoryExportAPIView(APIView):
@@ -24,9 +29,12 @@ class CategoryExportAPIView(APIView):
     Exports authenticated user's category list as CSV file.
     """
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [ImportExportRateThrottle]
 
     def get(self, request, *args, **kwargs):
-        return DataExportService.export_categories_csv(request.user)
+        response_obj = DataExportService.export_categories_csv(request.user)
+        AuditLogService.log_export(request.user, 'Category', metadata={'export_format': 'csv'}, request=request)
+        return response_obj
 
 
 class BudgetExportAPIView(APIView):
@@ -35,9 +43,12 @@ class BudgetExportAPIView(APIView):
     Exports authenticated user's budgets as CSV file.
     """
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [ImportExportRateThrottle]
 
     def get(self, request, *args, **kwargs):
-        return DataExportService.export_budgets_csv(request.user)
+        response_obj = DataExportService.export_budgets_csv(request.user)
+        AuditLogService.log_export(request.user, 'Budget', metadata={'export_format': 'csv'}, request=request)
+        return response_obj
 
 
 class FinancialGoalExportAPIView(APIView):
@@ -46,9 +57,12 @@ class FinancialGoalExportAPIView(APIView):
     Exports authenticated user's financial goals as CSV file.
     """
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [ImportExportRateThrottle]
 
     def get(self, request, *args, **kwargs):
-        return DataExportService.export_goals_csv(request.user)
+        response_obj = DataExportService.export_goals_csv(request.user)
+        AuditLogService.log_export(request.user, 'Goal', metadata={'export_format': 'csv'}, request=request)
+        return response_obj
 
 
 class RecurringTransactionExportAPIView(APIView):
@@ -57,9 +71,12 @@ class RecurringTransactionExportAPIView(APIView):
     Exports authenticated user's recurring transaction schedules as CSV file.
     """
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [ImportExportRateThrottle]
 
     def get(self, request, *args, **kwargs):
-        return DataExportService.export_recurring_csv(request.user)
+        response_obj = DataExportService.export_recurring_csv(request.user)
+        AuditLogService.log_export(request.user, 'RecurringTransaction', metadata={'export_format': 'csv'}, request=request)
+        return response_obj
 
 
 class FinancialReportAPIView(APIView):
@@ -70,6 +87,7 @@ class FinancialReportAPIView(APIView):
     budget utilization, and goal metrics. Supports start_date and end_date.
     """
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [AnalyticsRateThrottle]
 
     def get(self, request, *args, **kwargs):
         serializer = ReportDateRangeSerializer(data=request.query_params)
@@ -93,10 +111,10 @@ class TransactionImportAPIView(APIView):
     Imports transaction records from an uploaded CSV file for the authenticated user.
     """
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [ImportExportRateThrottle]
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request, *args, **kwargs):
-        # Extract uploaded file from request.FILES or request.data
         file_obj = request.FILES.get('file') or request.FILES.get('csv_file')
         if not file_obj and 'file' in request.data:
             file_obj = request.data['file']
@@ -108,6 +126,14 @@ class TransactionImportAPIView(APIView):
             user=request.user,
             file_obj=upload_serializer.validated_data['file']
         )
+
+        if result.get('success'):
+            AuditLogService.log_import(
+                user=request.user,
+                resource_type='Transaction',
+                metadata={'imported_count': result.get('imported_count', 0)},
+                request=request
+            )
 
         status_code = status.HTTP_200_OK if result['success'] else status.HTTP_400_BAD_REQUEST
         return Response(result, status=status_code)

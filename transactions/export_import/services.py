@@ -293,6 +293,18 @@ class TransactionImportService:
                 }]
             }
 
+        if len(rows) - 1 > 1000:
+            return {
+                'success': False,
+                'imported': 0,
+                'failed': 1,
+                'errors': [{
+                    'row': 0,
+                    'field': 'file',
+                    'message': 'CSV file contains more than 1000 rows limit.'
+                }]
+            }
+
         header_row = [col.strip().lower().replace(' ', '_') for col in rows[0]]
         header_map = {}
 
