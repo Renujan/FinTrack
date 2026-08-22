@@ -49,3 +49,19 @@ class NotificationType(models.TextChoices):
         return value in cls.values if value else False
 
 
+class AuditAction(models.TextChoices):
+    CREATE = 'CREATE', _('Create')
+    UPDATE = 'UPDATE', _('Update')
+    DELETE = 'DELETE', _('Delete')
+    IMPORT = 'IMPORT', _('Import')
+    EXPORT = 'EXPORT', _('Export')
+    LOGIN = 'LOGIN', _('Login')
+    LOGOUT = 'LOGOUT', _('Logout')
+    PASSWORD_CHANGE = 'PASSWORD_CHANGE', _('Password Change')
+
+    @classmethod
+    def is_valid_action(cls, value):
+        return value in cls.values if value else False
+
+
+
