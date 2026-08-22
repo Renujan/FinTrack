@@ -1,6 +1,7 @@
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from finance_tracker.throttling import AnalyticsRateThrottle
 from .services import AnalyticsService, parse_and_validate_date_range
 
 
@@ -10,6 +11,7 @@ class DashboardSummaryAPIView(APIView):
     Supports optional date filtering via start_date and end_date.
     """
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [AnalyticsRateThrottle]
 
     def get(self, request, *args, **kwargs):
         start_date, end_date = parse_and_validate_date_range(request.query_params)
@@ -23,6 +25,7 @@ class FinancialTrendsAPIView(APIView):
     Supports optional start_date, end_date, and group_by parameters.
     """
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [AnalyticsRateThrottle]
 
     def get(self, request, *args, **kwargs):
         start_date, end_date = parse_and_validate_date_range(request.query_params)
@@ -36,6 +39,7 @@ class MonthlySummaryAPIView(APIView):
     Returns financial summaries grouped chronologically by month.
     """
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [AnalyticsRateThrottle]
 
     def get(self, request, *args, **kwargs):
         start_date, end_date = parse_and_validate_date_range(request.query_params)
@@ -49,6 +53,7 @@ class CategoryAnalyticsAPIView(APIView):
     Supports limit parameter for top spending categories.
     """
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [AnalyticsRateThrottle]
 
     def get(self, request, *args, **kwargs):
         start_date, end_date = parse_and_validate_date_range(request.query_params)
@@ -62,6 +67,7 @@ class PeriodComparisonAPIView(APIView):
     Compares financial metrics between selected period and previous period of equal length.
     """
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [AnalyticsRateThrottle]
 
     def get(self, request, *args, **kwargs):
         start_date, end_date = parse_and_validate_date_range(request.query_params)
@@ -74,6 +80,7 @@ class BudgetAnalyticsAPIView(APIView):
     Returns budget-related financial analytics integrating Day 7 budget calculation logic.
     """
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [AnalyticsRateThrottle]
 
     def get(self, request, *args, **kwargs):
         start_date, end_date = parse_and_validate_date_range(request.query_params)
