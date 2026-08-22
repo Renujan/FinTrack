@@ -163,6 +163,9 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': os.getenv('THROTTLE_ANON_RATE', '30/minute'),
         'user': os.getenv('THROTTLE_USER_RATE', '100/minute'),
+        'auth': os.getenv('THROTTLE_AUTH_RATE', '10/minute'),
+        'analytics': os.getenv('THROTTLE_ANALYTICS_RATE', '20/minute'),
+        'import_export': os.getenv('THROTTLE_IMPORT_EXPORT_RATE', '10/minute'),
     },
     'EXCEPTION_HANDLER': 'finance_tracker.exceptions.custom_exception_handler',
 }
@@ -180,6 +183,8 @@ SIMPLE_JWT = {
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
 
 SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False').lower() in ('true', '1', 't')
 SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False').lower() in ('true', '1', 't')
