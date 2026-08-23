@@ -668,6 +668,11 @@ Day 14 builds the foundation for SaaS Subscription & Plan Management in the Djan
 - Upgrading to Premium immediately increases plan limits.
 - Downgrading to Free preserves all pre-existing user data. No data is deleted upon downgrade; creation of new resources is blocked if usage exceeds new plan limits.
 
+### 6. Architecture & Limits Summary
+- **Database Limits**: Enforced dynamically per user subscription plan fetched from database models (no hardcoded limits).
+- **Concurrency & Isolation**: One active subscription per user; cross-tenant modification prevented by DRF user-ownership scoping.
+
+
 ---
 
 ## 📄 License
