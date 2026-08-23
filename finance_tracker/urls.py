@@ -23,6 +23,7 @@ urlpatterns = [
     path('api/health/', health_check, name='health-check'),
     path('api/auth/', include('authentication.urls', namespace='auth')),
     path('api/v1/users/', include('users.urls', namespace='users')),
+    path('api/subscription/', include('subscriptions.urls', namespace='subscriptions')),
     path('api/', include('transactions.urls', namespace='transactions')),
 ]
 
