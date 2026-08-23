@@ -12,6 +12,7 @@ from transactions.models import Transaction, Category, Budget, FinancialGoal, Re
 from transactions.filters import TransactionFilter, validate_filter_params
 from transactions.analytics.services import AnalyticsService
 from transactions.services import BudgetCalculationService, GoalCalculationService
+from subscriptions.services import SubscriptionService
 
 
 class DataExportService:
@@ -19,6 +20,7 @@ class DataExportService:
     Service layer providing user-scoped CSV exports for Transactions, Categories,
     Budgets, Financial Goals, and Recurring Transactions.
     """
+
 
     @classmethod
     def export_transactions_csv(cls, user, params=None):
@@ -292,6 +294,10 @@ class TransactionImportService:
                     'message': 'Uploaded CSV file is empty.'
                 }]
             }
+
+        data_rows_count = max(0, len(rows) - 1)
+        if data_rows_count > 0:
+            SubscriptionService.can_import(user, count=data_rows_count)
 
         if len(rows) - 1 > 1000:
             return {
