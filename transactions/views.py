@@ -37,6 +37,7 @@ from .serializers import (
 )
 from .services import BudgetCalculationService, RecurringTransactionService, GoalCalculationService, NotificationService
 from .audit_services import AuditLogService
+from subscriptions.services import SubscriptionService
 
 
 class CategoryListCreateView(generics.ListCreateAPIView):
@@ -59,6 +60,7 @@ class CategoryListCreateView(generics.ListCreateAPIView):
         return Category.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
+        SubscriptionService.can_create_category(self.request.user)
         instance = serializer.save(user=self.request.user)
         AuditLogService.log_create(self.request.user, 'Category', instance.id, metadata={'name': instance.name}, request=self.request)
 
@@ -141,6 +143,7 @@ class TransactionListCreateView(generics.ListCreateAPIView):
         return super().filter_queryset(queryset)
 
     def perform_create(self, serializer):
+        SubscriptionService.can_create_transaction(self.request.user)
         instance = serializer.save(user=self.request.user)
         AuditLogService.log_create(self.request.user, 'Transaction', instance.id, metadata={'amount': str(instance.amount), 'type': instance.transaction_type}, request=self.request)
 
@@ -214,6 +217,7 @@ class BudgetListCreateView(generics.ListCreateAPIView):
         return super().filter_queryset(queryset)
 
     def perform_create(self, serializer):
+        SubscriptionService.can_create_budget(self.request.user)
         instance = serializer.save(user=self.request.user)
         AuditLogService.log_create(self.request.user, 'Budget', instance.id, metadata={'name': instance.name, 'amount': str(instance.amount)}, request=self.request)
 
@@ -267,6 +271,7 @@ class RecurringTransactionListCreateView(generics.ListCreateAPIView):
         return super().filter_queryset(queryset)
 
     def perform_create(self, serializer):
+        SubscriptionService.can_create_recurring_transaction(self.request.user)
         instance = serializer.save(user=self.request.user)
         AuditLogService.log_create(self.request.user, 'RecurringTransaction', instance.id, metadata={'name': instance.name, 'amount': str(instance.amount)}, request=self.request)
 
@@ -367,6 +372,7 @@ class FinancialGoalListCreateView(generics.ListCreateAPIView):
         return super().filter_queryset(queryset)
 
     def perform_create(self, serializer):
+        SubscriptionService.can_create_goal(self.request.user)
         instance = serializer.save(user=self.request.user)
         AuditLogService.log_create(self.request.user, 'Goal', instance.id, metadata={'name': instance.name, 'target_amount': str(instance.target_amount)}, request=self.request)
 
