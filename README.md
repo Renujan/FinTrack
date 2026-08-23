@@ -607,10 +607,72 @@ python -m pytest transactions/tests/test_notifications.py
 
 
 
+
+---
+
+## 💳 Day 14 — SaaS Subscription & Plan Management
+
+Day 14 builds the foundation for SaaS Subscription & Plan Management in the Django REST Framework backend.
+
+> [!NOTE]
+> Payment gateway integration (e.g. Stripe) is intentionally not implemented in Day 14. Plan transitions and state changes represent safe backend business-logic operations.
+
+### 1. Subscription Models & Architecture
+- **`SubscriptionPlan`**:
+  - Defines available tiers (`free`, `premium`, custom plans).
+  - Pricing (Decimal), billing period (`MONTHLY`, `YEARLY`), and feature flags JSON.
+  - Configurable limits: `max_transactions`, `max_budgets`, `max_goals`, `max_categories`, `max_recurring_transactions`, `max_import_size` (`-1` for unlimited).
+- **`UserSubscription`**:
+  - One-to-one user relationship ensuring no conflicting active subscriptions per user.
+  - Status tracking: `ACTIVE`, `TRIAL`, `EXPIRED`, `CANCELLED`.
+  - Expiration detection: dynamic calculation based on `end_date` vs current timestamp.
+
+### 2. Default Free Plan & Auto-Provisioning
+- Default **Free Plan** parameters:
+  - Transactions: 500 / month
+  - Budgets: 5
+  - Financial Goals: 3
+  - Categories: 20
+  - Recurring Transactions: 5
+  - Max CSV Import Rows: 100
+- Users without an explicit subscription are automatically provisioned with a default Free Plan subscription upon request.
+
+### 3. Usage Calculation & Access Control Service
+- `SubscriptionService` centralizes usage tracking and limit checking:
+  - `get_usage(user)`: Returns current usage vs plan limits.
+  - `check_limit(user, limit_type)`: Enforces limits on transactions, budgets, goals, categories, recurring rules, and imports.
+  - When a user exceeds a limit, a HTTP `403 Forbidden` response is returned with code `PLAN_LIMIT_REACHED`.
+  - Example error payload:
+    ```json
+    {
+        "detail": "Plan limit reached for transactions. Current usage: 500, Maximum allowed: 500.",
+        "error_code": "PLAN_LIMIT_REACHED",
+        "limit_type": "transactions",
+        "current_usage": 500,
+        "max_allowed": 500,
+        "upgrade_suggestion": "Please upgrade your subscription plan to increase your resource limits."
+    }
+    ```
+
+### 4. Subscription API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/subscription/` | Get current user's subscription details |
+| `GET` | `/api/subscription/usage/` | Get usage counts vs. plan limits |
+| `GET` | `/api/subscription/plans/` | List all available active subscription plans |
+| `POST` | `/api/subscription/upgrade/` | Upgrade/change user plan (e.g. `{"plan_code": "premium"}`) |
+| `POST` | `/api/subscription/cancel/` | Cancel user subscription (sets `auto_renew=False`) |
+
+### 5. Plan Transitions & Data Integrity
+- Upgrading to Premium immediately increases plan limits.
+- Downgrading to Free preserves all pre-existing user data. No data is deleted upon downgrade; creation of new resources is blocked if usage exceeds new plan limits.
+
 ---
 
 ## 📄 License
 MIT License
+
 
 
 
