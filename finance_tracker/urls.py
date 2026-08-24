@@ -16,14 +16,34 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularRedocView,
+    SpectacularSwaggerView,
+)
 from finance_tracker.views import health_check
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/health/', health_check, name='health-check'),
+
+    # OpenAPI Schema & Documentation Endpoints
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+
+    # Core API Routes
     path('api/auth/', include('authentication.urls', namespace='auth')),
-    path('api/v1/users/', include('users.urls', namespace='users')),
+    path('api/users/', include('users.urls', namespace='users')),
     path('api/subscription/', include('subscriptions.urls', namespace='subscriptions')),
     path('api/', include('transactions.urls', namespace='transactions')),
+
+    # API v1 Route Aliases for Versioning Readiness
+    path('api/v1/health/', health_check, name='v1-health-check'),
+    path('api/v1/auth/', include('authentication.urls', namespace='v1-auth')),
+    path('api/v1/users/', include('users.urls', namespace='v1-users')),
+    path('api/v1/subscription/', include('subscriptions.urls', namespace='v1-subscriptions')),
+    path('api/v1/', include('transactions.urls', namespace='v1-transactions')),
 ]
+
 
