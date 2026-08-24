@@ -2,12 +2,30 @@ from rest_framework import status, generics, permissions
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework_simplejwt.views import TokenObtainPairView
+from drf_spectacular.utils import extend_schema, OpenApiResponse, inline_serializer
+from rest_framework import serializers
 
 from finance_tracker.throttling import AuthRateThrottle, UserAuthRateThrottle
 from transactions.audit_services import AuditLogService
 from authentication.serializers import RegisterSerializer, UserProfileSerializer
 
 
+@extend_schema(
+    tags=['Authentication'],
+    summary='Obtain JWT Access & Refresh Tokens (Login)',
+    description='Authenticates user credentials and returns JWT access and refresh tokens. Logs login audit events upon success.',
+    responses={
+        200: inline_serializer(
+            name='TokenObtainResponse',
+            fields={
+                'access': serializers.CharField(),
+                'refresh': serializers.CharField(),
+            }
+        ),
+        401: OpenApiResponse(description='Invalid credentials'),
+        429: OpenApiResponse(description='Rate limit exceeded'),
+    }
+)
 class AuditLogTokenObtainPairView(TokenObtainPairView):
     """
     Subclass of SimpleJWT TokenObtainPairView to apply rate limiting and audit logging on login.
@@ -27,6 +45,30 @@ class AuditLogTokenObtainPairView(TokenObtainPairView):
         return res
 
 
+@extend_schema(
+    tags=['Authentication'],
+    summary='Register a New User',
+    description='Registers a new user account with default subscription tier, email, password, and currency preference.',
+    request=RegisterSerializer,
+    responses={
+        201: inline_serializer(
+            name='RegisterSuccessResponse',
+            fields={
+                'message': serializers.CharField(default='User registered successfully'),
+                'user': inline_serializer(
+                    name='RegisteredUserDetail',
+                    fields={
+                        'id': serializers.IntegerField(),
+                        'username': serializers.CharField(),
+                        'email': serializers.EmailField(),
+                        'currency': serializers.CharField(),
+                    }
+                )
+            }
+        ),
+        400: OpenApiResponse(description='Validation error or existing username/email'),
+    }
+)
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
@@ -51,6 +93,23 @@ class RegisterView(generics.CreateAPIView):
         )
 
 
+@extend_schema(
+    tags=['Authentication'],
+    summary='Blacklist Refresh Token (Logout)',
+    description='Blacklists the provided JWT refresh token to revoke future access.',
+    request=inline_serializer(
+        name='LogoutRequest',
+        fields={'refresh': serializers.CharField(help_text='JWT Refresh Token')}
+    ),
+    responses={
+        200: inline_serializer(
+            name='LogoutSuccessResponse',
+            fields={'message': serializers.CharField(default='Successfully logged out')}
+        ),
+        400: OpenApiResponse(description='Missing or invalid refresh token'),
+        401: OpenApiResponse(description='Authentication credentials were not provided'),
+    }
+)
 class LogoutView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     throttle_classes = [UserAuthRateThrottle]
@@ -77,9 +136,20 @@ class LogoutView(generics.GenericAPIView):
             )
 
 
+@extend_schema(
+    tags=['Authentication'],
+    summary='Retrieve or Update Current User Profile',
+    description='Retrieves or updates authenticated user details including email, name, and currency configuration.',
+    responses={
+        200: UserProfileSerializer,
+        400: OpenApiResponse(description='Invalid profile update data'),
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
 class UserProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = UserProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
         return self.request.user
+
