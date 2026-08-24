@@ -188,6 +188,18 @@ SPECTACULAR_SETTINGS = {
         'defaultModelsExpandDepth': 2,
         'defaultModelExpandDepth': 2,
     },
+    'REDOC_UI_SETTINGS': {
+        'expandResponses': '200,201',
+        'pathInMiddlePanel': True,
+        'hideDownloadButton': False,
+        'theme': {
+            'colors': {
+                'primary': {
+                    'main': '#2563eb'
+                }
+            }
+        }
+    },
     'SECURITY': [{
         'jwtAuth': []
     }],
@@ -200,6 +212,7 @@ SPECTACULAR_SETTINGS = {
         }
     },
 }
+
 
 
 # Simple JWT Configuration
