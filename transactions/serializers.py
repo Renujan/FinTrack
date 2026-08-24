@@ -187,8 +187,9 @@ class RecurringTransactionSerializer(serializers.ModelSerializer):
     transaction_type, recurrence frequency, user-owned category validation,
     and schedule date-range boundaries.
     """
-    category_name = serializers.ReadOnlyField(source='category.name')
-    next_run_date = serializers.DateField(required=False)
+    category_name = serializers.ReadOnlyField(source='category.name', help_text='Name of the associated category')
+    next_run_date = serializers.DateField(required=False, help_text='Next scheduled date for automated transaction execution (YYYY-MM-DD)')
+
 
     class Meta:
         model = RecurringTransaction
