@@ -1,6 +1,9 @@
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema, OpenApiResponse, inline_serializer
+from rest_framework import serializers
+
 from .models import SubscriptionPlan
 from .serializers import (
     SubscriptionPlanSerializer,
@@ -10,6 +13,15 @@ from .serializers import (
 from .services import SubscriptionService
 
 
+@extend_schema(
+    tags=['Subscriptions'],
+    summary='Retrieve Current Subscription Details',
+    description='Returns authenticated user active subscription plan, status, period dates, and auto-renewal configuration.',
+    responses={
+        200: UserSubscriptionSerializer,
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
 class SubscriptionDetailView(APIView):
     """
     GET /api/subscription/
@@ -23,6 +35,15 @@ class SubscriptionDetailView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    tags=['Subscriptions'],
+    summary='Retrieve Subscription Quota & Usage',
+    description='Returns consumption metrics against plan limits for transactions, categories, budgets, recurring items, and goals.',
+    responses={
+        200: OpenApiResponse(description='Usage metrics and plan limit breakdown'),
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
 class SubscriptionUsageView(APIView):
     """
     GET /api/subscription/usage/
@@ -35,6 +56,15 @@ class SubscriptionUsageView(APIView):
         return Response(usage_data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    tags=['Subscriptions'],
+    summary='List Active Subscription Plans',
+    description='Retrieves all active subscription tiers available for purchase or upgrade.',
+    responses={
+        200: SubscriptionPlanSerializer(many=True),
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
 class SubscriptionPlanListView(generics.ListAPIView):
     """
     GET /api/subscription/plans/
@@ -50,6 +80,23 @@ class SubscriptionPlanListView(generics.ListAPIView):
         return SubscriptionPlan.objects.filter(is_active=True).order_by('price')
 
 
+@extend_schema(
+    tags=['Subscriptions'],
+    summary='Upgrade or Switch Subscription Plan',
+    description='Switches the authenticated user to a target subscription plan tier (e.g. FREE, PREMIUM, PRO, ENTERPRISE).',
+    request=SubscriptionUpgradeSerializer,
+    responses={
+        200: inline_serializer(
+            name='SubscriptionUpgradeResponse',
+            fields={
+                'detail': serializers.CharField(),
+                'subscription': UserSubscriptionSerializer(),
+            }
+        ),
+        400: OpenApiResponse(description='Invalid plan code or validation error'),
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
 class SubscriptionUpgradeView(APIView):
     """
     POST /api/subscription/upgrade/
@@ -75,6 +122,21 @@ class SubscriptionUpgradeView(APIView):
         )
 
 
+@extend_schema(
+    tags=['Subscriptions'],
+    summary='Cancel Active Subscription',
+    description='Cancels auto-renewal for the user subscription without purging historical data.',
+    responses={
+        200: inline_serializer(
+            name='SubscriptionCancelResponse',
+            fields={
+                'detail': serializers.CharField(),
+                'subscription': UserSubscriptionSerializer(),
+            }
+        ),
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
 class SubscriptionCancelView(APIView):
     """
     POST /api/subscription/cancel/
@@ -92,3 +154,4 @@ class SubscriptionCancelView(APIView):
             },
             status=status.HTTP_200_OK
         )
+
