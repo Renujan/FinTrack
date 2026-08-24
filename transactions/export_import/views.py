@@ -1,7 +1,8 @@
-from rest_framework import status, permissions
+from rest_framework import status, permissions, serializers
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes, OpenApiResponse, inline_serializer
 
 from finance_tracker.throttling import ImportExportRateThrottle, AnalyticsRateThrottle
 from transactions.audit_services import AuditLogService
@@ -9,6 +10,21 @@ from .serializers import ReportDateRangeSerializer, TransactionImportFileUploadS
 from .services import DataExportService, FinancialReportService, TransactionImportService
 
 
+@extend_schema(
+    tags=['Import & Export'],
+    summary='Export Transactions CSV',
+    description='Generates and streams a downloadable CSV file containing transactions filtered by optional parameters.',
+    parameters=[
+        OpenApiParameter(name='start_date', type=OpenApiTypes.DATE, description='Start date filter (YYYY-MM-DD)'),
+        OpenApiParameter(name='end_date', type=OpenApiTypes.DATE, description='End date filter (YYYY-MM-DD)'),
+        OpenApiParameter(name='category', type=OpenApiTypes.INT, description='Category ID filter'),
+        OpenApiParameter(name='transaction_type', type=OpenApiTypes.STR, enum=['income', 'expense'], description='Transaction type filter'),
+    ],
+    responses={
+        200: OpenApiResponse(description='CSV File Download (text/csv)'),
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
 class TransactionExportAPIView(APIView):
     """
     GET /api/export/transactions/
@@ -23,6 +39,15 @@ class TransactionExportAPIView(APIView):
         return response_obj
 
 
+@extend_schema(
+    tags=['Import & Export'],
+    summary='Export Categories CSV',
+    description='Exports a CSV file of all custom and system categories for the authenticated user.',
+    responses={
+        200: OpenApiResponse(description='CSV File Download (text/csv)'),
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
 class CategoryExportAPIView(APIView):
     """
     GET /api/export/categories/
@@ -37,6 +62,15 @@ class CategoryExportAPIView(APIView):
         return response_obj
 
 
+@extend_schema(
+    tags=['Import & Export'],
+    summary='Export Budgets CSV',
+    description='Exports a CSV file of all category budgets and progress metrics.',
+    responses={
+        200: OpenApiResponse(description='CSV File Download (text/csv)'),
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
 class BudgetExportAPIView(APIView):
     """
     GET /api/export/budgets/
@@ -51,6 +85,15 @@ class BudgetExportAPIView(APIView):
         return response_obj
 
 
+@extend_schema(
+    tags=['Import & Export'],
+    summary='Export Financial Goals CSV',
+    description='Exports a CSV file of all financial goal targets and completion percentages.',
+    responses={
+        200: OpenApiResponse(description='CSV File Download (text/csv)'),
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
 class FinancialGoalExportAPIView(APIView):
     """
     GET /api/export/goals/
@@ -65,6 +108,15 @@ class FinancialGoalExportAPIView(APIView):
         return response_obj
 
 
+@extend_schema(
+    tags=['Import & Export'],
+    summary='Export Recurring Schedules CSV',
+    description='Exports a CSV file of all automated recurring transaction schedules.',
+    responses={
+        200: OpenApiResponse(description='CSV File Download (text/csv)'),
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
 class RecurringTransactionExportAPIView(APIView):
     """
     GET /api/export/recurring/
@@ -79,6 +131,20 @@ class RecurringTransactionExportAPIView(APIView):
         return response_obj
 
 
+@extend_schema(
+    tags=['Reports'],
+    summary='Unified Financial Report',
+    description='Generates a consolidated financial report including totals, category breakdown, monthly distribution, budgets, and goal progress.',
+    parameters=[
+        OpenApiParameter(name='start_date', type=OpenApiTypes.DATE, description='Start date filter (YYYY-MM-DD)'),
+        OpenApiParameter(name='end_date', type=OpenApiTypes.DATE, description='End date filter (YYYY-MM-DD)'),
+    ],
+    responses={
+        200: OpenApiResponse(description='Unified financial report JSON structure'),
+        400: OpenApiResponse(description='Invalid date range parameters'),
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
 class FinancialReportAPIView(APIView):
     """
     GET /api/reports/financial/
@@ -105,6 +171,24 @@ class FinancialReportAPIView(APIView):
         return Response(report_data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    tags=['Import & Export'],
+    summary='Bulk Import Transactions CSV',
+    description='Accepts a multipart CSV file upload and imports transaction records into the user dataset with field validation.',
+    request=TransactionImportFileUploadSerializer,
+    responses={
+        200: inline_serializer(
+            name='TransactionImportSuccessResponse',
+            fields={
+                'success': serializers.BooleanField(default=True),
+                'imported_count': serializers.IntegerField(),
+                'errors': serializers.ListField(child=serializers.CharField(), default=[]),
+            }
+        ),
+        400: OpenApiResponse(description='CSV parsing or row validation error'),
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
 class TransactionImportAPIView(APIView):
     """
     POST /api/import/transactions/
@@ -137,3 +221,4 @@ class TransactionImportAPIView(APIView):
 
         status_code = status.HTTP_200_OK if result['success'] else status.HTTP_400_BAD_REQUEST
         return Response(result, status=status_code)
+
