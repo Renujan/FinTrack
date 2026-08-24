@@ -41,9 +41,22 @@ The system follows clean modular monolithic architecture designed for SaaS scala
 - [x] **Day 11**: Notifications & Financial Alerts (Notification model, notification choices, NotificationService, budget warning/exceeded alerts, goal warning/completed alerts, recurring transaction due/generated/expired alerts, duplicate protection, read/unread state management, list/retrieve/update/delete API endpoints, mark-all-read endpoint, filtering, search, pagination, process_financial_notifications management command, 222 total automated tests, 13 Git commits).
 - [x] **Day 12**: Data Export, Import & Financial Reports (Financial data export services, transaction CSV export with filters, categories/budgets/goals/recurring CSV exports, unified financial reports API, date range filtering, transaction CSV import with strict row validation, cross-user category protection, row fingerprint duplicate import protection, security & file handling, 249 total automated tests, 12 Git commits).
 - [x] **Day 13**: API Security, Rate Limiting, Audit Logs & Production Hardening (JWT auth hardening, permission enforcement, IDOR protection, centralized rate throttling for auth/analytics/imports, AuditLog model & AuditLogService, audit trail APIs (/api/audit-logs/), audit hooks across CRUD/auth/import operations, error response sanitization, import file size/row limits, SECURITY.md guide, production Django checks, 269 total automated tests, 13 Git commits).
-
+- [x] **Day 14**: Subscription Plans, Tier Limits & Usage Tracking (SubscriptionPlan & UserSubscription models, FREE/PREMIUM/PRO/ENTERPRISE tiers, usage tracking service, limit enforcement on transactions, categories, budgets, recurring items, and goals, subscription detail, plans list, usage, upgrade, and cancel APIs, 290 total automated tests, 13 Git commits).
+- [x] **Day 15**: API Documentation, OpenAPI & Developer Experience (OpenAPI 3.0 schema generation via `drf-spectacular`, interactive Swagger UI at `/api/docs/`, ReDoc reference at `/api/redoc/`, raw OpenAPI schema at `/api/schema/`, `@extend_schema` annotations, versioning readiness at `/api/v1/`, complete developer guide in `API.md`, 13 Git commits).
 
 ---
+
+## 📖 API Documentation & OpenAPI Specification (Day 15)
+
+The SaaS Finance Tracker provides complete interactive and reference API documentation:
+
+- **Swagger UI**: [`/api/docs/`](http://127.0.0.1:8000/api/docs/) — Interactive API testing and parameter inspection.
+- **ReDoc**: [`/api/redoc/`](http://127.0.0.1:8000/api/redoc/) — Clean 3-panel API reference.
+- **OpenAPI Schema**: [`/api/schema/`](http://127.0.0.1:8000/api/schema/) — Raw OpenAPI 3.0 specification (YAML/JSON).
+- **Developer Guide**: Refer to [`API.md`](file:///c:/Users/Renu/Desktop/git_plan/API.md) for full integration architecture, environment setup, JWT headers, filtering options, status codes, and endpoint payloads.
+
+---
+
 
 ## 📤 Data Export, Import & Financial Reporting API Documentation (Day 12)
 
