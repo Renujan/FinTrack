@@ -1,8 +1,9 @@
 from django.shortcuts import get_object_or_404
 from django.db.models import ProtectedError, Case, When
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import generics, permissions, filters, status, response
+from rest_framework import generics, permissions, filters, status, response, serializers
 from rest_framework.views import APIView
+from drf_spectacular.utils import extend_schema, OpenApiResponse, inline_serializer
 from .filters import (
     TransactionFilter,
     BudgetFilter,
@@ -40,6 +41,18 @@ from .audit_services import AuditLogService
 from subscriptions.services import SubscriptionService
 
 
+@extend_schema(
+    tags=['Categories'],
+    summary='List or Create Income/Expense Categories',
+    description='Retrieves custom and system categories or creates a new user category subject to subscription limit checks.',
+    responses={
+        200: CategorySerializer(many=True),
+        201: CategorySerializer,
+        400: OpenApiResponse(description='Validation error or invalid payload'),
+        402: OpenApiResponse(description='Category creation limit exceeded for active subscription plan'),
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
 class CategoryListCreateView(generics.ListCreateAPIView):
     """
     List and create categories for the authenticated user.
@@ -65,7 +78,19 @@ class CategoryListCreateView(generics.ListCreateAPIView):
         AuditLogService.log_create(self.request.user, 'Category', instance.id, metadata={'name': instance.name}, request=self.request)
 
 
+@extend_schema(
+    tags=['Categories'],
+    summary='Retrieve, Update, or Delete Category',
+    description='Retrieves, updates, or deletes a category owned by the authenticated user. Deletion is blocked if referenced by active transactions.',
+    responses={
+        200: CategorySerializer,
+        400: OpenApiResponse(description='Cannot delete category because it is being used by existing transactions.'),
+        401: OpenApiResponse(description='Authentication required'),
+        404: OpenApiResponse(description='Category not found'),
+    }
+)
 class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
+
     """
     Retrieve, update (PUT/PATCH), or delete a category owned by the authenticated user.
     Protects category deletion if associated transactions exist.
@@ -95,6 +120,18 @@ class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
         return response.Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@extend_schema(
+    tags=['Transactions'],
+    summary='List or Create Transactions',
+    description='Retrieves a paginated list of transactions filtered by date range, category, type, amount, or creates a new transaction.',
+    responses={
+        200: TransactionSerializer(many=True),
+        201: TransactionSerializer,
+        400: OpenApiResponse(description='Validation error or invalid query parameters'),
+        402: OpenApiResponse(description='Transaction creation limit reached for active subscription plan'),
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
 class TransactionListCreateView(generics.ListCreateAPIView):
     """
     List and create transactions for the authenticated user.
@@ -148,6 +185,17 @@ class TransactionListCreateView(generics.ListCreateAPIView):
         AuditLogService.log_create(self.request.user, 'Transaction', instance.id, metadata={'amount': str(instance.amount), 'type': instance.transaction_type}, request=self.request)
 
 
+@extend_schema(
+    tags=['Transactions'],
+    summary='Retrieve, Update, or Delete Transaction',
+    description='Retrieves, updates, or deletes a specific transaction owned by the authenticated user.',
+    responses={
+        200: TransactionSerializer,
+        400: OpenApiResponse(description='Validation error'),
+        401: OpenApiResponse(description='Authentication required'),
+        404: OpenApiResponse(description='Transaction not found'),
+    }
+)
 class TransactionDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TransactionSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwner]
@@ -169,6 +217,18 @@ class TransactionDetailView(generics.RetrieveUpdateDestroyAPIView):
         AuditLogService.log_delete(self.request.user, 'Transaction', txn_id, metadata=meta, request=self.request)
 
 
+@extend_schema(
+    tags=['Budgets'],
+    summary='List or Create Category Budgets',
+    description='Retrieves a list of spending budgets with progress metrics or creates a new budget.',
+    responses={
+        200: BudgetSerializer(many=True),
+        201: BudgetSerializer,
+        400: OpenApiResponse(description='Validation error or invalid query params'),
+        402: OpenApiResponse(description='Budget creation limit reached for active subscription plan'),
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
 class BudgetListCreateView(generics.ListCreateAPIView):
     """
     List and create budgets for the authenticated user.
@@ -222,7 +282,19 @@ class BudgetListCreateView(generics.ListCreateAPIView):
         AuditLogService.log_create(self.request.user, 'Budget', instance.id, metadata={'name': instance.name, 'amount': str(instance.amount)}, request=self.request)
 
 
+@extend_schema(
+    tags=['Budgets'],
+    summary='Retrieve, Update, or Delete Budget',
+    description='Retrieves, updates, or deletes a specific budget owned by the authenticated user.',
+    responses={
+        200: BudgetSerializer,
+        400: OpenApiResponse(description='Validation error'),
+        401: OpenApiResponse(description='Authentication required'),
+        404: OpenApiResponse(description='Budget not found'),
+    }
+)
 class BudgetDetailView(generics.RetrieveUpdateDestroyAPIView):
+
     """
     Retrieve, update (PUT/PATCH), or delete a budget owned by the authenticated user.
     """
@@ -243,6 +315,18 @@ class BudgetDetailView(generics.RetrieveUpdateDestroyAPIView):
         AuditLogService.log_delete(self.request.user, 'Budget', b_id, metadata=meta, request=self.request)
 
 
+@extend_schema(
+    tags=['Recurring Transactions'],
+    summary='List or Create Recurring Schedules',
+    description='Retrieves a list of automated recurring income/expense schedules or creates a new schedule.',
+    responses={
+        200: RecurringTransactionSerializer(many=True),
+        201: RecurringTransactionSerializer,
+        400: OpenApiResponse(description='Validation error or invalid query params'),
+        402: OpenApiResponse(description='Recurring schedule creation limit reached'),
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
 class RecurringTransactionListCreateView(generics.ListCreateAPIView):
     """
     List and create recurring transactions for the authenticated user.
@@ -276,6 +360,17 @@ class RecurringTransactionListCreateView(generics.ListCreateAPIView):
         AuditLogService.log_create(self.request.user, 'RecurringTransaction', instance.id, metadata={'name': instance.name, 'amount': str(instance.amount)}, request=self.request)
 
 
+@extend_schema(
+    tags=['Recurring Transactions'],
+    summary='Retrieve, Update, or Delete Recurring Schedule',
+    description='Retrieves, updates, or deletes a specific recurring transaction schedule owned by the authenticated user.',
+    responses={
+        200: RecurringTransactionSerializer,
+        400: OpenApiResponse(description='Validation error'),
+        401: OpenApiResponse(description='Authentication required'),
+        404: OpenApiResponse(description='Recurring transaction not found'),
+    }
+)
 class RecurringTransactionDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
     Retrieve, update (PUT/PATCH), or delete a recurring transaction owned by the authenticated user.
@@ -297,6 +392,16 @@ class RecurringTransactionDetailView(generics.RetrieveUpdateDestroyAPIView):
         AuditLogService.log_delete(self.request.user, 'RecurringTransaction', r_id, metadata=meta, request=self.request)
 
 
+@extend_schema(
+    tags=['Recurring Transactions'],
+    summary='Pause Recurring Schedule',
+    description='Pauses execution of a recurring transaction schedule without deleting it.',
+    responses={
+        200: RecurringTransactionSerializer,
+        401: OpenApiResponse(description='Authentication required'),
+        404: OpenApiResponse(description='Recurring transaction schedule not found'),
+    }
+)
 class RecurringTransactionPauseView(APIView):
     """
     Pause an active recurring transaction schedule for the authenticated user.
@@ -310,6 +415,16 @@ class RecurringTransactionPauseView(APIView):
         return response.Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    tags=['Recurring Transactions'],
+    summary='Resume Recurring Schedule',
+    description='Resumes execution of a previously paused recurring transaction schedule.',
+    responses={
+        200: RecurringTransactionSerializer,
+        401: OpenApiResponse(description='Authentication required'),
+        404: OpenApiResponse(description='Recurring transaction schedule not found'),
+    }
+)
 class RecurringTransactionResumeView(APIView):
     """
     Resume a paused recurring transaction schedule for the authenticated user.
@@ -323,7 +438,20 @@ class RecurringTransactionResumeView(APIView):
         return response.Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    tags=['Financial Goals'],
+    summary='List or Create Financial Savings Goals',
+    description='Retrieves a list of financial goals with target calculations and completion progress or creates a new goal.',
+    responses={
+        200: FinancialGoalSerializer(many=True),
+        201: FinancialGoalSerializer,
+        400: OpenApiResponse(description='Validation error or invalid query parameters'),
+        402: OpenApiResponse(description='Financial goal limit reached'),
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
 class FinancialGoalListCreateView(generics.ListCreateAPIView):
+
     """
     List and create financial goals for the authenticated user.
     Supports search across goal name, description, and category name, filtering, ordering, and pagination.
@@ -377,6 +505,17 @@ class FinancialGoalListCreateView(generics.ListCreateAPIView):
         AuditLogService.log_create(self.request.user, 'Goal', instance.id, metadata={'name': instance.name, 'target_amount': str(instance.target_amount)}, request=self.request)
 
 
+@extend_schema(
+    tags=['Financial Goals'],
+    summary='Retrieve, Update, or Delete Financial Goal',
+    description='Retrieves, updates, or deletes a specific financial goal owned by the authenticated user.',
+    responses={
+        200: FinancialGoalSerializer,
+        400: OpenApiResponse(description='Validation error'),
+        401: OpenApiResponse(description='Authentication required'),
+        404: OpenApiResponse(description='Goal not found'),
+    }
+)
 class FinancialGoalDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
     Retrieve, update (PUT/PATCH), or delete a financial goal owned by the authenticated user.
@@ -398,6 +537,16 @@ class FinancialGoalDetailView(generics.RetrieveUpdateDestroyAPIView):
         AuditLogService.log_delete(self.request.user, 'Goal', g_id, metadata=meta, request=self.request)
 
 
+@extend_schema(
+    tags=['Financial Goals'],
+    summary='Pause Financial Goal',
+    description='Pauses active monitoring of a financial goal.',
+    responses={
+        200: FinancialGoalSerializer,
+        401: OpenApiResponse(description='Authentication required'),
+        404: OpenApiResponse(description='Goal not found'),
+    }
+)
 class FinancialGoalPauseView(APIView):
     """
     Pause an active financial goal for the authenticated user.
@@ -414,6 +563,16 @@ class FinancialGoalPauseView(APIView):
         return response.Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    tags=['Financial Goals'],
+    summary='Resume Financial Goal',
+    description='Resumes monitoring of a previously paused financial goal.',
+    responses={
+        200: FinancialGoalSerializer,
+        401: OpenApiResponse(description='Authentication required'),
+        404: OpenApiResponse(description='Goal not found'),
+    }
+)
 class FinancialGoalResumeView(APIView):
     """
     Resume a paused financial goal for the authenticated user.
@@ -430,6 +589,16 @@ class FinancialGoalResumeView(APIView):
         return response.Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    tags=['Notifications'],
+    summary='List Notifications',
+    description='Retrieves a paginated list of user notifications with filter parameters.',
+    responses={
+        200: NotificationSerializer(many=True),
+        400: OpenApiResponse(description='Invalid query parameters'),
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
 class NotificationListView(generics.ListAPIView):
     """
     List notifications for the authenticated user.
@@ -452,6 +621,16 @@ class NotificationListView(generics.ListAPIView):
         return super().list(request, *args, **kwargs)
 
 
+@extend_schema(
+    tags=['Notifications'],
+    summary='Retrieve, Update, or Delete Notification',
+    description='Retrieves, updates (e.g. mark as read), or deletes a notification.',
+    responses={
+        200: NotificationSerializer,
+        401: OpenApiResponse(description='Authentication required'),
+        404: OpenApiResponse(description='Notification not found'),
+    }
+)
 class NotificationDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
     Retrieve, update (PATCH for read status), or delete a notification owned by the authenticated user.
@@ -482,6 +661,21 @@ class NotificationDetailView(generics.RetrieveUpdateDestroyAPIView):
         AuditLogService.log_delete(self.request.user, 'Notification', n_id, request=self.request)
 
 
+@extend_schema(
+    tags=['Notifications'],
+    summary='Mark All Notifications as Read',
+    description='Marks all unread notifications for the current authenticated user as read.',
+    responses={
+        200: inline_serializer(
+            name='MarkAllReadResponse',
+            fields={
+                'message': serializers.CharField(default='All notifications marked as read.'),
+                'updated_count': serializers.IntegerField(),
+            }
+        ),
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
 class NotificationMarkAllReadView(APIView):
     """
     Mark all unread notifications as read for the authenticated user.
@@ -497,6 +691,16 @@ class NotificationMarkAllReadView(APIView):
         }, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    tags=['Audit Logs'],
+    summary='List Audit Logs',
+    description='Retrieves security and activity audit logs for actions performed by the user.',
+    responses={
+        200: AuditLogSerializer(many=True),
+        400: OpenApiResponse(description='Invalid filter parameters'),
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
 class AuditLogListView(generics.ListAPIView):
     """
     GET /api/audit-logs/
@@ -519,6 +723,16 @@ class AuditLogListView(generics.ListAPIView):
         return super().list(request, *args, **kwargs)
 
 
+@extend_schema(
+    tags=['Audit Logs'],
+    summary='Retrieve Audit Log Entry',
+    description='Retrieves a specific audit log entry by ID.',
+    responses={
+        200: AuditLogSerializer,
+        401: OpenApiResponse(description='Authentication required'),
+        404: OpenApiResponse(description='Audit log entry not found'),
+    }
+)
 class AuditLogDetailView(generics.RetrieveAPIView):
     """
     GET /api/audit-logs/<id>/
@@ -529,6 +743,7 @@ class AuditLogDetailView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         return AuditLog.objects.filter(user=self.request.user)
+
 
 
 
