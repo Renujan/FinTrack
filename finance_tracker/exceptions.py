@@ -1,9 +1,15 @@
+"""
+Standardized API Error Handler & Exception Sanitizer for SaaS Finance Tracker.
+Covers 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found,
+409 Conflict, 429 Too Many Requests, and 500 Internal Server Errors.
+"""
 from rest_framework.views import exception_handler
 from rest_framework.response import Response
 from rest_framework import status
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 
 def sanitize_error_data(data):
