@@ -30,7 +30,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-kzjdf3pc!pljy&g9)3ev#t)wj_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 't')
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost,testserver').split(',')
 
 
 # Application definition
@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'rest_framework_simplejwt.token_blacklist',
+    'drf_spectacular',
     # Local applications
     'users',
     'authentication',
@@ -151,6 +152,7 @@ AUTH_USER_MODEL = 'users.User'
 
 # Django REST Framework Configuration
 REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
@@ -170,6 +172,35 @@ REST_FRAMEWORK = {
     },
     'EXCEPTION_HANDLER': 'finance_tracker.exceptions.custom_exception_handler',
 }
+
+# OpenAPI / drf-spectacular Configuration
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'SaaS Finance Tracker API',
+    'DESCRIPTION': 'Comprehensive RESTful API for personal & multi-tenant business financial tracking, budgets, analytics, recurring items, reports, and subscription tier management.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': r'/api/v[0-9]|/api',
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+        'displayOperationId': True,
+        'defaultModelsExpandDepth': 2,
+        'defaultModelExpandDepth': 2,
+    },
+    'SECURITY': [{
+        'jwtAuth': []
+    }],
+    'SECURITY_DEFINITIONS': {
+        'jwtAuth': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization',
+            'description': 'Format: Bearer <access_token>',
+        }
+    },
+}
+
 
 # Simple JWT Configuration
 SIMPLE_JWT = {

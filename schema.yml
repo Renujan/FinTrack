@@ -1,0 +1,6047 @@
+openapi: 3.0.3
+info:
+  title: SaaS Finance Tracker API
+  version: 1.0.0
+  description: Comprehensive RESTful API for personal & multi-tenant business financial
+    tracking, budgets, analytics, recurring items, reports, and subscription tier
+    management.
+paths:
+  /api/analytics/budgets/:
+    get:
+      operationId: analytics_budgets_retrieve
+      description: Returns budget utilization rates, warning indicators, and remaining
+        limits.
+      summary: Budget Progress & Utilization Analytics
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Analytics
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Budget analytics report
+        '400':
+          description: Invalid parameters
+        '401':
+          description: Authentication required
+  /api/analytics/categories/:
+    get:
+      operationId: analytics_categories_retrieve
+      description: Returns percentage breakdown and total spending by category for
+        expense transactions.
+      summary: Category Spending Analytics
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Limit top N categories
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Analytics
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Category analytics breakdown
+        '400':
+          description: Invalid parameters
+        '401':
+          description: Authentication required
+  /api/analytics/comparison/:
+    get:
+      operationId: analytics_comparison_retrieve
+      description: Compares income, expense, and net savings between the selected
+        period and the preceding equal period.
+      summary: Period Comparison Analysis
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Analytics
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Period comparison metrics
+        '400':
+          description: Invalid parameters
+        '401':
+          description: Authentication required
+  /api/analytics/monthly/:
+    get:
+      operationId: analytics_monthly_retrieve
+      description: Returns monthly aggregated financial performance metrics for historical
+        analysis.
+      summary: Monthly Chronological Summary
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Analytics
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Monthly summary dataset
+        '400':
+          description: Invalid date parameters
+        '401':
+          description: Authentication required
+  /api/analytics/summary/:
+    get:
+      operationId: analytics_summary_retrieve
+      description: Returns income, expense, net savings, and category distribution
+        overview for the specified date range.
+      summary: Dashboard Overview Summary
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Analytics
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Dashboard summary metrics
+        '400':
+          description: Invalid date format or range
+        '401':
+          description: Authentication required
+  /api/analytics/trends/:
+    get:
+      operationId: analytics_trends_retrieve
+      description: Returns time-series income, expense, and net balance trends grouped
+        by daily, weekly, or monthly periods.
+      summary: Financial Trends Aggregation
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: group_by
+        schema:
+          type: string
+          enum:
+          - daily
+          - monthly
+          - weekly
+        description: Grouping granularity
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Analytics
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Financial trends array
+        '400':
+          description: Invalid parameters
+        '401':
+          description: Authentication required
+  /api/audit-logs/:
+    get:
+      operationId: audit_logs_list
+      description: Retrieves security and activity audit logs for actions performed
+        by the user.
+      summary: List Audit Logs
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Audit Logs
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAuditLogList'
+          description: ''
+        '400':
+          description: Invalid filter parameters
+        '401':
+          description: Authentication required
+  /api/audit-logs/{id}/:
+    get:
+      operationId: audit_logs_retrieve
+      description: Retrieves a specific audit log entry by ID.
+      summary: Retrieve Audit Log Entry
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Audit Logs
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLog'
+          description: ''
+        '401':
+          description: Authentication required
+        '404':
+          description: Audit log entry not found
+  /api/auth/login/:
+    post:
+      operationId: auth_login_create
+      description: Authenticates user credentials and returns JWT access and refresh
+        tokens. Logs login audit events upon success.
+      summary: Obtain JWT Access & Refresh Tokens (Login)
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainResponse'
+          description: ''
+        '401':
+          description: Invalid credentials
+        '429':
+          description: Rate limit exceeded
+  /api/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      description: Blacklists the provided JWT refresh token to revoke future access.
+      summary: Blacklist Refresh Token (Logout)
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LogoutRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LogoutRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoutSuccessResponse'
+          description: ''
+        '400':
+          description: Missing or invalid refresh token
+        '401':
+          description: Authentication credentials were not provided
+  /api/auth/profile/:
+    get:
+      operationId: auth_profile_retrieve
+      description: Retrieves or updates authenticated user details including email,
+        name, and currency configuration.
+      summary: Retrieve or Update Current User Profile
+      tags:
+      - Authentication
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+        '400':
+          description: Invalid profile update data
+        '401':
+          description: Authentication required
+    put:
+      operationId: auth_profile_update
+      description: Retrieves or updates authenticated user details including email,
+        name, and currency configuration.
+      summary: Retrieve or Update Current User Profile
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+        '400':
+          description: Invalid profile update data
+        '401':
+          description: Authentication required
+    patch:
+      operationId: auth_profile_partial_update
+      description: Retrieves or updates authenticated user details including email,
+        name, and currency configuration.
+      summary: Retrieve or Update Current User Profile
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+        '400':
+          description: Invalid profile update data
+        '401':
+          description: Authentication required
+  /api/auth/register/:
+    post:
+      operationId: auth_register_create
+      description: Registers a new user account with default subscription tier, email,
+        password, and currency preference.
+      summary: Register a New User
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterSuccessResponse'
+          description: ''
+        '400':
+          description: Validation error or existing username/email
+  /api/auth/token/refresh/:
+    post:
+      operationId: auth_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/budgets/:
+    get:
+      operationId: budgets_list
+      description: Retrieves a list of spending budgets with progress metrics or creates
+        a new budget.
+      summary: List or Create Category Budgets
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Budgets
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBudgetList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBudgetList'
+          description: ''
+        '400':
+          description: Validation error or invalid query params
+        '402':
+          description: Budget creation limit reached for active subscription plan
+        '401':
+          description: Authentication required
+    post:
+      operationId: budgets_create
+      description: Retrieves a list of spending budgets with progress metrics or creates
+        a new budget.
+      summary: List or Create Category Budgets
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Budgets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BudgetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BudgetRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBudgetList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+          description: ''
+        '400':
+          description: Validation error or invalid query params
+        '402':
+          description: Budget creation limit reached for active subscription plan
+        '401':
+          description: Authentication required
+  /api/budgets/{id}/:
+    get:
+      operationId: budgets_retrieve
+      description: Retrieves, updates, or deletes a specific budget owned by the authenticated
+        user.
+      summary: Retrieve, Update, or Delete Budget
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Budgets
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Budget not found
+    put:
+      operationId: budgets_update
+      description: Retrieves, updates, or deletes a specific budget owned by the authenticated
+        user.
+      summary: Retrieve, Update, or Delete Budget
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Budgets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BudgetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BudgetRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Budget not found
+    patch:
+      operationId: budgets_partial_update
+      description: Retrieves, updates, or deletes a specific budget owned by the authenticated
+        user.
+      summary: Retrieve, Update, or Delete Budget
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Budgets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBudgetRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBudgetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBudgetRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Budget not found
+    delete:
+      operationId: budgets_destroy
+      description: Retrieves, updates, or deletes a specific budget owned by the authenticated
+        user.
+      summary: Retrieve, Update, or Delete Budget
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Budgets
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Budget not found
+  /api/categories/:
+    get:
+      operationId: categories_list
+      description: Retrieves custom and system categories or creates a new user category
+        subject to subscription limit checks.
+      summary: List or Create Income/Expense Categories
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Categories
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCategoryList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCategoryList'
+          description: ''
+        '400':
+          description: Validation error or invalid payload
+        '402':
+          description: Category creation limit exceeded for active subscription plan
+        '401':
+          description: Authentication required
+    post:
+      operationId: categories_create
+      description: Retrieves custom and system categories or creates a new user category
+        subject to subscription limit checks.
+      summary: List or Create Income/Expense Categories
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCategoryList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+        '400':
+          description: Validation error or invalid payload
+        '402':
+          description: Category creation limit exceeded for active subscription plan
+        '401':
+          description: Authentication required
+  /api/categories/{id}/:
+    get:
+      operationId: categories_retrieve
+      description: Retrieves, updates, or deletes a category owned by the authenticated
+        user. Deletion is blocked if referenced by active transactions.
+      summary: Retrieve, Update, or Delete Category
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Categories
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+        '400':
+          description: Cannot delete category because it is being used by existing
+            transactions.
+        '401':
+          description: Authentication required
+        '404':
+          description: Category not found
+    put:
+      operationId: categories_update
+      description: Retrieves, updates, or deletes a category owned by the authenticated
+        user. Deletion is blocked if referenced by active transactions.
+      summary: Retrieve, Update, or Delete Category
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+        '400':
+          description: Cannot delete category because it is being used by existing
+            transactions.
+        '401':
+          description: Authentication required
+        '404':
+          description: Category not found
+    patch:
+      operationId: categories_partial_update
+      description: Retrieves, updates, or deletes a category owned by the authenticated
+        user. Deletion is blocked if referenced by active transactions.
+      summary: Retrieve, Update, or Delete Category
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+        '400':
+          description: Cannot delete category because it is being used by existing
+            transactions.
+        '401':
+          description: Authentication required
+        '404':
+          description: Category not found
+    delete:
+      operationId: categories_destroy
+      description: Retrieves, updates, or deletes a category owned by the authenticated
+        user. Deletion is blocked if referenced by active transactions.
+      summary: Retrieve, Update, or Delete Category
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Categories
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+        '400':
+          description: Cannot delete category because it is being used by existing
+            transactions.
+        '401':
+          description: Authentication required
+        '404':
+          description: Category not found
+  /api/export/budgets/:
+    get:
+      operationId: export_budgets_retrieve
+      description: Exports a CSV file of all category budgets and progress metrics.
+      summary: Export Budgets CSV
+      tags:
+      - Import & Export
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: CSV File Download (text/csv)
+        '401':
+          description: Authentication required
+  /api/export/categories/:
+    get:
+      operationId: export_categories_retrieve
+      description: Exports a CSV file of all custom and system categories for the
+        authenticated user.
+      summary: Export Categories CSV
+      tags:
+      - Import & Export
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: CSV File Download (text/csv)
+        '401':
+          description: Authentication required
+  /api/export/goals/:
+    get:
+      operationId: export_goals_retrieve
+      description: Exports a CSV file of all financial goal targets and completion
+        percentages.
+      summary: Export Financial Goals CSV
+      tags:
+      - Import & Export
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: CSV File Download (text/csv)
+        '401':
+          description: Authentication required
+  /api/export/recurring/:
+    get:
+      operationId: export_recurring_retrieve
+      description: Exports a CSV file of all automated recurring transaction schedules.
+      summary: Export Recurring Schedules CSV
+      tags:
+      - Import & Export
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: CSV File Download (text/csv)
+        '401':
+          description: Authentication required
+  /api/export/transactions/:
+    get:
+      operationId: export_transactions_retrieve
+      description: Generates and streams a downloadable CSV file containing transactions
+        filtered by optional parameters.
+      summary: Export Transactions CSV
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: integer
+        description: Category ID filter
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      - in: query
+        name: transaction_type
+        schema:
+          type: string
+          enum:
+          - expense
+          - income
+        description: Transaction type filter
+      tags:
+      - Import & Export
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: CSV File Download (text/csv)
+        '401':
+          description: Authentication required
+  /api/goals/:
+    get:
+      operationId: goals_list
+      description: Retrieves a list of financial goals with target calculations and
+        completion progress or creates a new goal.
+      summary: List or Create Financial Savings Goals
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Financial Goals
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFinancialGoalList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFinancialGoalList'
+          description: ''
+        '400':
+          description: Validation error or invalid query parameters
+        '402':
+          description: Financial goal limit reached
+        '401':
+          description: Authentication required
+    post:
+      operationId: goals_create
+      description: Retrieves a list of financial goals with target calculations and
+        completion progress or creates a new goal.
+      summary: List or Create Financial Savings Goals
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Financial Goals
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinancialGoalRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FinancialGoalRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FinancialGoalRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFinancialGoalList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialGoal'
+          description: ''
+        '400':
+          description: Validation error or invalid query parameters
+        '402':
+          description: Financial goal limit reached
+        '401':
+          description: Authentication required
+  /api/goals/{id}/:
+    get:
+      operationId: goals_retrieve
+      description: Retrieves, updates, or deletes a specific financial goal owned
+        by the authenticated user.
+      summary: Retrieve, Update, or Delete Financial Goal
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Financial Goals
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialGoal'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Goal not found
+    put:
+      operationId: goals_update
+      description: Retrieves, updates, or deletes a specific financial goal owned
+        by the authenticated user.
+      summary: Retrieve, Update, or Delete Financial Goal
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Financial Goals
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinancialGoalRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FinancialGoalRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FinancialGoalRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialGoal'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Goal not found
+    patch:
+      operationId: goals_partial_update
+      description: Retrieves, updates, or deletes a specific financial goal owned
+        by the authenticated user.
+      summary: Retrieve, Update, or Delete Financial Goal
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Financial Goals
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedFinancialGoalRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedFinancialGoalRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedFinancialGoalRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialGoal'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Goal not found
+    delete:
+      operationId: goals_destroy
+      description: Retrieves, updates, or deletes a specific financial goal owned
+        by the authenticated user.
+      summary: Retrieve, Update, or Delete Financial Goal
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Financial Goals
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialGoal'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Goal not found
+  /api/goals/{id}/pause/:
+    post:
+      operationId: goals_pause_create
+      description: Pauses active monitoring of a financial goal.
+      summary: Pause Financial Goal
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Financial Goals
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialGoal'
+          description: ''
+        '401':
+          description: Authentication required
+        '404':
+          description: Goal not found
+  /api/goals/{id}/resume/:
+    post:
+      operationId: goals_resume_create
+      description: Resumes monitoring of a previously paused financial goal.
+      summary: Resume Financial Goal
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Financial Goals
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialGoal'
+          description: ''
+        '401':
+          description: Authentication required
+        '404':
+          description: Goal not found
+  /api/health/:
+    get:
+      operationId: health_retrieve
+      description: |-
+        Backend health-check endpoint.
+        Verifies operational status and basic database connectivity.
+      tags:
+      - health
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/import/transactions/:
+    post:
+      operationId: import_transactions_create
+      description: Accepts a multipart CSV file upload and imports transaction records
+        into the user dataset with field validation.
+      summary: Bulk Import Transactions CSV
+      tags:
+      - Import & Export
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TransactionImportFileUploadRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TransactionImportFileUploadRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionImportSuccessResponse'
+          description: ''
+        '400':
+          description: CSV parsing or row validation error
+        '401':
+          description: Authentication required
+  /api/notifications/:
+    get:
+      operationId: notifications_list
+      description: Retrieves a paginated list of user notifications with filter parameters.
+      summary: List Notifications
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Notifications
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNotificationList'
+          description: ''
+        '400':
+          description: Invalid query parameters
+        '401':
+          description: Authentication required
+  /api/notifications/{id}/:
+    get:
+      operationId: notifications_retrieve
+      description: Retrieves, updates (e.g. mark as read), or deletes a notification.
+      summary: Retrieve, Update, or Delete Notification
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Notifications
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+        '401':
+          description: Authentication required
+        '404':
+          description: Notification not found
+    put:
+      operationId: notifications_update
+      description: Retrieves, updates (e.g. mark as read), or deletes a notification.
+      summary: Retrieve, Update, or Delete Notification
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NotificationUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationUpdateRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+        '401':
+          description: Authentication required
+        '404':
+          description: Notification not found
+    patch:
+      operationId: notifications_partial_update
+      description: Retrieves, updates (e.g. mark as read), or deletes a notification.
+      summary: Retrieve, Update, or Delete Notification
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationUpdateRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+        '401':
+          description: Authentication required
+        '404':
+          description: Notification not found
+    delete:
+      operationId: notifications_destroy
+      description: Retrieves, updates (e.g. mark as read), or deletes a notification.
+      summary: Retrieve, Update, or Delete Notification
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Notifications
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+        '401':
+          description: Authentication required
+        '404':
+          description: Notification not found
+  /api/notifications/mark-all-read/:
+    post:
+      operationId: notifications_mark_all_read_create
+      description: Marks all unread notifications for the current authenticated user
+        as read.
+      summary: Mark All Notifications as Read
+      tags:
+      - Notifications
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkAllReadResponse'
+          description: ''
+        '401':
+          description: Authentication required
+  /api/recurring-transactions/:
+    get:
+      operationId: recurring_transactions_list
+      description: Retrieves a list of automated recurring income/expense schedules
+        or creates a new schedule.
+      summary: List or Create Recurring Schedules
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Recurring Transactions
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRecurringTransactionList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRecurringTransactionList'
+          description: ''
+        '400':
+          description: Validation error or invalid query params
+        '402':
+          description: Recurring schedule creation limit reached
+        '401':
+          description: Authentication required
+    post:
+      operationId: recurring_transactions_create
+      description: Retrieves a list of automated recurring income/expense schedules
+        or creates a new schedule.
+      summary: List or Create Recurring Schedules
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Recurring Transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecurringTransactionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecurringTransactionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecurringTransactionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRecurringTransactionList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringTransaction'
+          description: ''
+        '400':
+          description: Validation error or invalid query params
+        '402':
+          description: Recurring schedule creation limit reached
+        '401':
+          description: Authentication required
+  /api/recurring-transactions/{id}/:
+    get:
+      operationId: recurring_transactions_retrieve
+      description: Retrieves, updates, or deletes a specific recurring transaction
+        schedule owned by the authenticated user.
+      summary: Retrieve, Update, or Delete Recurring Schedule
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Recurring Transactions
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringTransaction'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Recurring transaction not found
+    put:
+      operationId: recurring_transactions_update
+      description: Retrieves, updates, or deletes a specific recurring transaction
+        schedule owned by the authenticated user.
+      summary: Retrieve, Update, or Delete Recurring Schedule
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Recurring Transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecurringTransactionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecurringTransactionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecurringTransactionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringTransaction'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Recurring transaction not found
+    patch:
+      operationId: recurring_transactions_partial_update
+      description: Retrieves, updates, or deletes a specific recurring transaction
+        schedule owned by the authenticated user.
+      summary: Retrieve, Update, or Delete Recurring Schedule
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Recurring Transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRecurringTransactionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRecurringTransactionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRecurringTransactionRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringTransaction'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Recurring transaction not found
+    delete:
+      operationId: recurring_transactions_destroy
+      description: Retrieves, updates, or deletes a specific recurring transaction
+        schedule owned by the authenticated user.
+      summary: Retrieve, Update, or Delete Recurring Schedule
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Recurring Transactions
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringTransaction'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Recurring transaction not found
+  /api/recurring-transactions/{id}/pause/:
+    post:
+      operationId: recurring_transactions_pause_create
+      description: Pauses execution of a recurring transaction schedule without deleting
+        it.
+      summary: Pause Recurring Schedule
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Recurring Transactions
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringTransaction'
+          description: ''
+        '401':
+          description: Authentication required
+        '404':
+          description: Recurring transaction schedule not found
+  /api/recurring-transactions/{id}/resume/:
+    post:
+      operationId: recurring_transactions_resume_create
+      description: Resumes execution of a previously paused recurring transaction
+        schedule.
+      summary: Resume Recurring Schedule
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Recurring Transactions
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringTransaction'
+          description: ''
+        '401':
+          description: Authentication required
+        '404':
+          description: Recurring transaction schedule not found
+  /api/reports/financial/:
+    get:
+      operationId: reports_financial_retrieve
+      description: Generates a consolidated financial report including totals, category
+        breakdown, monthly distribution, budgets, and goal progress.
+      summary: Unified Financial Report
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Reports
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Unified financial report JSON structure
+        '400':
+          description: Invalid date range parameters
+        '401':
+          description: Authentication required
+  /api/subscription/:
+    get:
+      operationId: subscription_retrieve
+      description: Returns authenticated user active subscription plan, status, period
+        dates, and auto-renewal configuration.
+      summary: Retrieve Current Subscription Details
+      tags:
+      - Subscriptions
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSubscription'
+          description: ''
+        '401':
+          description: Authentication required
+  /api/subscription/cancel/:
+    post:
+      operationId: subscription_cancel_create
+      description: Cancels auto-renewal for the user subscription without purging
+        historical data.
+      summary: Cancel Active Subscription
+      tags:
+      - Subscriptions
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionCancelResponse'
+          description: ''
+        '401':
+          description: Authentication required
+  /api/subscription/plans/:
+    get:
+      operationId: subscription_plans_list
+      description: Retrieves all active subscription tiers available for purchase
+        or upgrade.
+      summary: List Active Subscription Plans
+      tags:
+      - Subscriptions
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubscriptionPlan'
+          description: ''
+        '401':
+          description: Authentication required
+  /api/subscription/upgrade/:
+    post:
+      operationId: subscription_upgrade_create
+      description: Switches the authenticated user to a target subscription plan tier
+        (e.g. FREE, PREMIUM, PRO, ENTERPRISE).
+      summary: Upgrade or Switch Subscription Plan
+      tags:
+      - Subscriptions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionUpgradeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SubscriptionUpgradeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SubscriptionUpgradeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionUpgradeResponse'
+          description: ''
+        '400':
+          description: Invalid plan code or validation error
+        '401':
+          description: Authentication required
+  /api/subscription/usage/:
+    get:
+      operationId: subscription_usage_retrieve
+      description: Returns consumption metrics against plan limits for transactions,
+        categories, budgets, recurring items, and goals.
+      summary: Retrieve Subscription Quota & Usage
+      tags:
+      - Subscriptions
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Usage metrics and plan limit breakdown
+        '401':
+          description: Authentication required
+  /api/transactions/:
+    get:
+      operationId: transactions_list
+      description: Retrieves a paginated list of transactions filtered by date range,
+        category, type, amount, or creates a new transaction.
+      summary: List or Create Transactions
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Transactions
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTransactionList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTransactionList'
+          description: ''
+        '400':
+          description: Validation error or invalid query parameters
+        '402':
+          description: Transaction creation limit reached for active subscription
+            plan
+        '401':
+          description: Authentication required
+    post:
+      operationId: transactions_create
+      description: Retrieves a paginated list of transactions filtered by date range,
+        category, type, amount, or creates a new transaction.
+      summary: List or Create Transactions
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTransactionList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+          description: ''
+        '400':
+          description: Validation error or invalid query parameters
+        '402':
+          description: Transaction creation limit reached for active subscription
+            plan
+        '401':
+          description: Authentication required
+  /api/transactions/{id}/:
+    get:
+      operationId: transactions_retrieve
+      description: Retrieves, updates, or deletes a specific transaction owned by
+        the authenticated user.
+      summary: Retrieve, Update, or Delete Transaction
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Transactions
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Transaction not found
+    put:
+      operationId: transactions_update
+      description: Retrieves, updates, or deletes a specific transaction owned by
+        the authenticated user.
+      summary: Retrieve, Update, or Delete Transaction
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Transaction not found
+    patch:
+      operationId: transactions_partial_update
+      description: Retrieves, updates, or deletes a specific transaction owned by
+        the authenticated user.
+      summary: Retrieve, Update, or Delete Transaction
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTransactionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTransactionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTransactionRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Transaction not found
+    delete:
+      operationId: transactions_destroy
+      description: Retrieves, updates, or deletes a specific transaction owned by
+        the authenticated user.
+      summary: Retrieve, Update, or Delete Transaction
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Transactions
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Transaction not found
+  /api/v1/analytics/budgets/:
+    get:
+      operationId: analytics_budgets_retrieve_2
+      description: Returns budget utilization rates, warning indicators, and remaining
+        limits.
+      summary: Budget Progress & Utilization Analytics
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Analytics
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Budget analytics report
+        '400':
+          description: Invalid parameters
+        '401':
+          description: Authentication required
+  /api/v1/analytics/categories/:
+    get:
+      operationId: analytics_categories_retrieve_2
+      description: Returns percentage breakdown and total spending by category for
+        expense transactions.
+      summary: Category Spending Analytics
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Limit top N categories
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Analytics
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Category analytics breakdown
+        '400':
+          description: Invalid parameters
+        '401':
+          description: Authentication required
+  /api/v1/analytics/comparison/:
+    get:
+      operationId: analytics_comparison_retrieve_2
+      description: Compares income, expense, and net savings between the selected
+        period and the preceding equal period.
+      summary: Period Comparison Analysis
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Analytics
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Period comparison metrics
+        '400':
+          description: Invalid parameters
+        '401':
+          description: Authentication required
+  /api/v1/analytics/monthly/:
+    get:
+      operationId: analytics_monthly_retrieve_2
+      description: Returns monthly aggregated financial performance metrics for historical
+        analysis.
+      summary: Monthly Chronological Summary
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Analytics
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Monthly summary dataset
+        '400':
+          description: Invalid date parameters
+        '401':
+          description: Authentication required
+  /api/v1/analytics/summary/:
+    get:
+      operationId: analytics_summary_retrieve_2
+      description: Returns income, expense, net savings, and category distribution
+        overview for the specified date range.
+      summary: Dashboard Overview Summary
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Analytics
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Dashboard summary metrics
+        '400':
+          description: Invalid date format or range
+        '401':
+          description: Authentication required
+  /api/v1/analytics/trends/:
+    get:
+      operationId: analytics_trends_retrieve_2
+      description: Returns time-series income, expense, and net balance trends grouped
+        by daily, weekly, or monthly periods.
+      summary: Financial Trends Aggregation
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: group_by
+        schema:
+          type: string
+          enum:
+          - daily
+          - monthly
+          - weekly
+        description: Grouping granularity
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Analytics
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Financial trends array
+        '400':
+          description: Invalid parameters
+        '401':
+          description: Authentication required
+  /api/v1/audit-logs/:
+    get:
+      operationId: audit_logs_list_2
+      description: Retrieves security and activity audit logs for actions performed
+        by the user.
+      summary: List Audit Logs
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Audit Logs
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAuditLogList'
+          description: ''
+        '400':
+          description: Invalid filter parameters
+        '401':
+          description: Authentication required
+  /api/v1/audit-logs/{id}/:
+    get:
+      operationId: audit_logs_retrieve_2
+      description: Retrieves a specific audit log entry by ID.
+      summary: Retrieve Audit Log Entry
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Audit Logs
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLog'
+          description: ''
+        '401':
+          description: Authentication required
+        '404':
+          description: Audit log entry not found
+  /api/v1/auth/login/:
+    post:
+      operationId: auth_login_create_2
+      description: Authenticates user credentials and returns JWT access and refresh
+        tokens. Logs login audit events upon success.
+      summary: Obtain JWT Access & Refresh Tokens (Login)
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainResponse'
+          description: ''
+        '401':
+          description: Invalid credentials
+        '429':
+          description: Rate limit exceeded
+  /api/v1/auth/logout/:
+    post:
+      operationId: auth_logout_create_2
+      description: Blacklists the provided JWT refresh token to revoke future access.
+      summary: Blacklist Refresh Token (Logout)
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LogoutRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LogoutRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoutSuccessResponse'
+          description: ''
+        '400':
+          description: Missing or invalid refresh token
+        '401':
+          description: Authentication credentials were not provided
+  /api/v1/auth/profile/:
+    get:
+      operationId: auth_profile_retrieve_2
+      description: Retrieves or updates authenticated user details including email,
+        name, and currency configuration.
+      summary: Retrieve or Update Current User Profile
+      tags:
+      - Authentication
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+        '400':
+          description: Invalid profile update data
+        '401':
+          description: Authentication required
+    put:
+      operationId: auth_profile_update_2
+      description: Retrieves or updates authenticated user details including email,
+        name, and currency configuration.
+      summary: Retrieve or Update Current User Profile
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+        '400':
+          description: Invalid profile update data
+        '401':
+          description: Authentication required
+    patch:
+      operationId: auth_profile_partial_update_2
+      description: Retrieves or updates authenticated user details including email,
+        name, and currency configuration.
+      summary: Retrieve or Update Current User Profile
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+        '400':
+          description: Invalid profile update data
+        '401':
+          description: Authentication required
+  /api/v1/auth/register/:
+    post:
+      operationId: auth_register_create_2
+      description: Registers a new user account with default subscription tier, email,
+        password, and currency preference.
+      summary: Register a New User
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterSuccessResponse'
+          description: ''
+        '400':
+          description: Validation error or existing username/email
+  /api/v1/auth/token/refresh/:
+    post:
+      operationId: auth_token_refresh_create_2
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/v1/budgets/:
+    get:
+      operationId: budgets_list_2
+      description: Retrieves a list of spending budgets with progress metrics or creates
+        a new budget.
+      summary: List or Create Category Budgets
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Budgets
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBudgetList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBudgetList'
+          description: ''
+        '400':
+          description: Validation error or invalid query params
+        '402':
+          description: Budget creation limit reached for active subscription plan
+        '401':
+          description: Authentication required
+    post:
+      operationId: budgets_create_2
+      description: Retrieves a list of spending budgets with progress metrics or creates
+        a new budget.
+      summary: List or Create Category Budgets
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Budgets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BudgetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BudgetRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBudgetList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+          description: ''
+        '400':
+          description: Validation error or invalid query params
+        '402':
+          description: Budget creation limit reached for active subscription plan
+        '401':
+          description: Authentication required
+  /api/v1/budgets/{id}/:
+    get:
+      operationId: budgets_retrieve_2
+      description: Retrieves, updates, or deletes a specific budget owned by the authenticated
+        user.
+      summary: Retrieve, Update, or Delete Budget
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Budgets
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Budget not found
+    put:
+      operationId: budgets_update_2
+      description: Retrieves, updates, or deletes a specific budget owned by the authenticated
+        user.
+      summary: Retrieve, Update, or Delete Budget
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Budgets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BudgetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BudgetRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Budget not found
+    patch:
+      operationId: budgets_partial_update_2
+      description: Retrieves, updates, or deletes a specific budget owned by the authenticated
+        user.
+      summary: Retrieve, Update, or Delete Budget
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Budgets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBudgetRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBudgetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBudgetRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Budget not found
+    delete:
+      operationId: budgets_destroy_2
+      description: Retrieves, updates, or deletes a specific budget owned by the authenticated
+        user.
+      summary: Retrieve, Update, or Delete Budget
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Budgets
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Budget not found
+  /api/v1/categories/:
+    get:
+      operationId: categories_list_2
+      description: Retrieves custom and system categories or creates a new user category
+        subject to subscription limit checks.
+      summary: List or Create Income/Expense Categories
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Categories
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCategoryList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCategoryList'
+          description: ''
+        '400':
+          description: Validation error or invalid payload
+        '402':
+          description: Category creation limit exceeded for active subscription plan
+        '401':
+          description: Authentication required
+    post:
+      operationId: categories_create_2
+      description: Retrieves custom and system categories or creates a new user category
+        subject to subscription limit checks.
+      summary: List or Create Income/Expense Categories
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCategoryList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+        '400':
+          description: Validation error or invalid payload
+        '402':
+          description: Category creation limit exceeded for active subscription plan
+        '401':
+          description: Authentication required
+  /api/v1/categories/{id}/:
+    get:
+      operationId: categories_retrieve_2
+      description: Retrieves, updates, or deletes a category owned by the authenticated
+        user. Deletion is blocked if referenced by active transactions.
+      summary: Retrieve, Update, or Delete Category
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Categories
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+        '400':
+          description: Cannot delete category because it is being used by existing
+            transactions.
+        '401':
+          description: Authentication required
+        '404':
+          description: Category not found
+    put:
+      operationId: categories_update_2
+      description: Retrieves, updates, or deletes a category owned by the authenticated
+        user. Deletion is blocked if referenced by active transactions.
+      summary: Retrieve, Update, or Delete Category
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+        '400':
+          description: Cannot delete category because it is being used by existing
+            transactions.
+        '401':
+          description: Authentication required
+        '404':
+          description: Category not found
+    patch:
+      operationId: categories_partial_update_2
+      description: Retrieves, updates, or deletes a category owned by the authenticated
+        user. Deletion is blocked if referenced by active transactions.
+      summary: Retrieve, Update, or Delete Category
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+        '400':
+          description: Cannot delete category because it is being used by existing
+            transactions.
+        '401':
+          description: Authentication required
+        '404':
+          description: Category not found
+    delete:
+      operationId: categories_destroy_2
+      description: Retrieves, updates, or deletes a category owned by the authenticated
+        user. Deletion is blocked if referenced by active transactions.
+      summary: Retrieve, Update, or Delete Category
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Categories
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+        '400':
+          description: Cannot delete category because it is being used by existing
+            transactions.
+        '401':
+          description: Authentication required
+        '404':
+          description: Category not found
+  /api/v1/export/budgets/:
+    get:
+      operationId: export_budgets_retrieve_2
+      description: Exports a CSV file of all category budgets and progress metrics.
+      summary: Export Budgets CSV
+      tags:
+      - Import & Export
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: CSV File Download (text/csv)
+        '401':
+          description: Authentication required
+  /api/v1/export/categories/:
+    get:
+      operationId: export_categories_retrieve_2
+      description: Exports a CSV file of all custom and system categories for the
+        authenticated user.
+      summary: Export Categories CSV
+      tags:
+      - Import & Export
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: CSV File Download (text/csv)
+        '401':
+          description: Authentication required
+  /api/v1/export/goals/:
+    get:
+      operationId: export_goals_retrieve_2
+      description: Exports a CSV file of all financial goal targets and completion
+        percentages.
+      summary: Export Financial Goals CSV
+      tags:
+      - Import & Export
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: CSV File Download (text/csv)
+        '401':
+          description: Authentication required
+  /api/v1/export/recurring/:
+    get:
+      operationId: export_recurring_retrieve_2
+      description: Exports a CSV file of all automated recurring transaction schedules.
+      summary: Export Recurring Schedules CSV
+      tags:
+      - Import & Export
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: CSV File Download (text/csv)
+        '401':
+          description: Authentication required
+  /api/v1/export/transactions/:
+    get:
+      operationId: export_transactions_retrieve_2
+      description: Generates and streams a downloadable CSV file containing transactions
+        filtered by optional parameters.
+      summary: Export Transactions CSV
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: integer
+        description: Category ID filter
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      - in: query
+        name: transaction_type
+        schema:
+          type: string
+          enum:
+          - expense
+          - income
+        description: Transaction type filter
+      tags:
+      - Import & Export
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: CSV File Download (text/csv)
+        '401':
+          description: Authentication required
+  /api/v1/goals/:
+    get:
+      operationId: goals_list_2
+      description: Retrieves a list of financial goals with target calculations and
+        completion progress or creates a new goal.
+      summary: List or Create Financial Savings Goals
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Financial Goals
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFinancialGoalList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFinancialGoalList'
+          description: ''
+        '400':
+          description: Validation error or invalid query parameters
+        '402':
+          description: Financial goal limit reached
+        '401':
+          description: Authentication required
+    post:
+      operationId: goals_create_2
+      description: Retrieves a list of financial goals with target calculations and
+        completion progress or creates a new goal.
+      summary: List or Create Financial Savings Goals
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Financial Goals
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinancialGoalRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FinancialGoalRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FinancialGoalRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFinancialGoalList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialGoal'
+          description: ''
+        '400':
+          description: Validation error or invalid query parameters
+        '402':
+          description: Financial goal limit reached
+        '401':
+          description: Authentication required
+  /api/v1/goals/{id}/:
+    get:
+      operationId: goals_retrieve_2
+      description: Retrieves, updates, or deletes a specific financial goal owned
+        by the authenticated user.
+      summary: Retrieve, Update, or Delete Financial Goal
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Financial Goals
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialGoal'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Goal not found
+    put:
+      operationId: goals_update_2
+      description: Retrieves, updates, or deletes a specific financial goal owned
+        by the authenticated user.
+      summary: Retrieve, Update, or Delete Financial Goal
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Financial Goals
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinancialGoalRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FinancialGoalRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FinancialGoalRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialGoal'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Goal not found
+    patch:
+      operationId: goals_partial_update_2
+      description: Retrieves, updates, or deletes a specific financial goal owned
+        by the authenticated user.
+      summary: Retrieve, Update, or Delete Financial Goal
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Financial Goals
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedFinancialGoalRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedFinancialGoalRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedFinancialGoalRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialGoal'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Goal not found
+    delete:
+      operationId: goals_destroy_2
+      description: Retrieves, updates, or deletes a specific financial goal owned
+        by the authenticated user.
+      summary: Retrieve, Update, or Delete Financial Goal
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Financial Goals
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialGoal'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Goal not found
+  /api/v1/goals/{id}/pause/:
+    post:
+      operationId: goals_pause_create_2
+      description: Pauses active monitoring of a financial goal.
+      summary: Pause Financial Goal
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Financial Goals
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialGoal'
+          description: ''
+        '401':
+          description: Authentication required
+        '404':
+          description: Goal not found
+  /api/v1/goals/{id}/resume/:
+    post:
+      operationId: goals_resume_create_2
+      description: Resumes monitoring of a previously paused financial goal.
+      summary: Resume Financial Goal
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Financial Goals
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialGoal'
+          description: ''
+        '401':
+          description: Authentication required
+        '404':
+          description: Goal not found
+  /api/v1/health/:
+    get:
+      operationId: health_retrieve_2
+      description: |-
+        Backend health-check endpoint.
+        Verifies operational status and basic database connectivity.
+      tags:
+      - health
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/import/transactions/:
+    post:
+      operationId: import_transactions_create_2
+      description: Accepts a multipart CSV file upload and imports transaction records
+        into the user dataset with field validation.
+      summary: Bulk Import Transactions CSV
+      tags:
+      - Import & Export
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TransactionImportFileUploadRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TransactionImportFileUploadRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionImportSuccessResponse'
+          description: ''
+        '400':
+          description: CSV parsing or row validation error
+        '401':
+          description: Authentication required
+  /api/v1/notifications/:
+    get:
+      operationId: notifications_list_2
+      description: Retrieves a paginated list of user notifications with filter parameters.
+      summary: List Notifications
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Notifications
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNotificationList'
+          description: ''
+        '400':
+          description: Invalid query parameters
+        '401':
+          description: Authentication required
+  /api/v1/notifications/{id}/:
+    get:
+      operationId: notifications_retrieve_2
+      description: Retrieves, updates (e.g. mark as read), or deletes a notification.
+      summary: Retrieve, Update, or Delete Notification
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Notifications
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+        '401':
+          description: Authentication required
+        '404':
+          description: Notification not found
+    put:
+      operationId: notifications_update_2
+      description: Retrieves, updates (e.g. mark as read), or deletes a notification.
+      summary: Retrieve, Update, or Delete Notification
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NotificationUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationUpdateRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+        '401':
+          description: Authentication required
+        '404':
+          description: Notification not found
+    patch:
+      operationId: notifications_partial_update_2
+      description: Retrieves, updates (e.g. mark as read), or deletes a notification.
+      summary: Retrieve, Update, or Delete Notification
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationUpdateRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+        '401':
+          description: Authentication required
+        '404':
+          description: Notification not found
+    delete:
+      operationId: notifications_destroy_2
+      description: Retrieves, updates (e.g. mark as read), or deletes a notification.
+      summary: Retrieve, Update, or Delete Notification
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Notifications
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+        '401':
+          description: Authentication required
+        '404':
+          description: Notification not found
+  /api/v1/notifications/mark-all-read/:
+    post:
+      operationId: notifications_mark_all_read_create_2
+      description: Marks all unread notifications for the current authenticated user
+        as read.
+      summary: Mark All Notifications as Read
+      tags:
+      - Notifications
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarkAllReadResponse'
+          description: ''
+        '401':
+          description: Authentication required
+  /api/v1/recurring-transactions/:
+    get:
+      operationId: recurring_transactions_list_2
+      description: Retrieves a list of automated recurring income/expense schedules
+        or creates a new schedule.
+      summary: List or Create Recurring Schedules
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Recurring Transactions
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRecurringTransactionList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRecurringTransactionList'
+          description: ''
+        '400':
+          description: Validation error or invalid query params
+        '402':
+          description: Recurring schedule creation limit reached
+        '401':
+          description: Authentication required
+    post:
+      operationId: recurring_transactions_create_2
+      description: Retrieves a list of automated recurring income/expense schedules
+        or creates a new schedule.
+      summary: List or Create Recurring Schedules
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Recurring Transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecurringTransactionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecurringTransactionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecurringTransactionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRecurringTransactionList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringTransaction'
+          description: ''
+        '400':
+          description: Validation error or invalid query params
+        '402':
+          description: Recurring schedule creation limit reached
+        '401':
+          description: Authentication required
+  /api/v1/recurring-transactions/{id}/:
+    get:
+      operationId: recurring_transactions_retrieve_2
+      description: Retrieves, updates, or deletes a specific recurring transaction
+        schedule owned by the authenticated user.
+      summary: Retrieve, Update, or Delete Recurring Schedule
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Recurring Transactions
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringTransaction'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Recurring transaction not found
+    put:
+      operationId: recurring_transactions_update_2
+      description: Retrieves, updates, or deletes a specific recurring transaction
+        schedule owned by the authenticated user.
+      summary: Retrieve, Update, or Delete Recurring Schedule
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Recurring Transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecurringTransactionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecurringTransactionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecurringTransactionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringTransaction'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Recurring transaction not found
+    patch:
+      operationId: recurring_transactions_partial_update_2
+      description: Retrieves, updates, or deletes a specific recurring transaction
+        schedule owned by the authenticated user.
+      summary: Retrieve, Update, or Delete Recurring Schedule
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Recurring Transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRecurringTransactionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRecurringTransactionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRecurringTransactionRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringTransaction'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Recurring transaction not found
+    delete:
+      operationId: recurring_transactions_destroy_2
+      description: Retrieves, updates, or deletes a specific recurring transaction
+        schedule owned by the authenticated user.
+      summary: Retrieve, Update, or Delete Recurring Schedule
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Recurring Transactions
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringTransaction'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Recurring transaction not found
+  /api/v1/recurring-transactions/{id}/pause/:
+    post:
+      operationId: recurring_transactions_pause_create_2
+      description: Pauses execution of a recurring transaction schedule without deleting
+        it.
+      summary: Pause Recurring Schedule
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Recurring Transactions
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringTransaction'
+          description: ''
+        '401':
+          description: Authentication required
+        '404':
+          description: Recurring transaction schedule not found
+  /api/v1/recurring-transactions/{id}/resume/:
+    post:
+      operationId: recurring_transactions_resume_create_2
+      description: Resumes execution of a previously paused recurring transaction
+        schedule.
+      summary: Resume Recurring Schedule
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Recurring Transactions
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecurringTransaction'
+          description: ''
+        '401':
+          description: Authentication required
+        '404':
+          description: Recurring transaction schedule not found
+  /api/v1/reports/financial/:
+    get:
+      operationId: reports_financial_retrieve_2
+      description: Generates a consolidated financial report including totals, category
+        breakdown, monthly distribution, budgets, and goal progress.
+      summary: Unified Financial Report
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Reports
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Unified financial report JSON structure
+        '400':
+          description: Invalid date range parameters
+        '401':
+          description: Authentication required
+  /api/v1/subscription/:
+    get:
+      operationId: subscription_retrieve_2
+      description: Returns authenticated user active subscription plan, status, period
+        dates, and auto-renewal configuration.
+      summary: Retrieve Current Subscription Details
+      tags:
+      - Subscriptions
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSubscription'
+          description: ''
+        '401':
+          description: Authentication required
+  /api/v1/subscription/cancel/:
+    post:
+      operationId: subscription_cancel_create_2
+      description: Cancels auto-renewal for the user subscription without purging
+        historical data.
+      summary: Cancel Active Subscription
+      tags:
+      - Subscriptions
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionCancelResponse'
+          description: ''
+        '401':
+          description: Authentication required
+  /api/v1/subscription/plans/:
+    get:
+      operationId: subscription_plans_list_2
+      description: Retrieves all active subscription tiers available for purchase
+        or upgrade.
+      summary: List Active Subscription Plans
+      tags:
+      - Subscriptions
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubscriptionPlan'
+          description: ''
+        '401':
+          description: Authentication required
+  /api/v1/subscription/upgrade/:
+    post:
+      operationId: subscription_upgrade_create_2
+      description: Switches the authenticated user to a target subscription plan tier
+        (e.g. FREE, PREMIUM, PRO, ENTERPRISE).
+      summary: Upgrade or Switch Subscription Plan
+      tags:
+      - Subscriptions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionUpgradeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SubscriptionUpgradeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SubscriptionUpgradeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionUpgradeResponse'
+          description: ''
+        '400':
+          description: Invalid plan code or validation error
+        '401':
+          description: Authentication required
+  /api/v1/subscription/usage/:
+    get:
+      operationId: subscription_usage_retrieve_2
+      description: Returns consumption metrics against plan limits for transactions,
+        categories, budgets, recurring items, and goals.
+      summary: Retrieve Subscription Quota & Usage
+      tags:
+      - Subscriptions
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Usage metrics and plan limit breakdown
+        '401':
+          description: Authentication required
+  /api/v1/transactions/:
+    get:
+      operationId: transactions_list_2
+      description: Retrieves a paginated list of transactions filtered by date range,
+        category, type, amount, or creates a new transaction.
+      summary: List or Create Transactions
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Transactions
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTransactionList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTransactionList'
+          description: ''
+        '400':
+          description: Validation error or invalid query parameters
+        '402':
+          description: Transaction creation limit reached for active subscription
+            plan
+        '401':
+          description: Authentication required
+    post:
+      operationId: transactions_create_2
+      description: Retrieves a paginated list of transactions filtered by date range,
+        category, type, amount, or creates a new transaction.
+      summary: List or Create Transactions
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTransactionList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+          description: ''
+        '400':
+          description: Validation error or invalid query parameters
+        '402':
+          description: Transaction creation limit reached for active subscription
+            plan
+        '401':
+          description: Authentication required
+  /api/v1/transactions/{id}/:
+    get:
+      operationId: transactions_retrieve_2
+      description: Retrieves, updates, or deletes a specific transaction owned by
+        the authenticated user.
+      summary: Retrieve, Update, or Delete Transaction
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Transactions
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Transaction not found
+    put:
+      operationId: transactions_update_2
+      description: Retrieves, updates, or deletes a specific transaction owned by
+        the authenticated user.
+      summary: Retrieve, Update, or Delete Transaction
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Transaction not found
+    patch:
+      operationId: transactions_partial_update_2
+      description: Retrieves, updates, or deletes a specific transaction owned by
+        the authenticated user.
+      summary: Retrieve, Update, or Delete Transaction
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTransactionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTransactionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTransactionRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Transaction not found
+    delete:
+      operationId: transactions_destroy_2
+      description: Retrieves, updates, or deletes a specific transaction owned by
+        the authenticated user.
+      summary: Retrieve, Update, or Delete Transaction
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Transactions
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+          description: ''
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '404':
+          description: Transaction not found
+components:
+  schemas:
+    ActionEnum:
+      enum:
+      - CREATE
+      - UPDATE
+      - DELETE
+      - IMPORT
+      - EXPORT
+      - LOGIN
+      - LOGOUT
+      - PASSWORD_CHANGE
+      type: string
+      description: |-
+        * `CREATE` - Create
+        * `UPDATE` - Update
+        * `DELETE` - Delete
+        * `IMPORT` - Import
+        * `EXPORT` - Export
+        * `LOGIN` - Login
+        * `LOGOUT` - Logout
+        * `PASSWORD_CHANGE` - Password Change
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+          readOnly: true
+          nullable: true
+        action:
+          allOf:
+          - $ref: '#/components/schemas/ActionEnum'
+          readOnly: true
+        resource_type:
+          type: string
+          readOnly: true
+        resource_id:
+          type: string
+          readOnly: true
+        ip_address:
+          type: string
+          readOnly: true
+          nullable: true
+        metadata:
+          readOnly: true
+        timestamp:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - action
+      - id
+      - ip_address
+      - metadata
+      - resource_id
+      - resource_type
+      - timestamp
+      - user
+    BillingPeriodEnum:
+      enum:
+      - MONTHLY
+      - YEARLY
+      type: string
+      description: |-
+        * `MONTHLY` - Monthly
+        * `YEARLY` - Yearly
+    Budget:
+      type: object
+      description: |-
+        Serializer for Budget model with calculation status metrics, category ownership validation,
+        date-range validation, and budget period validation.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        category:
+          type: integer
+          nullable: true
+        category_name:
+          type: string
+          readOnly: true
+        is_overall:
+          type: string
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        budget_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        period:
+          $ref: '#/components/schemas/PeriodEnum'
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        spent_amount:
+          type: string
+          readOnly: true
+        remaining_amount:
+          type: string
+          readOnly: true
+        percentage_used:
+          type: string
+          readOnly: true
+        is_exceeded:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - amount
+      - budget_amount
+      - category_name
+      - created_at
+      - end_date
+      - id
+      - is_exceeded
+      - is_overall
+      - name
+      - percentage_used
+      - remaining_amount
+      - spent_amount
+      - start_date
+      - updated_at
+    BudgetRequest:
+      type: object
+      description: |-
+        Serializer for Budget model with calculation status metrics, category ownership validation,
+        date-range validation, and budget period validation.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        category:
+          type: integer
+          nullable: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        period:
+          $ref: '#/components/schemas/PeriodEnum'
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+      required:
+      - amount
+      - end_date
+      - name
+      - start_date
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+      - updated_at
+    CategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+      required:
+      - name
+    FinancialGoal:
+      type: object
+      description: |-
+        Serializer for FinancialGoal model with calculation status metrics, category ownership validation,
+        target amount validation, and dynamic goal status calculation.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        category:
+          type: integer
+          nullable: true
+        category_name:
+          type: string
+          readOnly: true
+        target_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        target_date:
+          type: string
+          format: date
+        is_active:
+          type: boolean
+        current_amount:
+          type: string
+          readOnly: true
+        remaining_amount:
+          type: string
+          readOnly: true
+        percentage_complete:
+          type: string
+          readOnly: true
+        is_completed:
+          type: string
+          readOnly: true
+        status:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - category_name
+      - created_at
+      - current_amount
+      - id
+      - is_completed
+      - name
+      - percentage_complete
+      - remaining_amount
+      - status
+      - target_amount
+      - target_date
+      - updated_at
+    FinancialGoalRequest:
+      type: object
+      description: |-
+        Serializer for FinancialGoal model with calculation status metrics, category ownership validation,
+        target amount validation, and dynamic goal status calculation.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+        category:
+          type: integer
+          nullable: true
+        target_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        target_date:
+          type: string
+          format: date
+        is_active:
+          type: boolean
+      required:
+      - name
+      - target_amount
+      - target_date
+    FrequencyEnum:
+      enum:
+      - DAILY
+      - WEEKLY
+      - MONTHLY
+      - YEARLY
+      type: string
+      description: |-
+        * `DAILY` - Daily
+        * `WEEKLY` - Weekly
+        * `MONTHLY` - Monthly
+        * `YEARLY` - Yearly
+    LogoutRequestRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+          description: JWT Refresh Token
+      required:
+      - refresh
+    LogoutSuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          default: Successfully logged out
+    MarkAllReadResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          default: All notifications marked as read.
+        updated_count:
+          type: integer
+      required:
+      - updated_count
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        notification_type:
+          allOf:
+          - $ref: '#/components/schemas/NotificationTypeEnum'
+          readOnly: true
+        notification_type_display:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        message:
+          type: string
+          readOnly: true
+        is_read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        read_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        metadata:
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - message
+      - metadata
+      - notification_type
+      - notification_type_display
+      - read_at
+      - title
+    NotificationTypeEnum:
+      enum:
+      - BUDGET_EXCEEDED
+      - BUDGET_WARNING
+      - GOAL_COMPLETED
+      - GOAL_WARNING
+      - RECURRING_DUE
+      - RECURRING_GENERATED
+      - RECURRING_EXPIRED
+      type: string
+      description: |-
+        * `BUDGET_EXCEEDED` - Budget Exceeded
+        * `BUDGET_WARNING` - Budget Warning
+        * `GOAL_COMPLETED` - Goal Completed
+        * `GOAL_WARNING` - Goal Warning
+        * `RECURRING_DUE` - Recurring Transaction Due
+        * `RECURRING_GENERATED` - Recurring Transaction Generated
+        * `RECURRING_EXPIRED` - Recurring Schedule Expired
+    NotificationUpdateRequest:
+      type: object
+      properties:
+        is_read:
+          type: boolean
+    PaginatedAuditLogList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditLog'
+    PaginatedBudgetList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Budget'
+    PaginatedCategoryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+    PaginatedFinancialGoalList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinancialGoal'
+    PaginatedNotificationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+    PaginatedRecurringTransactionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecurringTransaction'
+    PaginatedTransactionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+    PatchedBudgetRequest:
+      type: object
+      description: |-
+        Serializer for Budget model with calculation status metrics, category ownership validation,
+        date-range validation, and budget period validation.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        category:
+          type: integer
+          nullable: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        period:
+          $ref: '#/components/schemas/PeriodEnum'
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+    PatchedCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+    PatchedFinancialGoalRequest:
+      type: object
+      description: |-
+        Serializer for FinancialGoal model with calculation status metrics, category ownership validation,
+        target amount validation, and dynamic goal status calculation.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+        category:
+          type: integer
+          nullable: true
+        target_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        target_date:
+          type: string
+          format: date
+        is_active:
+          type: boolean
+    PatchedNotificationUpdateRequest:
+      type: object
+      properties:
+        is_read:
+          type: boolean
+    PatchedRecurringTransactionRequest:
+      type: object
+      description: |-
+        Serializer for RecurringTransaction model with strict validation on amount,
+        transaction_type, recurrence frequency, user-owned category validation,
+        and schedule date-range boundaries.
+      properties:
+        category:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        transaction_type:
+          $ref: '#/components/schemas/TransactionTypeEnum'
+        frequency:
+          $ref: '#/components/schemas/FrequencyEnum'
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+          nullable: true
+        next_run_date:
+          type: string
+          format: date
+        is_active:
+          type: boolean
+    PatchedTransactionRequest:
+      type: object
+      description: |-
+        Serializer for Transaction model with strict validation on amount, transaction_type,
+        user-owned category validation, and required transaction date formatting.
+      properties:
+        category:
+          type: integer
+        transaction_type:
+          $ref: '#/components/schemas/TransactionTypeEnum'
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        description:
+          type: string
+        date:
+          type: string
+          format: date
+    PatchedUserProfileRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          title: Email address
+          oneOf:
+          - type: string
+            format: email
+            maxLength: 254
+          - type: string
+            maxLength: 0
+        currency:
+          type: string
+          minLength: 1
+          description: Primary currency ISO code (e.g. LKR, USD, EUR)
+          maxLength: 3
+    PeriodEnum:
+      enum:
+      - WEEKLY
+      - MONTHLY
+      - CUSTOM
+      type: string
+      description: |-
+        * `WEEKLY` - Weekly
+        * `MONTHLY` - Monthly
+        * `CUSTOM` - Custom
+    RecurringTransaction:
+      type: object
+      description: |-
+        Serializer for RecurringTransaction model with strict validation on amount,
+        transaction_type, recurrence frequency, user-owned category validation,
+        and schedule date-range boundaries.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        category:
+          type: integer
+        category_name:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        transaction_type:
+          $ref: '#/components/schemas/TransactionTypeEnum'
+        frequency:
+          $ref: '#/components/schemas/FrequencyEnum'
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+          nullable: true
+        next_run_date:
+          type: string
+          format: date
+        last_run_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - amount
+      - category
+      - category_name
+      - created_at
+      - frequency
+      - id
+      - last_run_date
+      - name
+      - start_date
+      - transaction_type
+      - updated_at
+    RecurringTransactionRequest:
+      type: object
+      description: |-
+        Serializer for RecurringTransaction model with strict validation on amount,
+        transaction_type, recurrence frequency, user-owned category validation,
+        and schedule date-range boundaries.
+      properties:
+        category:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        transaction_type:
+          $ref: '#/components/schemas/TransactionTypeEnum'
+        frequency:
+          $ref: '#/components/schemas/FrequencyEnum'
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+          nullable: true
+        next_run_date:
+          type: string
+          format: date
+        is_active:
+          type: boolean
+      required:
+      - amount
+      - category
+      - frequency
+      - name
+      - start_date
+      - transaction_type
+    RegisterRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          title: Email address
+          oneOf:
+          - type: string
+            format: email
+            maxLength: 254
+          - type: string
+            maxLength: 0
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password_confirm:
+          type: string
+          writeOnly: true
+          minLength: 1
+        currency:
+          type: string
+          minLength: 1
+          default: LKR
+          description: Primary currency ISO code (e.g. LKR, USD, EUR)
+          maxLength: 3
+      required:
+      - email
+      - password
+      - password_confirm
+      - username
+    RegisterSuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          default: User registered successfully
+        user:
+          $ref: '#/components/schemas/RegisteredUserDetail'
+      required:
+      - user
+    RegisteredUserDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        currency:
+          type: string
+      required:
+      - currency
+      - email
+      - id
+      - username
+    StatusEnum:
+      enum:
+      - ACTIVE
+      - TRIAL
+      - EXPIRED
+      - CANCELLED
+      type: string
+      description: |-
+        * `ACTIVE` - Active
+        * `TRIAL` - Trial
+        * `EXPIRED` - Expired
+        * `CANCELLED` - Cancelled
+    SubscriptionCancelResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+        subscription:
+          $ref: '#/components/schemas/UserSubscription'
+      required:
+      - detail
+      - subscription
+    SubscriptionPlan:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        code:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+        billing_period:
+          allOf:
+          - $ref: '#/components/schemas/BillingPeriodEnum'
+          readOnly: true
+        max_transactions:
+          type: integer
+          readOnly: true
+          description: Max transactions allowed per month (-1 for unlimited)
+        max_budgets:
+          type: integer
+          readOnly: true
+          description: Max active budgets allowed (-1 for unlimited)
+        max_goals:
+          type: integer
+          readOnly: true
+          description: Max financial goals allowed (-1 for unlimited)
+        max_categories:
+          type: integer
+          readOnly: true
+          description: Max custom categories allowed (-1 for unlimited)
+        max_recurring_transactions:
+          type: integer
+          readOnly: true
+          description: Max recurring transaction rules allowed (-1 for unlimited)
+        max_import_size:
+          type: integer
+          readOnly: true
+          description: Max rows allowed per CSV import (-1 for unlimited)
+        features:
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - billing_period
+      - code
+      - created_at
+      - description
+      - features
+      - id
+      - is_active
+      - max_budgets
+      - max_categories
+      - max_goals
+      - max_import_size
+      - max_recurring_transactions
+      - max_transactions
+      - name
+      - price
+      - updated_at
+    SubscriptionUpgradeRequest:
+      type: object
+      properties:
+        plan_code:
+          type: string
+          minLength: 1
+          maxLength: 50
+      required:
+      - plan_code
+    SubscriptionUpgradeResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+        subscription:
+          $ref: '#/components/schemas/UserSubscription'
+      required:
+      - detail
+      - subscription
+    TokenObtainPairRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+      - username
+    TokenObtainResponse:
+      type: object
+      properties:
+        access:
+          type: string
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    Transaction:
+      type: object
+      description: |-
+        Serializer for Transaction model with strict validation on amount, transaction_type,
+        user-owned category validation, and required transaction date formatting.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        category:
+          type: integer
+        category_name:
+          type: string
+          readOnly: true
+        transaction_type:
+          $ref: '#/components/schemas/TransactionTypeEnum'
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        description:
+          type: string
+        date:
+          type: string
+          format: date
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - amount
+      - category
+      - category_name
+      - created_at
+      - date
+      - id
+      - transaction_type
+      - updated_at
+    TransactionImportFileUploadRequest:
+      type: object
+      description: Validates uploaded file format (.csv), non-empty payload, and enforces
+        strict 5MB size limit.
+      properties:
+        file:
+          type: string
+          format: binary
+      required:
+      - file
+    TransactionImportSuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          default: true
+        imported_count:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+          default: []
+      required:
+      - imported_count
+    TransactionRequest:
+      type: object
+      description: |-
+        Serializer for Transaction model with strict validation on amount, transaction_type,
+        user-owned category validation, and required transaction date formatting.
+      properties:
+        category:
+          type: integer
+        transaction_type:
+          $ref: '#/components/schemas/TransactionTypeEnum'
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        description:
+          type: string
+        date:
+          type: string
+          format: date
+      required:
+      - amount
+      - category
+      - date
+      - transaction_type
+    TransactionTypeEnum:
+      enum:
+      - INCOME
+      - EXPENSE
+      type: string
+      description: |-
+        * `INCOME` - Income
+        * `EXPENSE` - Expense
+    UserProfile:
+      type: object
+      properties:
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          title: Email address
+          oneOf:
+          - type: string
+            format: email
+            maxLength: 254
+          - type: string
+            maxLength: 0
+        currency:
+          type: string
+          description: Primary currency ISO code (e.g. LKR, USD, EUR)
+          maxLength: 3
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - username
+    UserProfileRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          title: Email address
+          oneOf:
+          - type: string
+            format: email
+            maxLength: 254
+          - type: string
+            maxLength: 0
+        currency:
+          type: string
+          minLength: 1
+          description: Primary currency ISO code (e.g. LKR, USD, EUR)
+          maxLength: 3
+      required:
+      - username
+    UserSubscription:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        plan:
+          allOf:
+          - $ref: '#/components/schemas/SubscriptionPlan'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+        effective_status:
+          type: string
+          readOnly: true
+        is_expired:
+          type: boolean
+          readOnly: true
+        start_date:
+          type: string
+          format: date-time
+          readOnly: true
+        end_date:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        auto_renew:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - auto_renew
+      - created_at
+      - effective_status
+      - end_date
+      - id
+      - is_expired
+      - plan
+      - start_date
+      - status
+      - updated_at
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
