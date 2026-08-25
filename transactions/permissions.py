@@ -11,7 +11,8 @@ class IsOwner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if not request.user or not request.user.is_authenticated:
             return False
-        return hasattr(obj, 'user') and obj.user == request.user
+        owner = getattr(obj, 'user', None)
+        return owner is not None and owner == request.user
 
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
@@ -22,8 +23,9 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if not request.user or not request.user.is_authenticated:
             return False
-        if request.method in permissions.SAFE_METHODS:
-            return hasattr(obj, 'user') and obj.user == request.user
-        return hasattr(obj, 'user') and obj.user == request.user
+        owner = getattr(obj, 'user', None)
+        if owner is None or owner != request.user:
+            return False
+        return True
 
 
