@@ -34,7 +34,7 @@ def sanitize_error_data(data):
 def custom_exception_handler(exc, context):
     """
     Custom DRF exception handler providing consistent, sanitized error responses
-    for 400, 401, 403, 404, 429, and 500 HTTP errors without exposing raw tracebacks
+    for 400, 401, 403, 404, 409, 429, and 500 HTTP errors without exposing raw tracebacks
     or internal system paths.
     """
     response = exception_handler(exc, context)
@@ -43,8 +43,15 @@ def custom_exception_handler(exc, context):
         response.data = sanitize_error_data(response.data)
 
         if isinstance(response.data, dict):
+            # Ensure top-level detail field for generic dictionary responses if missing
             if 'detail' not in response.data and 'error' not in response.data:
-                pass
+                first_key = next(iter(response.data)) if response.data else None
+                if first_key:
+                    first_val = response.data[first_key]
+                    if isinstance(first_val, list) and first_val:
+                        response.data['detail'] = f"{first_key}: {first_val[0]}"
+                    elif isinstance(first_val, str):
+                        response.data['detail'] = f"{first_key}: {first_val}"
         elif isinstance(response.data, list):
             first_msg = response.data[0] if len(response.data) > 0 else "Invalid input."
             response.data = {
