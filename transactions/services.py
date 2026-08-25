@@ -40,10 +40,10 @@ class BudgetCalculationService:
 
 
     @classmethod
-    def calculate_budget_metrics(cls, budget):
+    def calculate_budget_metrics(cls, budget) -> dict:
         """
         Calculates all usage metrics for a budget.
-        Returns a dictionary containing spent_amount, remaining_amount, percentage_used, is_exceeded.
+        Returns a dictionary containing budget_amount, spent_amount, remaining_amount, percentage_used, is_exceeded.
         """
         spent_amount = cls.calculate_spent_amount(budget)
         budget_amount = budget.amount
