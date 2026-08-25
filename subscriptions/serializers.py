@@ -52,7 +52,9 @@ class SubscriptionUpgradeSerializer(serializers.Serializer):
     plan_code = serializers.CharField(max_length=50, required=True)
 
     def validate_plan_code(self, value):
-        code_clean = value.strip().lower()
+        if value is None or not str(value).strip():
+            raise serializers.ValidationError("Plan code is required and cannot be empty.")
+        code_clean = str(value).strip().lower()
         if not SubscriptionPlan.objects.filter(code=code_clean, is_active=True).exists():
             raise serializers.ValidationError(f"Invalid or inactive plan code: '{value}'.")
         return code_clean
