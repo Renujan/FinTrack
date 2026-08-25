@@ -51,8 +51,9 @@ class AnalyticsService:
     def get_user_transactions(user, start_date=None, end_date=None):
         """
         Returns transaction queryset scoped to the given user and optional date range.
+        Optimized with select_related('category') for downstream relationship pre-fetching.
         """
-        qs = Transaction.objects.filter(user=user)
+        qs = Transaction.objects.filter(user=user).select_related('category')
         if start_date:
             qs = qs.filter(date__gte=start_date)
         if end_date:
