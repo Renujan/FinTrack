@@ -396,6 +396,7 @@ class RecurringTransactionDetailView(generics.RetrieveUpdateDestroyAPIView):
     tags=['Recurring Transactions'],
     summary='Pause Recurring Schedule',
     description='Pauses execution of a recurring transaction schedule without deleting it.',
+    request=None,
     responses={
         200: RecurringTransactionSerializer,
         401: OpenApiResponse(description='Authentication required'),
@@ -419,6 +420,7 @@ class RecurringTransactionPauseView(APIView):
     tags=['Recurring Transactions'],
     summary='Resume Recurring Schedule',
     description='Resumes execution of a previously paused recurring transaction schedule.',
+    request=None,
     responses={
         200: RecurringTransactionSerializer,
         401: OpenApiResponse(description='Authentication required'),
@@ -541,6 +543,7 @@ class FinancialGoalDetailView(generics.RetrieveUpdateDestroyAPIView):
     tags=['Financial Goals'],
     summary='Pause Financial Goal',
     description='Pauses active monitoring of a financial goal.',
+    request=None,
     responses={
         200: FinancialGoalSerializer,
         401: OpenApiResponse(description='Authentication required'),
@@ -567,6 +570,7 @@ class FinancialGoalPauseView(APIView):
     tags=['Financial Goals'],
     summary='Resume Financial Goal',
     description='Resumes monitoring of a previously paused financial goal.',
+    request=None,
     responses={
         200: FinancialGoalSerializer,
         401: OpenApiResponse(description='Authentication required'),
@@ -665,6 +669,7 @@ class NotificationDetailView(generics.RetrieveUpdateDestroyAPIView):
     tags=['Notifications'],
     summary='Mark All Notifications as Read',
     description='Marks all unread notifications for the current authenticated user as read.',
+    request=None,
     responses={
         200: inline_serializer(
             name='MarkAllReadResponse',

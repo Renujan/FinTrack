@@ -126,6 +126,7 @@ class SubscriptionUpgradeView(APIView):
     tags=['Subscriptions'],
     summary='Cancel Active Subscription',
     description='Cancels auto-renewal for the user subscription without purging historical data.',
+    request=None,
     responses={
         200: inline_serializer(
             name='SubscriptionCancelResponse',
