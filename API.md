@@ -20,6 +20,7 @@ The backend provides automatically generated OpenAPI 3.0 schemas and interactive
 - **Swagger UI (Interactive API Explorer)**: [`/api/docs/`](http://127.0.0.1:8000/api/docs/)
 - **ReDoc (Reference Documentation)**: [`/api/redoc/`](http://127.0.0.1:8000/api/redoc/)
 - **Raw OpenAPI Schema (YAML/JSON)**: [`/api/schema/`](http://127.0.0.1:8000/api/schema/) (Append `?format=json` for JSON output)
+- **Day 16 Schema Verification**: All action APIViews (`/api/goals/{id}/pause/`, `/api/goals/{id}/resume/`, `/api/recurring-transactions/{id}/pause/`, `/api/recurring-transactions/{id}/resume/`, `/api/notifications/mark-all-read/`, `/api/subscription/cancel/`) feature explicit OpenAPI `@extend_schema(request=None)` schema definitions.
 
 ---
 
