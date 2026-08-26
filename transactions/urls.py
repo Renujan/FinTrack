@@ -37,6 +37,16 @@ from .export_import.views import (
     FinancialReportAPIView,
     TransactionImportAPIView,
 )
+from .reports.views import (
+    IncomeReportAPIView,
+    ExpenseReportAPIView,
+    CashFlowReportAPIView,
+    CategoryReportAPIView,
+    MonthlyReportAPIView,
+    SpendingTrendsReportAPIView,
+    BudgetComparisonReportAPIView,
+    TopCategoriesReportAPIView,
+)
 
 app_name = 'transactions'
 
@@ -76,6 +86,14 @@ urlpatterns = [
     path('export/recurring/', RecurringTransactionExportAPIView.as_view(), name='export-recurring'),
 
     path('reports/financial/', FinancialReportAPIView.as_view(), name='reports-financial'),
+    path('reports/income/', IncomeReportAPIView.as_view(), name='reports-income'),
+    path('reports/expenses/', ExpenseReportAPIView.as_view(), name='reports-expenses'),
+    path('reports/cash-flow/', CashFlowReportAPIView.as_view(), name='reports-cash-flow'),
+    path('reports/categories/', CategoryReportAPIView.as_view(), name='reports-categories'),
+    path('reports/monthly/', MonthlyReportAPIView.as_view(), name='reports-monthly'),
+    path('reports/trends/', SpendingTrendsReportAPIView.as_view(), name='reports-trends'),
+    path('reports/budgets/', BudgetComparisonReportAPIView.as_view(), name='reports-budgets'),
+    path('reports/top-categories/', TopCategoriesReportAPIView.as_view(), name='reports-top-categories'),
 
     path('import/transactions/', TransactionImportAPIView.as_view(), name='import-transactions'),
 ]
