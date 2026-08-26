@@ -711,6 +711,41 @@ Complete backend quality audit, error fixing, and refactoring executed with non-
 
 ---
 
+## 📊 Day 17 — Financial Reports & Advanced Reporting API
+
+Day 17 implements a dedicated **Financial Reports API** system providing user-scoped financial reporting endpoints and analytics services.
+
+### 1. Architecture & Service Layer
+The reporting system is built on a modular `ReportService` class in `transactions/reports/services.py`:
+- `get_income_report(user, start_date=None, end_date=None)`
+- `get_expense_report(user, start_date=None, end_date=None, category=None, search=None)`
+- `get_cash_flow_report(user, start_date=None, end_date=None)`
+- `get_category_report(user, start_date=None, end_date=None, category=None)`
+- `get_monthly_report(user, start_date=None, end_date=None)`
+- `get_spending_trends(user, start_date=None, end_date=None, group_by='monthly')`
+- `get_budget_comparison(user, start_date=None, end_date=None)`
+- `get_top_categories(user, start_date=None, end_date=None, limit=5)`
+
+All report data is strictly isolated to the authenticated user.
+
+### 2. Endpoints Overview
+
+Base URL: `/api/reports/` (also available via `/api/v1/reports/`)
+All endpoints require `Authorization: Bearer <access_token>` header.
+
+| Method | Endpoint | Auth Required | Description |
+|---|---|---|---|
+| `GET` | `/api/reports/income/` | Yes (`Bearer`) | Income summary (total, count, avg, min, max) |
+| `GET` | `/api/reports/expenses/` | Yes (`Bearer`) | Expense summary (total, count, avg, min, max, category/search filter) |
+| `GET` | `/api/reports/cash-flow/` | Yes (`Bearer`) | Cash flow summary (income, expenses, net cash flow, savings rate) |
+| `GET` | `/api/reports/categories/` | Yes (`Bearer`) | Category spending breakdown (total, percentage, count, ordered) |
+| `GET` | `/api/reports/monthly/` | Yes (`Bearer`) | Monthly aggregated financial records chronologically |
+| `GET` | `/api/reports/trends/` | Yes (`Bearer`) | Financial trends grouped by daily, weekly, or monthly intervals |
+| `GET` | `/api/reports/budgets/` | Yes (`Bearer`) | Budget vs actual performance comparison metrics |
+| `GET` | `/api/reports/top-categories/` | Yes (`Bearer`) | Top spending categories (default top 5, customizable limit 1–100) |
+
+---
+
 ## 📄 License
 MIT License
 

@@ -183,6 +183,14 @@ Content-Type: application/json
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/api/reports/financial/` | Consolidated financial report JSON dataset |
+| `GET` | `/api/reports/income/` | Income summary statistics (total, count, avg, min, max) |
+| `GET` | `/api/reports/expenses/` | Expense summary statistics (total, count, avg, min, max, category/search) |
+| `GET` | `/api/reports/cash-flow/` | Net cash flow & savings rate report |
+| `GET` | `/api/reports/categories/` | Category expense spending breakdown & percentages |
+| `GET` | `/api/reports/monthly/` | Chronological monthly aggregated income, expenses, and net balance |
+| `GET` | `/api/reports/trends/` | Financial trends aggregated by daily, weekly, or monthly intervals |
+| `GET` | `/api/reports/budgets/` | Budget vs actual spending comparison and exceeded status |
+| `GET` | `/api/reports/top-categories/` | Top spending categories report (customizable limit 1–100) |
 
 ### 💎 Subscriptions (`/api/subscription/`)
 | Method | Endpoint | Description |
