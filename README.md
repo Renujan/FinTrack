@@ -753,3 +753,4 @@ MIT License
 
 
 
+- [x] **Day 18**: User Profile & Account Settings API (UserProfile & UserPreference models, currency selection & configuration, date format & timezone settings, financial year start month, notification preference controls, UserPreferenceService business layer, secure password change endpoint with audit trail, account overview API, DRF serializers, Django admin integration, audit log hooks, OpenAPI documentation, 13 Git commits).
