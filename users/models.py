@@ -185,6 +185,28 @@ class UserPreference(models.Model):
     def __str__(self):
         return f"Preferences of {self.user.username}"
 
+    DEFAULT_PREFERENCES_CONFIG = {
+        'currency': 'LKR',
+        'currency_symbol': 'Rs.',
+        'date_format': 'YYYY-MM-DD',
+        'timezone': 'UTC',
+        'language': 'en',
+        'financial_year_start_month': 1,
+        'default_transaction_type': 'EXPENSE',
+        'budget_alerts': True,
+        'goal_alerts': True,
+        'recurring_transaction_alerts': True,
+        'system_notifications': True,
+    }
+
+    @classmethod
+    def get_currency_symbol(cls, currency_code):
+        return CURRENCY_SYMBOLS.get(currency_code.upper() if currency_code else 'LKR', 'Rs.')
+
+    @classmethod
+    def is_valid_financial_month(cls, month):
+        return isinstance(month, int) and 1 <= month <= 12
+
     def save(self, *args, **kwargs):
         if self.currency in CURRENCY_SYMBOLS:
             self.currency_symbol = CURRENCY_SYMBOLS[self.currency]
