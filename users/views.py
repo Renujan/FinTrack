@@ -129,12 +129,9 @@ class AccountOverviewView(generics.GenericAPIView):
     throttle_classes = [UserAuthRateThrottle]
     serializer_class = AccountOverviewSerializer
 
-    def get(self, request, *args, **kwargs):
-        user = request.user
+    def get_account_summary(self, user, request):
         profile, _ = UserProfile.objects.get_or_create(user=user)
         preferences = UserPreferenceService.get_preferences(user)
-
-        # Subscription details
         sub_info = {
             'plan_name': 'Free',
             'status': 'active',
@@ -151,8 +148,6 @@ class AccountOverviewView(generics.GenericAPIView):
                 'end_date': sub.end_date.isoformat() if sub.end_date else None,
                 'auto_renew': sub.auto_renew,
             }
-
-        # Counters
         stats = {
             'transaction_count': Transaction.objects.filter(user=user).count(),
             'budget_count': Budget.objects.filter(user=user).count(),
@@ -160,30 +155,26 @@ class AccountOverviewView(generics.GenericAPIView):
             'recurring_schedule_count': RecurringTransaction.objects.filter(user=user).count(),
             'unread_notification_count': Notification.objects.filter(user=user, is_read=False).count(),
         }
-
-        # Recent activity summary from AuditLog
         recent_logs = AuditLog.objects.filter(user=user).order_by('-timestamp')[:5]
-        activity_summary = []
-        for log in recent_logs:
-            activity_summary.append({
+        activity_summary = [
+            {
                 'action': log.action,
                 'resource_type': log.resource_type,
                 'resource_id': log.resource_id,
                 'timestamp': log.timestamp.isoformat(),
                 'ip_address': log.ip_address,
-            })
-
-        user_info = {
-            'id': user.id,
-            'username': user.username,
-            'email': user.email,
-            'date_joined': user.date_joined.isoformat() if user.date_joined else None,
-            'is_staff': user.is_staff,
-            'is_active': user.is_active,
-        }
-
-        data = {
-            'user_info': user_info,
+            }
+            for log in recent_logs
+        ]
+        return {
+            'user_info': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'date_joined': user.date_joined.isoformat() if user.date_joined else None,
+                'is_staff': user.is_staff,
+                'is_active': user.is_active,
+            },
             'profile': UserProfileSerializer(profile, context={'request': request}).data,
             'preferences': UserPreferenceSerializer(preferences, context={'request': request}).data,
             'subscription': sub_info,
@@ -191,4 +182,6 @@ class AccountOverviewView(generics.GenericAPIView):
             'recent_activity': activity_summary,
         }
 
+    def get(self, request, *args, **kwargs):
+        data = self.get_account_summary(request.user, request)
         return Response(data, status=status.HTTP_200_OK)
