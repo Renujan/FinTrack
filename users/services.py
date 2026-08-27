@@ -85,6 +85,18 @@ class UserPreferenceService:
         return 'YYYY-MM-DD'
 
     @classmethod
+    def validate_date_format(cls, date_format_str):
+        from users.models import DateFormatChoice
+        return date_format_str in DateFormatChoice.values
+
+    @classmethod
+    def get_financial_year_start_month(cls, user):
+        preferences = cls.get_preferences(user)
+        if preferences and preferences.financial_year_start_month:
+            return preferences.financial_year_start_month
+        return 1
+
+    @classmethod
     def get_financial_preferences(cls, user):
         """
         Returns dictionary of user financial configuration settings.
