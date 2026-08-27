@@ -343,8 +343,12 @@ class NotificationService:
     @classmethod
     def create_notification(cls, user, notification_type, title, message, metadata=None):
         """
-        Creates and persists a Notification record for a user.
+        Creates and persists a Notification record for a user if user preferences permit.
         """
+        from users.services import UserPreferenceService
+        if not UserPreferenceService.should_receive_notification(user, notification_type):
+            return None
+
         if metadata is None:
             metadata = {}
         return Notification.objects.create(
