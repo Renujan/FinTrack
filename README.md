@@ -45,6 +45,7 @@ The system follows clean modular monolithic architecture designed for SaaS scala
 - [x] **Day 15**: API Documentation, OpenAPI & Developer Experience (OpenAPI 3.0 schema generation via `drf-spectacular`, interactive Swagger UI at `/api/docs/`, ReDoc reference at `/api/redoc/`, raw OpenAPI schema at `/api/schema/`, `@extend_schema` annotations, versioning readiness at `/api/v1/`, complete developer guide in `API.md`, 13 Git commits).
 - [x] **Day 16**: Backend Code Audit, Error Fixing & Refactoring (Complete backend audit, Python compilation and import verification, Django configuration checks, permission & user data isolation audit, serializer validation cleanup, OpenAPI schema generator warning resolutions, service layer refactoring, error handler standardization, project cleanup, manual API verification, 12 Git commits).
 - [x] **Day 17**: Financial Reports & Advanced Reporting API (ReportService foundation, income reports, expense reports, cash-flow summary & savings rate, category spending breakdown, monthly aggregation, spending trends, budget vs actual comparison, top spending categories with limit validation, query parameter filters & validation, 8 dedicated read-only REST API endpoints under /api/reports/, OpenAPI annotations, documentation, 12 Git commits).
+- [x] **Day 18**: User Profile & Account Settings API (UserProfile & UserPreference models, currency selection & configuration, date format & timezone settings, financial year start month, notification preference controls, UserPreferenceService business layer, secure password change endpoint with audit trail, account overview API, DRF serializers, Django admin integration, audit log hooks, OpenAPI documentation, 13 Git commits).
 
 ---
 
@@ -746,6 +747,28 @@ All endpoints require `Authorization: Bearer <access_token>` header.
 
 ---
 
+## 👤 Day 18 — User Profile & Account Settings API
+
+Day 18 introduces a complete **User Profile & Account Settings API**, allowing authenticated users to manage personal profile information, preferences, currency settings, date formats, notification triggers, and secure password updates.
+
+### 1. Key Models & Services
+- **`UserProfile`**: OneToOne relation with `User` (`display_name`, `bio`, `phone_number`, `profile_updated_at`, `full_name`).
+- **`UserPreference`**: OneToOne relation with `User` (`currency`, `currency_symbol`, `default_currency`, `date_format`, `timezone`, `language`, `financial_year_start_month`, `default_transaction_type`, `budget_alerts`, `goal_alerts`, `recurring_transaction_alerts`, `system_notifications`).
+- **`UserPreferenceService`**: Reusable service layer (`get_preferences`, `update_preferences`, `get_currency`, `get_timezone`, `get_financial_preferences`, `should_receive_notification`).
+
+### 2. Endpoints Overview
+
+| Method | Endpoint | Auth Required | Description |
+|---|---|---|---|
+| `GET` | `/api/profile/` | Yes (`Bearer`) | Retrieve authenticated user profile |
+| `PATCH` | `/api/profile/` | Yes (`Bearer`) | Update profile info (display name, bio, phone, email, currency) |
+| `GET` | `/api/account/preferences/` | Yes (`Bearer`) | Retrieve user account preferences |
+| `PATCH` | `/api/account/preferences/` | Yes (`Bearer`) | Update preferences (currency, date format, timezone, alerts) |
+| `POST` | `/api/account/change-password/` | Yes (`Bearer`) | Securely change user password with validation |
+| `GET` | `/api/account/overview/` | Yes (`Bearer`) | Retrieve account summary, subscription tier, stats & audit history |
+
+---
+
 ## 📄 License
 MIT License
 
@@ -753,4 +776,3 @@ MIT License
 
 
 
-- [x] **Day 18**: User Profile & Account Settings API (UserProfile & UserPreference models, currency selection & configuration, date format & timezone settings, financial year start month, notification preference controls, UserPreferenceService business layer, secure password change endpoint with audit trail, account overview API, DRF serializers, Django admin integration, audit log hooks, OpenAPI documentation, 13 Git commits).

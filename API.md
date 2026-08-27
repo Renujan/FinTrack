@@ -245,6 +245,95 @@ Errors handled by the custom exception handler return standard structure:
 
 ---
 
+## 👤 User Profile & Account Settings API (Day 18)
+
+Day 18 provides endpoints for managing user profile information, account preferences, password changes, and account overview metrics.
+
+### 1. User Profile (`GET /api/profile/`, `PATCH /api/profile/`)
+**GET Response:**
+```json
+{
+  "username": "johndoe",
+  "email": "john@example.com",
+  "first_name": "John",
+  "last_name": "Doe",
+  "full_name": "John Doe",
+  "display_name": "John D.",
+  "bio": "Personal finance enthusiast",
+  "phone_number": "+1234567890",
+  "currency": "USD",
+  "profile_updated_at": "2026-08-27T10:30:00Z",
+  "created_at": "2026-08-01T00:00:00Z"
+}
+```
+
+### 2. User Preferences (`GET /api/account/preferences/`, `PATCH /api/account/preferences/`)
+**PATCH Request Example:**
+```json
+{
+  "currency": "USD",
+  "date_format": "YYYY-MM-DD",
+  "timezone": "America/New_York",
+  "financial_year_start_month": 1,
+  "default_transaction_type": "EXPENSE",
+  "budget_alerts": true,
+  "goal_alerts": true,
+  "recurring_transaction_alerts": true,
+  "system_notifications": true
+}
+```
+
+### 3. Password Change (`POST /api/account/change-password/`)
+**Request Payload:**
+```json
+{
+  "current_password": "OldPassword123!",
+  "new_password": "NewStrongPassword456!",
+  "confirm_password": "NewStrongPassword456!"
+}
+```
+**Response:**
+```json
+{
+  "message": "Password changed successfully."
+}
+```
+
+### 4. Account Overview (`GET /api/account/overview/`)
+**Response:**
+```json
+{
+  "user_info": {
+    "id": 1,
+    "username": "johndoe",
+    "email": "john@example.com",
+    "date_joined": "2026-08-01T00:00:00Z",
+    "is_staff": false,
+    "is_active": true
+  },
+  "profile": { ... },
+  "preferences": { ... },
+  "subscription": {
+    "plan_name": "Free",
+    "status": "active",
+    "start_date": "2026-08-01T00:00:00Z",
+    "end_date": null,
+    "auto_renew": true
+  },
+  "statistics": {
+    "transaction_count": 42,
+    "budget_count": 3,
+    "goal_count": 2,
+    "recurring_schedule_count": 4,
+    "unread_notification_count": 1
+  },
+  "recent_activity": [ ... ]
+}
+}
+```
+
+---
+
 ## 💻 Local Developer Setup
 
 1. **Clone repository**:
