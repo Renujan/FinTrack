@@ -16,6 +16,22 @@ from users.serializers import (
 )
 
 
+def log_account_audit_action(user, action_type, resource_type, resource_id, metadata, request=None):
+    """
+    Helper function to record safe, sanitized account management audit events.
+    Excludes sensitive inputs like passwords, tokens, or personal identity numbers.
+    """
+    safe_metadata = {k: v for k, v in metadata.items() if k not in ['password', 'current_password', 'new_password']}
+    return AuditLogService.log_action(
+        user=user,
+        action=action_type,
+        resource_type=resource_type,
+        resource_id=resource_id,
+        metadata=safe_metadata,
+        request=request
+    )
+
+
 @extend_schema(
     tags=['User Profile & Account'],
     summary='Retrieve or Update Authenticated User Profile',
