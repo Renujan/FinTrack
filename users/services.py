@@ -142,4 +142,24 @@ class UserPreferenceService:
         ]:
             return preferences.recurring_transaction_alerts
 
-        return preferences.system_notifications
+    @classmethod
+    def get_preference_summary(cls, user):
+        """
+        Returns structured summary dictionary of all preferences for account overview.
+        """
+        preferences = cls.get_preferences(user)
+        if not preferences:
+            return cls.get_financial_preferences(user)
+        return {
+            'currency': preferences.currency,
+            'currency_symbol': preferences.currency_symbol,
+            'date_format': preferences.date_format,
+            'timezone': preferences.timezone,
+            'language': preferences.language,
+            'financial_year_start_month': preferences.financial_year_start_month,
+            'default_transaction_type': preferences.default_transaction_type,
+            'budget_alerts': preferences.budget_alerts,
+            'goal_alerts': preferences.goal_alerts,
+            'recurring_transaction_alerts': preferences.recurring_transaction_alerts,
+            'system_notifications': preferences.system_notifications,
+        }
