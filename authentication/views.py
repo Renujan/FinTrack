@@ -151,5 +151,7 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
-        return self.request.user
+        from users.models import UserProfile
+        profile, _ = UserProfile.objects.get_or_create(user=self.request.user)
+        return profile
 

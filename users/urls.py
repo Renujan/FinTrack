@@ -1,11 +1,16 @@
-"""
-Users App URL Configuration.
-User profile and preferences endpoints are routed under /api/auth/ and /api/users/.
-"""
 from django.urls import path
+from users.views import (
+    UserProfileDetailView,
+    UserPreferenceDetailView,
+    PasswordChangeView,
+    AccountOverviewView,
+)
 
 app_name = 'users'
 
 urlpatterns = [
-    # Dedicated user management routes reserved for multi-user extensions
+    path('profile/', UserProfileDetailView.as_view(), name='profile'),
+    path('preferences/', UserPreferenceDetailView.as_view(), name='preferences'),
+    path('change-password/', PasswordChangeView.as_view(), name='change-password'),
+    path('overview/', AccountOverviewView.as_view(), name='overview'),
 ]

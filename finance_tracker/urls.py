@@ -23,6 +23,8 @@ from drf_spectacular.views import (
 )
 from finance_tracker.views import health_check
 
+from users.views import UserProfileDetailView
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/health/', health_check, name='health-check'),
@@ -33,6 +35,8 @@ urlpatterns = [
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 
     # Core API Routes
+    path('api/profile/', UserProfileDetailView.as_view(), name='api-profile'),
+    path('api/account/', include('users.urls', namespace='account')),
     path('api/auth/', include('authentication.urls', namespace='auth')),
     path('api/users/', include('users.urls', namespace='users')),
     path('api/subscription/', include('subscriptions.urls', namespace='subscriptions')),
@@ -40,6 +44,8 @@ urlpatterns = [
 
     # API v1 Route Aliases for Versioning Readiness
     path('api/v1/health/', health_check, name='v1-health-check'),
+    path('api/v1/profile/', UserProfileDetailView.as_view(), name='v1-api-profile'),
+    path('api/v1/account/', include('users.urls', namespace='v1-account')),
     path('api/v1/auth/', include('authentication.urls', namespace='v1-auth')),
     path('api/v1/users/', include('users.urls', namespace='v1-users')),
     path('api/v1/subscription/', include('subscriptions.urls', namespace='v1-subscriptions')),
