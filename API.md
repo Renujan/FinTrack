@@ -334,6 +334,32 @@ Day 18 provides endpoints for managing user profile information, account prefere
 
 ---
 
+## 📊 Financial Dashboard API (`/api/dashboard/`)
+
+Base URL: `/api/dashboard/` (Alias: `/api/v1/dashboard/`)
+
+All Dashboard endpoints require `Authorization: Bearer <access_token>` header.
+
+### Endpoint Matrix
+
+| Method | Endpoint | Description | Query Parameters |
+|---|---|---|---|
+| `GET` | `/api/dashboard/` | Full Aggregated Financial Dashboard | `start_date`, `end_date`, `limit`, `top_categories_limit` |
+| `GET` | `/api/dashboard/summary/` | Summary Totals & Period Comparison | `start_date`, `end_date` |
+| `GET` | `/api/dashboard/recent-transactions/` | Recent User Transactions Feed | `limit` (default: 5, max: 50) |
+| `GET` | `/api/dashboard/budgets/` | Active Budget Progress & Exceeded Metrics | None |
+| `GET` | `/api/dashboard/goals/` | Savings Goals Overview & Near-Completion | None |
+| `GET` | `/api/dashboard/insights/` | Spending Insights & Top Categories | `start_date`, `end_date`, `limit` |
+| `GET` | `/api/dashboard/alerts/` | Financial System Warnings & Alerts | None |
+
+### Key Features
+- **Query Optimization**: Leverages `select_related('category')`, database-level annotations (`Sum`, `Count`, `Avg`, `TruncMonth`), and `Coalesce` to eliminate N+1 queries.
+- **Precision**: Money calculations use `Decimal` precision without floating-point inaccuracies.
+- **Zero-Division Protection**: Handles new users, empty datasets, and zero previous period amounts safely.
+- **Multi-Tenant Isolation**: All queries strictly scoped to `request.user`.
+
+---
+
 ## 💻 Local Developer Setup
 
 1. **Clone repository**:

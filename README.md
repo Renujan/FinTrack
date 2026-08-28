@@ -141,6 +141,134 @@ If errors occur on specific rows:
 
 ---
 
+## 📈 Financial Dashboard & Dashboard Summary API Documentation (Day 19)
+
+Base URL: `/api/dashboard/`
+
+The Financial Dashboard API provides optimized, aggregated dashboard endpoints for consumption by single-page applications (e.g., React frontend).
+
+### Endpoints Overview
+
+| Method | Endpoint | Auth Required | Description |
+|---|---|---|---|
+| `GET` | `/api/dashboard/` | Yes (`Bearer`) | Primary aggregated financial dashboard payload (summary, cash flow, recent txns, budgets, goals, insights, alerts) |
+| `GET` | `/api/dashboard/summary/` | Yes (`Bearer`) | Core financial summary totals, period comparisons, and balance summary |
+| `GET` | `/api/dashboard/recent-transactions/` | Yes (`Bearer`) | Recent transaction records for dashboard feed (supports `limit` param) |
+| `GET` | `/api/dashboard/budgets/` | Yes (`Bearer`) | Active budget status, exceeded counts, utilization rates, and remaining amounts |
+| `GET` | `/api/dashboard/goals/` | Yes (`Bearer`) | Goal overview metrics, savings progress, and near-completion goals |
+| `GET` | `/api/dashboard/insights/` | Yes (`Bearer`) | Spending insights (highest category, largest expense, average expense) and top categories |
+| `GET` | `/api/dashboard/alerts/` | Yes (`Bearer`) | Active financial alerts (budget warnings, goal milestones, subscription limits, recurring dues) |
+
+### Sample Response (`GET /api/dashboard/`)
+```json
+{
+  "financial_summary": {
+    "total_income": "250000.00",
+    "total_expenses": "175000.00",
+    "current_balance": "75000.00",
+    "net_cash_flow": "75000.00"
+  },
+  "income_expense_overview": {
+    "period_type": "monthly",
+    "current_period": {
+      "start_date": "2026-08-01",
+      "end_date": "2026-08-28",
+      "income": "150000.00",
+      "expenses": "95000.00"
+    },
+    "previous_period": {
+      "start_date": "2026-07-01",
+      "end_date": "2026-07-31",
+      "income": "100000.00",
+      "expenses": "80000.00"
+    },
+    "income_percentage_change": "50.00",
+    "expense_percentage_change": "18.75"
+  },
+  "balance_summary": {
+    "total_income": "250000.00",
+    "total_expenses": "175000.00",
+    "current_balance": "75000.00",
+    "transaction_count": 42,
+    "income_transaction_count": 15,
+    "expense_transaction_count": 27,
+    "balance_type": "transaction_based",
+    "note": "Calculated strictly from recorded income and expense transactions. Distinguish from live bank account balance."
+  },
+  "cash_flow_summary": [
+    {
+      "period": "2026-08",
+      "income": "150000.00",
+      "expenses": "95000.00",
+      "net_cash_flow": "55000.00",
+      "transaction_count": 20
+    }
+  ],
+  "recent_transactions": [
+    {
+      "id": 101,
+      "title": "Software License",
+      "description": "Monthly cloud subscription",
+      "amount": "49.99",
+      "transaction_type": "EXPENSE",
+      "category": { "id": 3, "name": "Subscriptions" },
+      "category_name": "Subscriptions",
+      "date": "2026-08-28"
+    }
+  ],
+  "budget_overview": {
+    "total_budgets": 5,
+    "active_budgets": 4,
+    "exceeded_budgets": 1,
+    "budgets_near_limit": 1,
+    "total_budget_amount": "5000.00",
+    "total_spent_amount": "3450.00",
+    "remaining_amount": "1550.00",
+    "overall_utilization_percentage": 69.0,
+    "budgets_summary": []
+  },
+  "goal_overview": {
+    "total_goals": 3,
+    "active_goals": 2,
+    "completed_goals": 1,
+    "near_completion_goals": 1,
+    "total_target_amount": "10000.00",
+    "total_saved_amount": "8500.00",
+    "overall_progress_percentage": 85.0,
+    "goals_summary": []
+  },
+  "spending_insights": {
+    "highest_spending_category": { "category": "Housing", "category_id": 1, "spent": "4500.00", "percentage": 45.0, "transaction_count": 2 },
+    "largest_recent_expense": { "id": 98, "title": "Laptop Purchase", "description": "Work laptop", "amount": "2499.00", "category_name": "Equipment", "date": "2026-08-20" },
+    "average_expense": "325.50",
+    "spending_change_percentage": "18.75",
+    "expense_transaction_count": 27,
+    "total_expenses_amount": "175000.00"
+  },
+  "monthly_comparison": {
+    "current_month": "2026-08",
+    "previous_month": "2026-07",
+    "income_difference": "50000.00",
+    "income_percentage_change": "50.00",
+    "expense_difference": "15000.00",
+    "expense_percentage_change": "18.75",
+    "balance_difference": "35000.00",
+    "balance_percentage_change": "175.00"
+  },
+  "alerts": [
+    {
+      "type": "BUDGET_NEAR_LIMIT",
+      "message": "Your budget 'Dining Out' is close to its limit (85% used). Spent $425.00 of $500.00.",
+      "severity": "warning",
+      "category": "budget",
+      "metadata": { "budget_id": 2, "budget_name": "Dining Out" }
+    }
+  ]
+}
+```
+
+---
+
 ## 🧪 Testing Guide
 
 We use `pytest` and `pytest-django` for automated unit and integration testing.
