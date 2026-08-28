@@ -47,6 +47,15 @@ from .reports.views import (
     BudgetComparisonReportAPIView,
     TopCategoriesReportAPIView,
 )
+from .dashboard.views import (
+    DashboardAPIView,
+    DashboardSummaryDetailAPIView,
+    DashboardRecentTransactionsAPIView,
+    DashboardBudgetsAPIView,
+    DashboardGoalsAPIView,
+    DashboardInsightsAPIView,
+    DashboardAlertsAPIView,
+)
 
 app_name = 'transactions'
 
@@ -96,6 +105,14 @@ urlpatterns = [
     path('reports/top-categories/', TopCategoriesReportAPIView.as_view(), name='reports-top-categories'),
 
     path('import/transactions/', TransactionImportAPIView.as_view(), name='import-transactions'),
+
+    path('dashboard/', DashboardAPIView.as_view(), name='dashboard-overview'),
+    path('dashboard/summary/', DashboardSummaryDetailAPIView.as_view(), name='dashboard-summary'),
+    path('dashboard/recent-transactions/', DashboardRecentTransactionsAPIView.as_view(), name='dashboard-recent-transactions'),
+    path('dashboard/budgets/', DashboardBudgetsAPIView.as_view(), name='dashboard-budgets'),
+    path('dashboard/goals/', DashboardGoalsAPIView.as_view(), name='dashboard-goals'),
+    path('dashboard/insights/', DashboardInsightsAPIView.as_view(), name='dashboard-insights'),
+    path('dashboard/alerts/', DashboardAlertsAPIView.as_view(), name='dashboard-alerts'),
 ]
 
 
