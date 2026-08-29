@@ -126,7 +126,7 @@ class DataBackupDetailView(generics.RetrieveDestroyAPIView):
 class DataBackupDownloadView(APIView):
     """
     GET /api/backups/<id>/download/ - Secure backup file download endpoint.
-    Only the owner of the backup can stream and download the file.
+    Only the owner of the backup can stream and download the file. Never exposes filesystem paths.
     """
     permission_classes = [IsAuthenticated]
 
