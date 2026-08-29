@@ -176,7 +176,7 @@ class DataBackupDownloadView(APIView):
 
 class BackupRestoreValidateView(APIView):
     """
-    POST /api/backups/validate-restore/ - Restore preparation & preview.
+    POST /api/backups/validate-restore/ - Safe restore preparation & preview validation.
     Validates backup structure, format, version, and entity integrity without modifying user data.
     """
     permission_classes = [IsAuthenticated]
