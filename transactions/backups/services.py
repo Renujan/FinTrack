@@ -21,6 +21,9 @@ from transactions.audit_services import AuditLogService
 
 logger = logging.getLogger(__name__)
 
+# JSON Backup Export Standard Schema Version
+JSON_BACKUP_SCHEMA_VERSION = "1.0"
+
 
 class DecimalAndDateEncoder(json.JSONEncoder):
     """
