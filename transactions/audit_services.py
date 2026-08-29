@@ -93,3 +93,19 @@ class AuditLogService:
     def log_password_change(cls, user, ip_address=None, metadata=None, request=None):
         user_id = getattr(user, 'id', '') if user else ''
         return cls.log_action(user=user, action=AuditAction.PASSWORD_CHANGE, resource_type='User', resource_id=user_id, ip_address=ip_address, metadata=metadata, request=request)
+
+    @classmethod
+    def log_backup_created(cls, user, resource_id='', metadata=None, request=None):
+        return cls.log_action(user=user, action=AuditAction.BACKUP_CREATED, resource_type='DataBackup', resource_id=resource_id, metadata=metadata, request=request)
+
+    @classmethod
+    def log_backup_downloaded(cls, user, resource_id='', metadata=None, request=None):
+        return cls.log_action(user=user, action=AuditAction.BACKUP_DOWNLOADED, resource_type='DataBackup', resource_id=resource_id, metadata=metadata, request=request)
+
+    @classmethod
+    def log_backup_deleted(cls, user, resource_id='', metadata=None, request=None):
+        return cls.log_action(user=user, action=AuditAction.BACKUP_DELETED, resource_type='DataBackup', resource_id=resource_id, metadata=metadata, request=request)
+
+    @classmethod
+    def log_restore_validated(cls, user, metadata=None, request=None):
+        return cls.log_action(user=user, action=AuditAction.RESTORE_VALIDATED, resource_type='DataBackup', resource_id='', metadata=metadata, request=request)

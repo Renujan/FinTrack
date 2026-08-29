@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Transaction, Budget, FinancialGoal, Notification
+from .models import Category, Transaction, Budget, FinancialGoal, Notification, DataBackup
 
 
 @admin.register(Category)
@@ -36,5 +36,13 @@ class NotificationAdmin(admin.ModelAdmin):
     list_filter = ('notification_type', 'is_read', 'user')
     search_fields = ('title', 'message', 'user__email')
     readonly_fields = ('created_at', 'read_at')
+
+
+@admin.register(DataBackup)
+class DataBackupAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'user', 'status', 'backup_type', 'file_size', 'record_count', 'created_at', 'completed_at', 'expires_at')
+    list_filter = ('status', 'backup_type', 'created_at')
+    search_fields = ('name', 'user__email', 'user__username')
+    readonly_fields = ('created_at', 'completed_at', 'file_size', 'record_count')
 
 
