@@ -56,10 +56,23 @@ from .dashboard.views import (
     DashboardInsightsAPIView,
     DashboardAlertsAPIView,
 )
+from .backups.views import (
+    DataBackupListCreateView,
+    DataBackupDetailView,
+    DataBackupDownloadView,
+    BackupRestoreValidateView,
+    BackupCleanupExpiredView,
+)
 
 app_name = 'transactions'
 
 urlpatterns = [
+    path('backups/', DataBackupListCreateView.as_view(), name='backup-list-create'),
+    path('backups/<int:pk>/', DataBackupDetailView.as_view(), name='backup-detail'),
+    path('backups/<int:pk>/download/', DataBackupDownloadView.as_view(), name='backup-download'),
+    path('backups/validate-restore/', BackupRestoreValidateView.as_view(), name='backup-validate-restore'),
+    path('backups/cleanup-expired/', BackupCleanupExpiredView.as_view(), name='backup-cleanup-expired'),
+
     path('categories/', CategoryListCreateView.as_view(), name='category-list-create'),
     path('categories/<int:pk>/', CategoryDetailView.as_view(), name='category-detail'),
     path('transactions/', TransactionListCreateView.as_view(), name='transaction-list-create'),
