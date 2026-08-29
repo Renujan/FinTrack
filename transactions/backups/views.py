@@ -88,7 +88,7 @@ class DataBackupListCreateView(generics.ListCreateAPIView):
 
 class DataBackupDetailView(generics.RetrieveDestroyAPIView):
     """
-    GET /api/backups/<id>/ - Retrieve backup metadata detail.
+    GET /api/backups/<id>/ - Retrieve backup metadata detail and history record.
     DELETE /api/backups/<id>/ - Safely delete backup file and record.
     """
     permission_classes = [IsAuthenticated]
