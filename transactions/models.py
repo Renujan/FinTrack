@@ -3,7 +3,7 @@ from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
-from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency, GoalStatus, NotificationType, AuditAction
+from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency, GoalStatus, NotificationType, AuditAction, BackupStatus, BackupType
 
 
 class Category(models.Model):
@@ -321,6 +321,75 @@ class AuditLog(models.Model):
 
     def __str__(self):
         return f"{self.action} - {self.resource_type} - {self.user} ({self.timestamp})"
+
+
+class DataBackup(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='backups'
+    )
+    name = models.CharField(max_length=255)
+    status = models.CharField(
+        max_length=20,
+        choices=BackupStatus.choices,
+        default=BackupStatus.PENDING
+    )
+    backup_type = models.CharField(
+        max_length=20,
+        choices=BackupType.choices,
+        default=BackupType.FULL
+    )
+    file = models.FileField(
+        upload_to='backups/%Y/%m/',
+        null=True,
+        blank=True
+    )
+    file_size = models.BigIntegerField(
+        default=0,
+        help_text="Backup file size in bytes"
+    )
+    record_count = models.IntegerField(
+        default=0,
+        help_text="Total number of records included in backup"
+    )
+    metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Detailed section record counts and metadata"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Data Backup'
+        verbose_name_plural = 'Data Backups'
+        indexes = [
+            models.Index(fields=['user', '-created_at'], name='idx_backup_user_created'),
+            models.Index(fields=['user', 'status'], name='idx_backup_user_status'),
+            models.Index(fields=['expires_at'], name='idx_backup_expires_at'),
+        ]
+
+    @property
+    def is_expired(self):
+        if self.expires_at and timezone.now() > self.expires_at:
+            return True
+        return self.status == BackupStatus.EXPIRED
+
+    def mark_expired(self):
+        if self.status != BackupStatus.EXPIRED:
+            self.status = BackupStatus.EXPIRED
+            if self.file:
+                try:
+                    self.file.delete(save=False)
+                except Exception:
+                    pass
+            self.save(update_fields=['status'])
+
+    def __str__(self):
+        return f"{self.name} ({self.backup_type}) - {self.status} - {self.user}"
 
 
 
