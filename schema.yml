@@ -6,6 +6,232 @@ info:
     tracking, budgets, analytics, recurring items, reports, and subscription tier
     management.
 paths:
+  /api/account/change-password/:
+    post:
+      operationId: account_change_password_create
+      description: Securely changes account password requiring current password validation
+        and matching password confirmation.
+      summary: Change Authenticated User Password
+      tags:
+      - User Profile & Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordChangeSuccessResponse'
+          description: ''
+        '400':
+          description: Current password incorrect or validation error
+        '401':
+          description: Authentication required
+  /api/account/overview/:
+    get:
+      operationId: account_overview_retrieve
+      description: Returns comprehensive overview of current account user info, active
+        profile, preferences, subscription tier, entity counters, and recent activity.
+      summary: Retrieve Account Overview & Activity Summary
+      tags:
+      - User Profile & Account
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountOverview'
+          description: ''
+        '401':
+          description: Authentication required
+  /api/account/preferences/:
+    get:
+      operationId: account_preferences_retrieve
+      description: Retrieves or updates authenticated user settings including preferred
+        currency, date format, timezone, and notification toggles.
+      summary: Retrieve or Update User Account Preferences
+      tags:
+      - User Profile & Account
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreference'
+          description: ''
+        '400':
+          description: Invalid preference configuration values
+        '401':
+          description: Authentication required
+    put:
+      operationId: account_preferences_update
+      description: Retrieves or updates authenticated user settings including preferred
+        currency, date format, timezone, and notification toggles.
+      summary: Retrieve or Update User Account Preferences
+      tags:
+      - User Profile & Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreference'
+          description: ''
+        '400':
+          description: Invalid preference configuration values
+        '401':
+          description: Authentication required
+    patch:
+      operationId: account_preferences_partial_update
+      description: Retrieves or updates authenticated user settings including preferred
+        currency, date format, timezone, and notification toggles.
+      summary: Retrieve or Update User Account Preferences
+      tags:
+      - User Profile & Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserPreferenceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserPreferenceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserPreferenceRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreference'
+          description: ''
+        '400':
+          description: Invalid preference configuration values
+        '401':
+          description: Authentication required
+  /api/account/profile/:
+    get:
+      operationId: account_profile_retrieve
+      description: Retrieves or updates authenticated user profile details including
+        name, bio, phone number, and currency.
+      summary: Retrieve or Update Authenticated User Profile
+      tags:
+      - User Profile & Account
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+        '400':
+          description: Validation error or duplicate email/username
+        '401':
+          description: Authentication credentials required
+    put:
+      operationId: account_profile_update
+      description: Retrieves or updates authenticated user profile details including
+        name, bio, phone number, and currency.
+      summary: Retrieve or Update Authenticated User Profile
+      tags:
+      - User Profile & Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+        '400':
+          description: Validation error or duplicate email/username
+        '401':
+          description: Authentication credentials required
+    patch:
+      operationId: account_profile_partial_update
+      description: Retrieves or updates authenticated user profile details including
+        name, bio, phone number, and currency.
+      summary: Retrieve or Update Authenticated User Profile
+      tags:
+      - User Profile & Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+        '400':
+          description: Validation error or duplicate email/username
+        '401':
+          description: Authentication credentials required
   /api/analytics/budgets/:
     get:
       operationId: analytics_budgets_retrieve
@@ -386,7 +612,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/UserProfileRequest'
-        required: true
       security:
       - jwtAuth: []
       - jwtAuth: []
@@ -494,6 +719,201 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/backups/:
+    get:
+      operationId: backups_list
+      description: Retrieve history and metadata of user financial backups.
+      summary: List user backups
+      parameters:
+      - in: query
+        name: backup_type
+        schema:
+          type: string
+        description: Filter by backup type (FULL, TRANSACTIONS, SELECTED_DATA)
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+        description: Filter by status (PENDING, PROCESSING, COMPLETED, FAILED, EXPIRED)
+      tags:
+      - backups
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDataBackupList'
+          description: ''
+    post:
+      operationId: backups_create
+      description: Generate a new JSON data backup for user financial records.
+      summary: Create financial backup
+      tags:
+      - backups
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataBackupCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DataBackupCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DataBackupCreateRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataBackup'
+          description: ''
+  /api/backups/{id}/:
+    get:
+      operationId: backups_retrieve
+      description: Retrieve metadata and download information for a specific backup
+        record.
+      summary: Get backup details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - backups
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataBackup'
+          description: ''
+    delete:
+      operationId: backups_destroy
+      description: Safely delete a user backup record and remove its associated file
+        from storage.
+      summary: Delete backup record
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - backups
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/backups/{id}/download/:
+    get:
+      operationId: backups_download_retrieve
+      description: Securely stream and download the JSON financial data backup file.
+      summary: Download backup file
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - backups
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/backups/cleanup-expired/:
+    post:
+      operationId: backups_cleanup_expired_create
+      description: Process retention rules and mark expired user backups as EXPIRED
+        while removing associated files.
+      summary: Cleanup expired backups
+      tags:
+      - backups
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/backups/validate-restore/:
+    post:
+      operationId: backups_validate_restore_create
+      description: Validate a financial backup file or payload for restore preparation
+        without altering any database records.
+      summary: Validate restore data
+      tags:
+      - backups
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestoreValidationRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RestoreValidationRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RestoreValidationRequestRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
           description: ''
   /api/budgets/:
     get:
@@ -1021,6 +1441,203 @@ paths:
           description: Authentication required
         '404':
           description: Category not found
+  /api/dashboard/:
+    get:
+      operationId: dashboard_retrieve
+      description: Returns fully aggregated financial dashboard payload including
+        summary, income/expense overview, cash flow, recent transactions, budgets,
+        goals, insights, top categories, monthly comparison, and alerts.
+      summary: Complete Financial Dashboard Overview
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: 'Limit recent transactions (default: 5, max: 50)'
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialDashboardResponse'
+          description: Aggregated financial dashboard summary
+        '400':
+          description: Invalid date parameters or limits
+        '401':
+          description: Authentication required
+  /api/dashboard/alerts/:
+    get:
+      operationId: dashboard_alerts_retrieve
+      description: Returns active financial system warnings, budget alerts, goal completion
+        alerts, subscription limits, and due recurring schedules.
+      summary: Dashboard Financial Alerts
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DashboardAlertItem'
+          description: Dashboard financial alerts array
+        '401':
+          description: Authentication required
+  /api/dashboard/budgets/:
+    get:
+      operationId: dashboard_budgets_retrieve
+      description: Returns active budget status, exceeded counts, utilization rates,
+        and remaining amounts.
+      summary: Dashboard Budget Overview
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetOverview'
+          description: Budget overview summary
+        '401':
+          description: Authentication required
+  /api/dashboard/goals/:
+    get:
+      operationId: dashboard_goals_retrieve
+      description: Returns financial goal completion metrics, overall savings progress,
+        and near-completion goals.
+      summary: Dashboard Goal Overview
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalOverview'
+          description: Goal overview summary
+        '401':
+          description: Authentication required
+  /api/dashboard/insights/:
+    get:
+      operationId: dashboard_insights_retrieve
+      description: Returns highest spending category, largest expense, average expense,
+        and top spending categories breakdown.
+      summary: Dashboard Spending Insights & Top Categories
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: 'Limit top categories (default: 5, max: 20)'
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Spending insights dataset
+        '400':
+          description: Invalid date parameters
+        '401':
+          description: Authentication required
+  /api/dashboard/recent-transactions/:
+    get:
+      operationId: dashboard_recent_transactions_retrieve
+      description: Returns user recent transaction entries with category details.
+      summary: Dashboard Recent Transactions
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: 'Number of recent transactions (default: 5, max: 50)'
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecentTransactionItem'
+          description: Recent transaction entries array
+        '401':
+          description: Authentication required
+  /api/dashboard/summary/:
+    get:
+      operationId: dashboard_summary_retrieve
+      description: 'Returns core financial totals: income, expenses, transaction-based
+        balance, and net cash flow.'
+      summary: Financial Dashboard Summary Metrics
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Financial summary metrics
+        '400':
+          description: Invalid date parameters
+        '401':
+          description: Authentication required
   /api/export/budgets/:
     get:
       operationId: export_budgets_retrieve
@@ -1443,18 +2060,20 @@ paths:
   /api/health/:
     get:
       operationId: health_retrieve
-      description: |-
-        Backend health-check endpoint.
-        Verifies operational status and basic database connectivity.
+      description: Verifies operational status and PostgreSQL database connection
+        availability.
+      summary: Backend Health & Database Connectivity Check
       tags:
-      - health
+      - Health Check
       security:
       - jwtAuth: []
       - jwtAuth: []
       - {}
       responses:
         '200':
-          description: No response body
+          description: Backend service healthy and database connected
+        '503':
+          description: Database connection failed
   /api/import/transactions/:
     post:
       operationId: import_transactions_create
@@ -1679,6 +2298,92 @@ paths:
           description: ''
         '401':
           description: Authentication required
+  /api/profile/:
+    get:
+      operationId: profile_retrieve
+      description: Retrieves or updates authenticated user profile details including
+        name, bio, phone number, and currency.
+      summary: Retrieve or Update Authenticated User Profile
+      tags:
+      - User Profile & Account
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+        '400':
+          description: Validation error or duplicate email/username
+        '401':
+          description: Authentication credentials required
+    put:
+      operationId: profile_update
+      description: Retrieves or updates authenticated user profile details including
+        name, bio, phone number, and currency.
+      summary: Retrieve or Update Authenticated User Profile
+      tags:
+      - User Profile & Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+        '400':
+          description: Validation error or duplicate email/username
+        '401':
+          description: Authentication credentials required
+    patch:
+      operationId: profile_partial_update
+      description: Retrieves or updates authenticated user profile details including
+        name, bio, phone number, and currency.
+      summary: Retrieve or Update Authenticated User Profile
+      tags:
+      - User Profile & Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+        '400':
+          description: Validation error or duplicate email/username
+        '401':
+          description: Authentication credentials required
   /api/recurring-transactions/:
     get:
       operationId: recurring_transactions_list
@@ -1996,6 +2701,145 @@ paths:
           description: Authentication required
         '404':
           description: Recurring transaction schedule not found
+  /api/reports/budgets/:
+    get:
+      operationId: reports_budgets_retrieve
+      description: Returns budget comparison report showing target amount, actual
+        spent, remaining balance, percentage used, and exceeded state.
+      summary: Budget vs Actual Report
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Financial Reports
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Budget vs actual report JSON object
+        '400':
+          description: Invalid parameters
+        '401':
+          description: Authentication required
+  /api/reports/cash-flow/:
+    get:
+      operationId: reports_cash_flow_retrieve
+      description: Returns total income, total expenses, net cash flow, and calculated
+        savings rate.
+      summary: Cash Flow Report
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Financial Reports
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Cash flow report JSON object
+        '400':
+          description: Invalid date parameters
+        '401':
+          description: Authentication required
+  /api/reports/categories/:
+    get:
+      operationId: reports_categories_retrieve
+      description: Returns expense breakdown per category with totals, percentage
+        of overall expenses, and transaction count.
+      summary: Category Spending Report
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+        description: Category ID or name filter
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Financial Reports
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Category spending report JSON object
+        '400':
+          description: Invalid date parameters
+        '401':
+          description: Authentication required
+  /api/reports/expenses/:
+    get:
+      operationId: reports_expenses_retrieve
+      description: Returns total expenses, transaction count, average expense, minimum,
+        and maximum expense with optional category and search filters.
+      summary: Expense Report
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+        description: Category ID or name filter
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Search filter for description or category
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Financial Reports
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Expense report JSON object
+        '400':
+          description: Invalid parameters
+        '401':
+          description: Authentication required
   /api/reports/financial/:
     get:
       operationId: reports_financial_retrieve
@@ -2025,6 +2869,144 @@ paths:
           description: Unified financial report JSON structure
         '400':
           description: Invalid date range parameters
+        '401':
+          description: Authentication required
+  /api/reports/income/:
+    get:
+      operationId: reports_income_retrieve
+      description: Returns total income, transaction count, average income, minimum
+        income, and maximum income for the user.
+      summary: Income Report
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Financial Reports
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Income report JSON object
+        '400':
+          description: Invalid date parameters
+        '401':
+          description: Authentication required
+  /api/reports/monthly/:
+    get:
+      operationId: reports_monthly_retrieve
+      description: Returns month-by-month financial summary including income, expenses,
+        net balance, and transaction count.
+      summary: Monthly Financial Report
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Financial Reports
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Monthly report JSON object
+        '400':
+          description: Invalid date parameters
+        '401':
+          description: Authentication required
+  /api/reports/top-categories/:
+    get:
+      operationId: reports_top_categories_retrieve
+      description: Returns top expense categories by amount spent (default top 5,
+        customizable limit up to 100).
+      summary: Top Spending Categories Report
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: 'Maximum number of categories (1-100, default: 5)'
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Financial Reports
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Top categories report JSON object
+        '400':
+          description: Invalid parameters
+        '401':
+          description: Authentication required
+  /api/reports/trends/:
+    get:
+      operationId: reports_trends_retrieve
+      description: Returns spending trends aggregated by daily, weekly, or monthly
+        intervals.
+      summary: Spending Trends Report
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: period
+        schema:
+          type: string
+          enum:
+          - daily
+          - monthly
+          - weekly
+        description: 'Aggregation interval (default: monthly)'
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Financial Reports
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Spending trends report JSON object
+        '400':
+          description: Invalid parameters
         '401':
           description: Authentication required
   /api/subscription/:
@@ -2402,6 +3384,458 @@ paths:
           description: Authentication required
         '404':
           description: Transaction not found
+  /api/users/change-password/:
+    post:
+      operationId: users_change_password_create
+      description: Securely changes account password requiring current password validation
+        and matching password confirmation.
+      summary: Change Authenticated User Password
+      tags:
+      - User Profile & Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordChangeSuccessResponse'
+          description: ''
+        '400':
+          description: Current password incorrect or validation error
+        '401':
+          description: Authentication required
+  /api/users/overview/:
+    get:
+      operationId: users_overview_retrieve
+      description: Returns comprehensive overview of current account user info, active
+        profile, preferences, subscription tier, entity counters, and recent activity.
+      summary: Retrieve Account Overview & Activity Summary
+      tags:
+      - User Profile & Account
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountOverview'
+          description: ''
+        '401':
+          description: Authentication required
+  /api/users/preferences/:
+    get:
+      operationId: users_preferences_retrieve
+      description: Retrieves or updates authenticated user settings including preferred
+        currency, date format, timezone, and notification toggles.
+      summary: Retrieve or Update User Account Preferences
+      tags:
+      - User Profile & Account
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreference'
+          description: ''
+        '400':
+          description: Invalid preference configuration values
+        '401':
+          description: Authentication required
+    put:
+      operationId: users_preferences_update
+      description: Retrieves or updates authenticated user settings including preferred
+        currency, date format, timezone, and notification toggles.
+      summary: Retrieve or Update User Account Preferences
+      tags:
+      - User Profile & Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreference'
+          description: ''
+        '400':
+          description: Invalid preference configuration values
+        '401':
+          description: Authentication required
+    patch:
+      operationId: users_preferences_partial_update
+      description: Retrieves or updates authenticated user settings including preferred
+        currency, date format, timezone, and notification toggles.
+      summary: Retrieve or Update User Account Preferences
+      tags:
+      - User Profile & Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserPreferenceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserPreferenceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserPreferenceRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreference'
+          description: ''
+        '400':
+          description: Invalid preference configuration values
+        '401':
+          description: Authentication required
+  /api/users/profile/:
+    get:
+      operationId: users_profile_retrieve
+      description: Retrieves or updates authenticated user profile details including
+        name, bio, phone number, and currency.
+      summary: Retrieve or Update Authenticated User Profile
+      tags:
+      - User Profile & Account
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+        '400':
+          description: Validation error or duplicate email/username
+        '401':
+          description: Authentication credentials required
+    put:
+      operationId: users_profile_update
+      description: Retrieves or updates authenticated user profile details including
+        name, bio, phone number, and currency.
+      summary: Retrieve or Update Authenticated User Profile
+      tags:
+      - User Profile & Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+        '400':
+          description: Validation error or duplicate email/username
+        '401':
+          description: Authentication credentials required
+    patch:
+      operationId: users_profile_partial_update
+      description: Retrieves or updates authenticated user profile details including
+        name, bio, phone number, and currency.
+      summary: Retrieve or Update Authenticated User Profile
+      tags:
+      - User Profile & Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+        '400':
+          description: Validation error or duplicate email/username
+        '401':
+          description: Authentication credentials required
+  /api/v1/account/change-password/:
+    post:
+      operationId: account_change_password_create_2
+      description: Securely changes account password requiring current password validation
+        and matching password confirmation.
+      summary: Change Authenticated User Password
+      tags:
+      - User Profile & Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordChangeSuccessResponse'
+          description: ''
+        '400':
+          description: Current password incorrect or validation error
+        '401':
+          description: Authentication required
+  /api/v1/account/overview/:
+    get:
+      operationId: account_overview_retrieve_2
+      description: Returns comprehensive overview of current account user info, active
+        profile, preferences, subscription tier, entity counters, and recent activity.
+      summary: Retrieve Account Overview & Activity Summary
+      tags:
+      - User Profile & Account
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountOverview'
+          description: ''
+        '401':
+          description: Authentication required
+  /api/v1/account/preferences/:
+    get:
+      operationId: account_preferences_retrieve_2
+      description: Retrieves or updates authenticated user settings including preferred
+        currency, date format, timezone, and notification toggles.
+      summary: Retrieve or Update User Account Preferences
+      tags:
+      - User Profile & Account
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreference'
+          description: ''
+        '400':
+          description: Invalid preference configuration values
+        '401':
+          description: Authentication required
+    put:
+      operationId: account_preferences_update_2
+      description: Retrieves or updates authenticated user settings including preferred
+        currency, date format, timezone, and notification toggles.
+      summary: Retrieve or Update User Account Preferences
+      tags:
+      - User Profile & Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreference'
+          description: ''
+        '400':
+          description: Invalid preference configuration values
+        '401':
+          description: Authentication required
+    patch:
+      operationId: account_preferences_partial_update_2
+      description: Retrieves or updates authenticated user settings including preferred
+        currency, date format, timezone, and notification toggles.
+      summary: Retrieve or Update User Account Preferences
+      tags:
+      - User Profile & Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserPreferenceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserPreferenceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserPreferenceRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreference'
+          description: ''
+        '400':
+          description: Invalid preference configuration values
+        '401':
+          description: Authentication required
+  /api/v1/account/profile/:
+    get:
+      operationId: account_profile_retrieve_2
+      description: Retrieves or updates authenticated user profile details including
+        name, bio, phone number, and currency.
+      summary: Retrieve or Update Authenticated User Profile
+      tags:
+      - User Profile & Account
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+        '400':
+          description: Validation error or duplicate email/username
+        '401':
+          description: Authentication credentials required
+    put:
+      operationId: account_profile_update_2
+      description: Retrieves or updates authenticated user profile details including
+        name, bio, phone number, and currency.
+      summary: Retrieve or Update Authenticated User Profile
+      tags:
+      - User Profile & Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+        '400':
+          description: Validation error or duplicate email/username
+        '401':
+          description: Authentication credentials required
+    patch:
+      operationId: account_profile_partial_update_2
+      description: Retrieves or updates authenticated user profile details including
+        name, bio, phone number, and currency.
+      summary: Retrieve or Update Authenticated User Profile
+      tags:
+      - User Profile & Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+        '400':
+          description: Validation error or duplicate email/username
+        '401':
+          description: Authentication credentials required
   /api/v1/analytics/budgets/:
     get:
       operationId: analytics_budgets_retrieve_2
@@ -2782,7 +4216,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/UserProfileRequest'
-        required: true
       security:
       - jwtAuth: []
       - jwtAuth: []
@@ -2890,6 +4323,201 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/v1/backups/:
+    get:
+      operationId: backups_list_2
+      description: Retrieve history and metadata of user financial backups.
+      summary: List user backups
+      parameters:
+      - in: query
+        name: backup_type
+        schema:
+          type: string
+        description: Filter by backup type (FULL, TRANSACTIONS, SELECTED_DATA)
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+        description: Filter by status (PENDING, PROCESSING, COMPLETED, FAILED, EXPIRED)
+      tags:
+      - backups
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDataBackupList'
+          description: ''
+    post:
+      operationId: backups_create_2
+      description: Generate a new JSON data backup for user financial records.
+      summary: Create financial backup
+      tags:
+      - backups
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataBackupCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DataBackupCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DataBackupCreateRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataBackup'
+          description: ''
+  /api/v1/backups/{id}/:
+    get:
+      operationId: backups_retrieve_2
+      description: Retrieve metadata and download information for a specific backup
+        record.
+      summary: Get backup details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - backups
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataBackup'
+          description: ''
+    delete:
+      operationId: backups_destroy_2
+      description: Safely delete a user backup record and remove its associated file
+        from storage.
+      summary: Delete backup record
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - backups
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/backups/{id}/download/:
+    get:
+      operationId: backups_download_retrieve_2
+      description: Securely stream and download the JSON financial data backup file.
+      summary: Download backup file
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - backups
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/v1/backups/cleanup-expired/:
+    post:
+      operationId: backups_cleanup_expired_create_2
+      description: Process retention rules and mark expired user backups as EXPIRED
+        while removing associated files.
+      summary: Cleanup expired backups
+      tags:
+      - backups
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/backups/validate-restore/:
+    post:
+      operationId: backups_validate_restore_create_2
+      description: Validate a financial backup file or payload for restore preparation
+        without altering any database records.
+      summary: Validate restore data
+      tags:
+      - backups
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestoreValidationRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RestoreValidationRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RestoreValidationRequestRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
           description: ''
   /api/v1/budgets/:
     get:
@@ -3417,6 +5045,203 @@ paths:
           description: Authentication required
         '404':
           description: Category not found
+  /api/v1/dashboard/:
+    get:
+      operationId: dashboard_retrieve_2
+      description: Returns fully aggregated financial dashboard payload including
+        summary, income/expense overview, cash flow, recent transactions, budgets,
+        goals, insights, top categories, monthly comparison, and alerts.
+      summary: Complete Financial Dashboard Overview
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: 'Limit recent transactions (default: 5, max: 50)'
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialDashboardResponse'
+          description: Aggregated financial dashboard summary
+        '400':
+          description: Invalid date parameters or limits
+        '401':
+          description: Authentication required
+  /api/v1/dashboard/alerts/:
+    get:
+      operationId: dashboard_alerts_retrieve_2
+      description: Returns active financial system warnings, budget alerts, goal completion
+        alerts, subscription limits, and due recurring schedules.
+      summary: Dashboard Financial Alerts
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DashboardAlertItem'
+          description: Dashboard financial alerts array
+        '401':
+          description: Authentication required
+  /api/v1/dashboard/budgets/:
+    get:
+      operationId: dashboard_budgets_retrieve_2
+      description: Returns active budget status, exceeded counts, utilization rates,
+        and remaining amounts.
+      summary: Dashboard Budget Overview
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetOverview'
+          description: Budget overview summary
+        '401':
+          description: Authentication required
+  /api/v1/dashboard/goals/:
+    get:
+      operationId: dashboard_goals_retrieve_2
+      description: Returns financial goal completion metrics, overall savings progress,
+        and near-completion goals.
+      summary: Dashboard Goal Overview
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalOverview'
+          description: Goal overview summary
+        '401':
+          description: Authentication required
+  /api/v1/dashboard/insights/:
+    get:
+      operationId: dashboard_insights_retrieve_2
+      description: Returns highest spending category, largest expense, average expense,
+        and top spending categories breakdown.
+      summary: Dashboard Spending Insights & Top Categories
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: 'Limit top categories (default: 5, max: 20)'
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Spending insights dataset
+        '400':
+          description: Invalid date parameters
+        '401':
+          description: Authentication required
+  /api/v1/dashboard/recent-transactions/:
+    get:
+      operationId: dashboard_recent_transactions_retrieve_2
+      description: Returns user recent transaction entries with category details.
+      summary: Dashboard Recent Transactions
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: 'Number of recent transactions (default: 5, max: 50)'
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecentTransactionItem'
+          description: Recent transaction entries array
+        '401':
+          description: Authentication required
+  /api/v1/dashboard/summary/:
+    get:
+      operationId: dashboard_summary_retrieve_2
+      description: 'Returns core financial totals: income, expenses, transaction-based
+        balance, and net cash flow.'
+      summary: Financial Dashboard Summary Metrics
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Financial summary metrics
+        '400':
+          description: Invalid date parameters
+        '401':
+          description: Authentication required
   /api/v1/export/budgets/:
     get:
       operationId: export_budgets_retrieve_2
@@ -3839,18 +5664,20 @@ paths:
   /api/v1/health/:
     get:
       operationId: health_retrieve_2
-      description: |-
-        Backend health-check endpoint.
-        Verifies operational status and basic database connectivity.
+      description: Verifies operational status and PostgreSQL database connection
+        availability.
+      summary: Backend Health & Database Connectivity Check
       tags:
-      - health
+      - Health Check
       security:
       - jwtAuth: []
       - jwtAuth: []
       - {}
       responses:
         '200':
-          description: No response body
+          description: Backend service healthy and database connected
+        '503':
+          description: Database connection failed
   /api/v1/import/transactions/:
     post:
       operationId: import_transactions_create_2
@@ -4075,6 +5902,92 @@ paths:
           description: ''
         '401':
           description: Authentication required
+  /api/v1/profile/:
+    get:
+      operationId: profile_retrieve_2
+      description: Retrieves or updates authenticated user profile details including
+        name, bio, phone number, and currency.
+      summary: Retrieve or Update Authenticated User Profile
+      tags:
+      - User Profile & Account
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+        '400':
+          description: Validation error or duplicate email/username
+        '401':
+          description: Authentication credentials required
+    put:
+      operationId: profile_update_2
+      description: Retrieves or updates authenticated user profile details including
+        name, bio, phone number, and currency.
+      summary: Retrieve or Update Authenticated User Profile
+      tags:
+      - User Profile & Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+        '400':
+          description: Validation error or duplicate email/username
+        '401':
+          description: Authentication credentials required
+    patch:
+      operationId: profile_partial_update_2
+      description: Retrieves or updates authenticated user profile details including
+        name, bio, phone number, and currency.
+      summary: Retrieve or Update Authenticated User Profile
+      tags:
+      - User Profile & Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+        '400':
+          description: Validation error or duplicate email/username
+        '401':
+          description: Authentication credentials required
   /api/v1/recurring-transactions/:
     get:
       operationId: recurring_transactions_list_2
@@ -4392,6 +6305,145 @@ paths:
           description: Authentication required
         '404':
           description: Recurring transaction schedule not found
+  /api/v1/reports/budgets/:
+    get:
+      operationId: reports_budgets_retrieve_2
+      description: Returns budget comparison report showing target amount, actual
+        spent, remaining balance, percentage used, and exceeded state.
+      summary: Budget vs Actual Report
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Financial Reports
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Budget vs actual report JSON object
+        '400':
+          description: Invalid parameters
+        '401':
+          description: Authentication required
+  /api/v1/reports/cash-flow/:
+    get:
+      operationId: reports_cash_flow_retrieve_2
+      description: Returns total income, total expenses, net cash flow, and calculated
+        savings rate.
+      summary: Cash Flow Report
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Financial Reports
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Cash flow report JSON object
+        '400':
+          description: Invalid date parameters
+        '401':
+          description: Authentication required
+  /api/v1/reports/categories/:
+    get:
+      operationId: reports_categories_retrieve_2
+      description: Returns expense breakdown per category with totals, percentage
+        of overall expenses, and transaction count.
+      summary: Category Spending Report
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+        description: Category ID or name filter
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Financial Reports
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Category spending report JSON object
+        '400':
+          description: Invalid date parameters
+        '401':
+          description: Authentication required
+  /api/v1/reports/expenses/:
+    get:
+      operationId: reports_expenses_retrieve_2
+      description: Returns total expenses, transaction count, average expense, minimum,
+        and maximum expense with optional category and search filters.
+      summary: Expense Report
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+        description: Category ID or name filter
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Search filter for description or category
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Financial Reports
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Expense report JSON object
+        '400':
+          description: Invalid parameters
+        '401':
+          description: Authentication required
   /api/v1/reports/financial/:
     get:
       operationId: reports_financial_retrieve_2
@@ -4421,6 +6473,144 @@ paths:
           description: Unified financial report JSON structure
         '400':
           description: Invalid date range parameters
+        '401':
+          description: Authentication required
+  /api/v1/reports/income/:
+    get:
+      operationId: reports_income_retrieve_2
+      description: Returns total income, transaction count, average income, minimum
+        income, and maximum income for the user.
+      summary: Income Report
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Financial Reports
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Income report JSON object
+        '400':
+          description: Invalid date parameters
+        '401':
+          description: Authentication required
+  /api/v1/reports/monthly/:
+    get:
+      operationId: reports_monthly_retrieve_2
+      description: Returns month-by-month financial summary including income, expenses,
+        net balance, and transaction count.
+      summary: Monthly Financial Report
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Financial Reports
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Monthly report JSON object
+        '400':
+          description: Invalid date parameters
+        '401':
+          description: Authentication required
+  /api/v1/reports/top-categories/:
+    get:
+      operationId: reports_top_categories_retrieve_2
+      description: Returns top expense categories by amount spent (default top 5,
+        customizable limit up to 100).
+      summary: Top Spending Categories Report
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: 'Maximum number of categories (1-100, default: 5)'
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Financial Reports
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Top categories report JSON object
+        '400':
+          description: Invalid parameters
+        '401':
+          description: Authentication required
+  /api/v1/reports/trends/:
+    get:
+      operationId: reports_trends_retrieve_2
+      description: Returns spending trends aggregated by daily, weekly, or monthly
+        intervals.
+      summary: Spending Trends Report
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date filter (YYYY-MM-DD)
+      - in: query
+        name: period
+        schema:
+          type: string
+          enum:
+          - daily
+          - monthly
+          - weekly
+        description: 'Aggregation interval (default: monthly)'
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date filter (YYYY-MM-DD)
+      tags:
+      - Financial Reports
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Spending trends report JSON object
+        '400':
+          description: Invalid parameters
         '401':
           description: Authentication required
   /api/v1/subscription/:
@@ -4798,8 +6988,262 @@ paths:
           description: Authentication required
         '404':
           description: Transaction not found
+  /api/v1/users/change-password/:
+    post:
+      operationId: users_change_password_create_2
+      description: Securely changes account password requiring current password validation
+        and matching password confirmation.
+      summary: Change Authenticated User Password
+      tags:
+      - User Profile & Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordChangeSuccessResponse'
+          description: ''
+        '400':
+          description: Current password incorrect or validation error
+        '401':
+          description: Authentication required
+  /api/v1/users/overview/:
+    get:
+      operationId: users_overview_retrieve_2
+      description: Returns comprehensive overview of current account user info, active
+        profile, preferences, subscription tier, entity counters, and recent activity.
+      summary: Retrieve Account Overview & Activity Summary
+      tags:
+      - User Profile & Account
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountOverview'
+          description: ''
+        '401':
+          description: Authentication required
+  /api/v1/users/preferences/:
+    get:
+      operationId: users_preferences_retrieve_2
+      description: Retrieves or updates authenticated user settings including preferred
+        currency, date format, timezone, and notification toggles.
+      summary: Retrieve or Update User Account Preferences
+      tags:
+      - User Profile & Account
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreference'
+          description: ''
+        '400':
+          description: Invalid preference configuration values
+        '401':
+          description: Authentication required
+    put:
+      operationId: users_preferences_update_2
+      description: Retrieves or updates authenticated user settings including preferred
+        currency, date format, timezone, and notification toggles.
+      summary: Retrieve or Update User Account Preferences
+      tags:
+      - User Profile & Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserPreferenceRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreference'
+          description: ''
+        '400':
+          description: Invalid preference configuration values
+        '401':
+          description: Authentication required
+    patch:
+      operationId: users_preferences_partial_update_2
+      description: Retrieves or updates authenticated user settings including preferred
+        currency, date format, timezone, and notification toggles.
+      summary: Retrieve or Update User Account Preferences
+      tags:
+      - User Profile & Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserPreferenceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserPreferenceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserPreferenceRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreference'
+          description: ''
+        '400':
+          description: Invalid preference configuration values
+        '401':
+          description: Authentication required
+  /api/v1/users/profile/:
+    get:
+      operationId: users_profile_retrieve_2
+      description: Retrieves or updates authenticated user profile details including
+        name, bio, phone number, and currency.
+      summary: Retrieve or Update Authenticated User Profile
+      tags:
+      - User Profile & Account
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+        '400':
+          description: Validation error or duplicate email/username
+        '401':
+          description: Authentication credentials required
+    put:
+      operationId: users_profile_update_2
+      description: Retrieves or updates authenticated user profile details including
+        name, bio, phone number, and currency.
+      summary: Retrieve or Update Authenticated User Profile
+      tags:
+      - User Profile & Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserProfileRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+        '400':
+          description: Validation error or duplicate email/username
+        '401':
+          description: Authentication credentials required
+    patch:
+      operationId: users_profile_partial_update_2
+      description: Retrieves or updates authenticated user profile details including
+        name, bio, phone number, and currency.
+      summary: Retrieve or Update Authenticated User Profile
+      tags:
+      - User Profile & Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+      security:
+      - jwtAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+        '400':
+          description: Validation error or duplicate email/username
+        '401':
+          description: Authentication credentials required
 components:
   schemas:
+    AccountOverview:
+      type: object
+      properties:
+        user_info:
+          type: object
+          additionalProperties: {}
+        profile:
+          type: object
+          additionalProperties: {}
+        preferences:
+          type: object
+          additionalProperties: {}
+        subscription:
+          type: object
+          additionalProperties: {}
+        statistics:
+          type: object
+          additionalProperties: {}
+        recent_activity:
+          type: array
+          items: {}
+      required:
+      - preferences
+      - profile
+      - recent_activity
+      - statistics
+      - subscription
+      - user_info
     ActionEnum:
       enum:
       - CREATE
@@ -4810,6 +7254,10 @@ components:
       - LOGIN
       - LOGOUT
       - PASSWORD_CHANGE
+      - BACKUP_CREATED
+      - BACKUP_DOWNLOADED
+      - BACKUP_DELETED
+      - RESTORE_VALIDATED
       type: string
       description: |-
         * `CREATE` - Create
@@ -4820,6 +7268,10 @@ components:
         * `LOGIN` - Login
         * `LOGOUT` - Logout
         * `PASSWORD_CHANGE` - Password Change
+        * `BACKUP_CREATED` - Backup Created
+        * `BACKUP_DOWNLOADED` - Backup Downloaded
+        * `BACKUP_DELETED` - Backup Deleted
+        * `RESTORE_VALIDATED` - Restore Validated
     AuditLog:
       type: object
       properties:
@@ -4859,6 +7311,44 @@ components:
       - resource_type
       - timestamp
       - user
+    BackupTypeEnum:
+      enum:
+      - FULL
+      - TRANSACTIONS
+      - SELECTED_DATA
+      type: string
+      description: |-
+        * `FULL` - Full Backup
+        * `TRANSACTIONS` - Transactions & Categories
+        * `SELECTED_DATA` - Selected Data
+    BalanceSummary:
+      type: object
+      properties:
+        total_income:
+          type: string
+        total_expenses:
+          type: string
+        current_balance:
+          type: string
+        transaction_count:
+          type: integer
+        income_transaction_count:
+          type: integer
+        expense_transaction_count:
+          type: integer
+        balance_type:
+          type: string
+        note:
+          type: string
+      required:
+      - balance_type
+      - current_balance
+      - expense_transaction_count
+      - income_transaction_count
+      - note
+      - total_expenses
+      - total_income
+      - transaction_count
     BillingPeriodEnum:
       enum:
       - MONTHLY
@@ -4940,6 +7430,40 @@ components:
       - spent_amount
       - start_date
       - updated_at
+    BudgetOverview:
+      type: object
+      properties:
+        total_budgets:
+          type: integer
+        active_budgets:
+          type: integer
+        exceeded_budgets:
+          type: integer
+        budgets_near_limit:
+          type: integer
+        total_budget_amount:
+          type: string
+        total_spent_amount:
+          type: string
+        remaining_amount:
+          type: string
+        overall_utilization_percentage:
+          type: number
+          format: double
+        budgets_summary:
+          type: array
+          items:
+            $ref: '#/components/schemas/BudgetSummaryItem'
+      required:
+      - active_budgets
+      - budgets_near_limit
+      - budgets_summary
+      - exceeded_budgets
+      - overall_utilization_percentage
+      - remaining_amount
+      - total_budget_amount
+      - total_budgets
+      - total_spent_amount
     BudgetRequest:
       type: object
       description: |-
@@ -4970,6 +7494,61 @@ components:
       - end_date
       - name
       - start_date
+    BudgetSummaryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        category_name:
+          type: string
+          nullable: true
+        is_overall:
+          type: boolean
+        budget_amount:
+          type: string
+        spent_amount:
+          type: string
+        remaining_amount:
+          type: string
+        percentage_used:
+          type: number
+          format: double
+        is_exceeded:
+          type: boolean
+        is_near_limit:
+          type: boolean
+      required:
+      - budget_amount
+      - category_name
+      - id
+      - is_exceeded
+      - is_near_limit
+      - is_overall
+      - name
+      - percentage_used
+      - remaining_amount
+      - spent_amount
+    CashFlowSummaryItem:
+      type: object
+      properties:
+        period:
+          type: string
+        income:
+          type: string
+        expenses:
+          type: string
+        net_cash_flow:
+          type: string
+        transaction_count:
+          type: integer
+      required:
+      - expenses
+      - income
+      - net_cash_flow
+      - period
+      - transaction_count
     Category:
       type: object
       properties:
@@ -4992,6 +7571,16 @@ components:
       - id
       - name
       - updated_at
+    CategoryMin:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
     CategoryRequest:
       type: object
       properties:
@@ -5001,6 +7590,207 @@ components:
           maxLength: 100
       required:
       - name
+    DashboardAlertItem:
+      type: object
+      properties:
+        type:
+          type: string
+        message:
+          type: string
+        severity:
+          type: string
+        category:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: {}
+      required:
+      - category
+      - message
+      - severity
+      - type
+    DashboardFinancialSummary:
+      type: object
+      properties:
+        total_income:
+          type: string
+        total_expenses:
+          type: string
+        current_balance:
+          type: string
+        net_cash_flow:
+          type: string
+      required:
+      - current_balance
+      - net_cash_flow
+      - total_expenses
+      - total_income
+    DataBackup:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        status:
+          allOf:
+          - $ref: '#/components/schemas/DataBackupStatusEnum'
+          readOnly: true
+        backup_type:
+          $ref: '#/components/schemas/BackupTypeEnum'
+        file_size:
+          type: integer
+          readOnly: true
+          description: Backup file size in bytes
+        record_count:
+          type: integer
+          readOnly: true
+          description: Total number of records included in backup
+        metadata:
+          readOnly: true
+          description: Detailed section record counts and metadata
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        is_expired:
+          type: boolean
+          readOnly: true
+        download_url:
+          type: string
+          readOnly: true
+      required:
+      - completed_at
+      - created_at
+      - download_url
+      - expires_at
+      - file_size
+      - id
+      - is_expired
+      - metadata
+      - name
+      - record_count
+      - status
+    DataBackupCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Optional custom name for the backup record
+          maxLength: 255
+        backup_type:
+          allOf:
+          - $ref: '#/components/schemas/BackupTypeEnum'
+          default: FULL
+          description: |-
+            Backup type: FULL, TRANSACTIONS, or SELECTED_DATA
+
+            * `FULL` - Full Backup
+            * `TRANSACTIONS` - Transactions & Categories
+            * `SELECTED_DATA` - Selected Data
+        include_sections:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 50
+          description: Specific sections to include for SELECTED_DATA (e.g. ['transactions',
+            'budgets', 'goals', 'categories', 'recurring'])
+        retention_days:
+          type: integer
+          maximum: 365
+          minimum: 1
+          default: 30
+          description: Number of days before backup expires (1-365 days, default 30)
+    DataBackupStatusEnum:
+      enum:
+      - PENDING
+      - PROCESSING
+      - COMPLETED
+      - FAILED
+      - EXPIRED
+      type: string
+      description: |-
+        * `PENDING` - Pending
+        * `PROCESSING` - Processing
+        * `COMPLETED` - Completed
+        * `FAILED` - Failed
+        * `EXPIRED` - Expired
+    DateFormatEnum:
+      enum:
+      - YYYY-MM-DD
+      - DD/MM/YYYY
+      - MM/DD/YYYY
+      type: string
+      description: |-
+        * `YYYY-MM-DD` - YYYY-MM-DD (e.g. 2026-08-27)
+        * `DD/MM/YYYY` - DD/MM/YYYY (e.g. 27/08/2026)
+        * `MM/DD/YYYY` - MM/DD/YYYY (e.g. 08/27/2026)
+    DefaultTransactionTypeEnum:
+      enum:
+      - EXPENSE
+      - INCOME
+      type: string
+      description: |-
+        * `EXPENSE` - Expense
+        * `INCOME` - Income
+    FinancialDashboardResponse:
+      type: object
+      properties:
+        financial_summary:
+          $ref: '#/components/schemas/DashboardFinancialSummary'
+        income_expense_overview:
+          $ref: '#/components/schemas/IncomeExpenseOverview'
+        balance_summary:
+          $ref: '#/components/schemas/BalanceSummary'
+        cash_flow_summary:
+          type: array
+          items:
+            $ref: '#/components/schemas/CashFlowSummaryItem'
+        recent_transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecentTransactionItem'
+        budget_overview:
+          $ref: '#/components/schemas/BudgetOverview'
+        goal_overview:
+          $ref: '#/components/schemas/GoalOverview'
+        spending_insights:
+          $ref: '#/components/schemas/SpendingInsights'
+        top_categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/TopCategoryItem'
+        monthly_comparison:
+          $ref: '#/components/schemas/MonthlyComparison'
+        alerts:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardAlertItem'
+      required:
+      - alerts
+      - balance_summary
+      - budget_overview
+      - cash_flow_summary
+      - financial_summary
+      - goal_overview
+      - income_expense_overview
+      - monthly_comparison
+      - recent_transactions
+      - spending_insights
+      - top_categories
     FinancialGoal:
       type: object
       description: |-
@@ -5106,6 +7896,120 @@ components:
         * `WEEKLY` - Weekly
         * `MONTHLY` - Monthly
         * `YEARLY` - Yearly
+    GoalOverview:
+      type: object
+      properties:
+        total_goals:
+          type: integer
+        active_goals:
+          type: integer
+        completed_goals:
+          type: integer
+        near_completion_goals:
+          type: integer
+        total_target_amount:
+          type: string
+        total_saved_amount:
+          type: string
+        overall_progress_percentage:
+          type: number
+          format: double
+        goals_summary:
+          type: array
+          items:
+            $ref: '#/components/schemas/GoalSummaryItem'
+      required:
+      - active_goals
+      - completed_goals
+      - goals_summary
+      - near_completion_goals
+      - overall_progress_percentage
+      - total_goals
+      - total_saved_amount
+      - total_target_amount
+    GoalSummaryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        category_name:
+          type: string
+          nullable: true
+        target_amount:
+          type: string
+        current_amount:
+          type: string
+        remaining_amount:
+          type: string
+        percentage_complete:
+          type: number
+          format: double
+        status:
+          type: string
+        is_completed:
+          type: boolean
+        is_near_completion:
+          type: boolean
+        target_date:
+          type: string
+        days_remaining:
+          type: integer
+      required:
+      - category_name
+      - current_amount
+      - days_remaining
+      - id
+      - is_completed
+      - is_near_completion
+      - name
+      - percentage_complete
+      - remaining_amount
+      - status
+      - target_amount
+      - target_date
+    IncomeExpenseOverview:
+      type: object
+      properties:
+        period_type:
+          type: string
+        current_period:
+          $ref: '#/components/schemas/PeriodDetail'
+        previous_period:
+          $ref: '#/components/schemas/PeriodDetail'
+        income_percentage_change:
+          type: string
+        expense_percentage_change:
+          type: string
+      required:
+      - current_period
+      - expense_percentage_change
+      - income_percentage_change
+      - period_type
+      - previous_period
+    LargestExpenseItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        amount:
+          type: string
+        category_name:
+          type: string
+        date:
+          type: string
+      required:
+      - amount
+      - category_name
+      - date
+      - description
+      - id
+      - title
     LogoutRequestRequest:
       type: object
       properties:
@@ -5131,6 +8035,52 @@ components:
           type: integer
       required:
       - updated_count
+    MonthlyComparison:
+      type: object
+      properties:
+        current_month:
+          type: string
+        previous_month:
+          type: string
+        current_income:
+          type: string
+        previous_income:
+          type: string
+        income_difference:
+          type: string
+        income_percentage_change:
+          type: string
+        current_expenses:
+          type: string
+        previous_expenses:
+          type: string
+        expense_difference:
+          type: string
+        expense_percentage_change:
+          type: string
+        current_balance:
+          type: string
+        previous_balance:
+          type: string
+        balance_difference:
+          type: string
+        balance_percentage_change:
+          type: string
+      required:
+      - balance_difference
+      - balance_percentage_change
+      - current_balance
+      - current_expenses
+      - current_income
+      - current_month
+      - expense_difference
+      - expense_percentage_change
+      - income_difference
+      - income_percentage_change
+      - previous_balance
+      - previous_expenses
+      - previous_income
+      - previous_month
     Notification:
       type: object
       properties:
@@ -5264,6 +8214,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Category'
+    PaginatedDataBackupList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataBackup'
     PaginatedFinancialGoalList:
       type: object
       required:
@@ -5356,6 +8329,31 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Transaction'
+    PasswordChangeRequest:
+      type: object
+      properties:
+        current_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        new_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        confirm_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - confirm_password
+      - current_password
+      - new_password
+    PasswordChangeSuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          default: Password changed successfully.
     PatchedBudgetRequest:
       type: object
       description: |-
@@ -5450,6 +8448,7 @@ components:
         next_run_date:
           type: string
           format: date
+          description: Next scheduled date for automated transaction execution (YYYY-MM-DD)
         is_active:
           type: boolean
     PatchedTransactionRequest:
@@ -5471,29 +8470,104 @@ components:
         date:
           type: string
           format: date
+    PatchedUserPreferenceRequest:
+      type: object
+      properties:
+        currency:
+          type: string
+          minLength: 1
+          description: Preferred primary currency code (e.g. LKR, USD, EUR, GBP, INR)
+          maxLength: 10
+        date_format:
+          allOf:
+          - $ref: '#/components/schemas/DateFormatEnum'
+          description: |-
+            Preferred date display format
+
+            * `YYYY-MM-DD` - YYYY-MM-DD (e.g. 2026-08-27)
+            * `DD/MM/YYYY` - DD/MM/YYYY (e.g. 27/08/2026)
+            * `MM/DD/YYYY` - MM/DD/YYYY (e.g. 08/27/2026)
+        timezone:
+          type: string
+          minLength: 1
+          description: User local timezone e.g. UTC, Asia/Colombo, America/New_York
+          maxLength: 50
+        language:
+          type: string
+          minLength: 1
+          description: Preferred display language code
+          maxLength: 10
+        financial_year_start_month:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          description: Month when financial year begins (1=Jan to 12=Dec)
+        default_transaction_type:
+          allOf:
+          - $ref: '#/components/schemas/DefaultTransactionTypeEnum'
+          description: |-
+            Default transaction type selected when creating entries
+
+            * `EXPENSE` - Expense
+            * `INCOME` - Income
+        budget_alerts:
+          type: boolean
+          description: Receive notifications when budgets reach warning or exceeded
+            thresholds
+        goal_alerts:
+          type: boolean
+          description: Receive notifications for financial goal progress and milestones
+        recurring_transaction_alerts:
+          type: boolean
+          description: Receive notifications for upcoming due or generated recurring
+            transactions
+        system_notifications:
+          type: boolean
+          description: Receive general system and security notifications
     PatchedUserProfileRequest:
       type: object
       properties:
         username:
           type: string
           minLength: 1
-          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
-            only.
-          pattern: ^[\w.@+-]+$
-          maxLength: 150
         email:
-          title: Email address
-          oneOf:
-          - type: string
-            format: email
-            maxLength: 254
-          - type: string
-            maxLength: 0
+          type: string
+          format: email
+          minLength: 1
+        first_name:
+          type: string
+        last_name:
+          type: string
+        display_name:
+          type: string
+          description: User display or screen name
+          maxLength: 100
+        bio:
+          type: string
+          description: Short bio or user description
+        phone_number:
+          type: string
+          description: Contact phone number
+          maxLength: 30
         currency:
           type: string
           minLength: 1
-          description: Primary currency ISO code (e.g. LKR, USD, EUR)
-          maxLength: 3
+    PeriodDetail:
+      type: object
+      properties:
+        start_date:
+          type: string
+        end_date:
+          type: string
+        income:
+          type: string
+        expenses:
+          type: string
+      required:
+      - end_date
+      - expenses
+      - income
+      - start_date
     PeriodEnum:
       enum:
       - WEEKLY
@@ -5504,6 +8578,36 @@ components:
         * `WEEKLY` - Weekly
         * `MONTHLY` - Monthly
         * `CUSTOM` - Custom
+    RecentTransactionItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        amount:
+          type: string
+        transaction_type:
+          type: string
+        category:
+          allOf:
+          - $ref: '#/components/schemas/CategoryMin'
+          nullable: true
+        category_name:
+          type: string
+        date:
+          type: string
+      required:
+      - amount
+      - category
+      - category_name
+      - date
+      - description
+      - id
+      - title
+      - transaction_type
     RecurringTransaction:
       type: object
       description: |-
@@ -5519,6 +8623,7 @@ components:
         category_name:
           type: string
           readOnly: true
+          description: Name of the associated category
         name:
           type: string
           maxLength: 100
@@ -5542,6 +8647,7 @@ components:
         next_run_date:
           type: string
           format: date
+          description: Next scheduled date for automated transaction execution (YYYY-MM-DD)
         last_run_date:
           type: string
           format: date
@@ -5602,6 +8708,7 @@ components:
         next_run_date:
           type: string
           format: date
+          description: Next scheduled date for automated transaction execution (YYYY-MM-DD)
         is_active:
           type: boolean
       required:
@@ -5641,8 +8748,8 @@ components:
           type: string
           minLength: 1
           default: LKR
-          description: Primary currency ISO code (e.g. LKR, USD, EUR)
-          maxLength: 3
+          description: Primary currency ISO code (e.g. LKR, USD, EUR, GBP, INR)
+          maxLength: 10
       required:
       - email
       - password
@@ -5675,18 +8782,41 @@ components:
       - email
       - id
       - username
-    StatusEnum:
-      enum:
-      - ACTIVE
-      - TRIAL
-      - EXPIRED
-      - CANCELLED
-      type: string
-      description: |-
-        * `ACTIVE` - Active
-        * `TRIAL` - Trial
-        * `EXPIRED` - Expired
-        * `CANCELLED` - Cancelled
+    RestoreValidationRequestRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+          description: Uploaded JSON backup file to validate
+        json_data:
+          description: Raw JSON backup payload to validate
+    SpendingInsights:
+      type: object
+      properties:
+        highest_spending_category:
+          allOf:
+          - $ref: '#/components/schemas/TopCategoryItem'
+          nullable: true
+        largest_recent_expense:
+          allOf:
+          - $ref: '#/components/schemas/LargestExpenseItem'
+          nullable: true
+        average_expense:
+          type: string
+        spending_change_percentage:
+          type: string
+        expense_transaction_count:
+          type: integer
+        total_expenses_amount:
+          type: string
+      required:
+      - average_expense
+      - expense_transaction_count
+      - highest_spending_category
+      - largest_recent_expense
+      - spending_change_percentage
+      - total_expenses_amount
     SubscriptionCancelResponse:
       type: object
       properties:
@@ -5837,6 +8967,27 @@ components:
           minLength: 1
       required:
       - refresh
+    TopCategoryItem:
+      type: object
+      properties:
+        category:
+          type: string
+        category_id:
+          type: integer
+          nullable: true
+        spent:
+          type: string
+        percentage:
+          type: number
+          format: double
+        transaction_count:
+          type: integer
+      required:
+      - category
+      - category_id
+      - percentage
+      - spent
+      - transaction_count
     Transaction:
       type: object
       description: |-
@@ -5936,59 +9087,195 @@ components:
       description: |-
         * `INCOME` - Income
         * `EXPENSE` - Expense
+    UserPreference:
+      type: object
+      properties:
+        currency:
+          type: string
+          description: Preferred primary currency code (e.g. LKR, USD, EUR, GBP, INR)
+          maxLength: 10
+        currency_symbol:
+          type: string
+          description: Display symbol for preferred currency
+          readOnly: true
+        default_currency:
+          type: string
+          readOnly: true
+          description: Default currency for transactions and budgets
+        date_format:
+          allOf:
+          - $ref: '#/components/schemas/DateFormatEnum'
+          description: |-
+            Preferred date display format
+
+            * `YYYY-MM-DD` - YYYY-MM-DD (e.g. 2026-08-27)
+            * `DD/MM/YYYY` - DD/MM/YYYY (e.g. 27/08/2026)
+            * `MM/DD/YYYY` - MM/DD/YYYY (e.g. 08/27/2026)
+        timezone:
+          type: string
+          description: User local timezone e.g. UTC, Asia/Colombo, America/New_York
+          maxLength: 50
+        language:
+          type: string
+          description: Preferred display language code
+          maxLength: 10
+        financial_year_start_month:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          description: Month when financial year begins (1=Jan to 12=Dec)
+        default_transaction_type:
+          allOf:
+          - $ref: '#/components/schemas/DefaultTransactionTypeEnum'
+          description: |-
+            Default transaction type selected when creating entries
+
+            * `EXPENSE` - Expense
+            * `INCOME` - Income
+        budget_alerts:
+          type: boolean
+          description: Receive notifications when budgets reach warning or exceeded
+            thresholds
+        goal_alerts:
+          type: boolean
+          description: Receive notifications for financial goal progress and milestones
+        recurring_transaction_alerts:
+          type: boolean
+          description: Receive notifications for upcoming due or generated recurring
+            transactions
+        system_notifications:
+          type: boolean
+          description: Receive general system and security notifications
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - currency_symbol
+      - default_currency
+      - updated_at
+    UserPreferenceRequest:
+      type: object
+      properties:
+        currency:
+          type: string
+          minLength: 1
+          description: Preferred primary currency code (e.g. LKR, USD, EUR, GBP, INR)
+          maxLength: 10
+        date_format:
+          allOf:
+          - $ref: '#/components/schemas/DateFormatEnum'
+          description: |-
+            Preferred date display format
+
+            * `YYYY-MM-DD` - YYYY-MM-DD (e.g. 2026-08-27)
+            * `DD/MM/YYYY` - DD/MM/YYYY (e.g. 27/08/2026)
+            * `MM/DD/YYYY` - MM/DD/YYYY (e.g. 08/27/2026)
+        timezone:
+          type: string
+          minLength: 1
+          description: User local timezone e.g. UTC, Asia/Colombo, America/New_York
+          maxLength: 50
+        language:
+          type: string
+          minLength: 1
+          description: Preferred display language code
+          maxLength: 10
+        financial_year_start_month:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          description: Month when financial year begins (1=Jan to 12=Dec)
+        default_transaction_type:
+          allOf:
+          - $ref: '#/components/schemas/DefaultTransactionTypeEnum'
+          description: |-
+            Default transaction type selected when creating entries
+
+            * `EXPENSE` - Expense
+            * `INCOME` - Income
+        budget_alerts:
+          type: boolean
+          description: Receive notifications when budgets reach warning or exceeded
+            thresholds
+        goal_alerts:
+          type: boolean
+          description: Receive notifications for financial goal progress and milestones
+        recurring_transaction_alerts:
+          type: boolean
+          description: Receive notifications for upcoming due or generated recurring
+            transactions
+        system_notifications:
+          type: boolean
+          description: Receive general system and security notifications
     UserProfile:
       type: object
       properties:
         username:
           type: string
-          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
-            only.
-          pattern: ^[\w.@+-]+$
-          maxLength: 150
         email:
-          title: Email address
-          oneOf:
-          - type: string
-            format: email
-            maxLength: 254
-          - type: string
-            maxLength: 0
+          type: string
+          format: email
+        first_name:
+          type: string
+        last_name:
+          type: string
+        full_name:
+          type: string
+          readOnly: true
+        display_name:
+          type: string
+          description: User display or screen name
+          maxLength: 100
+        bio:
+          type: string
+          description: Short bio or user description
+        phone_number:
+          type: string
+          description: Contact phone number
+          maxLength: 30
         currency:
           type: string
-          description: Primary currency ISO code (e.g. LKR, USD, EUR)
-          maxLength: 3
+        profile_updated_at:
+          type: string
+          format: date-time
+          readOnly: true
         created_at:
           type: string
           format: date-time
           readOnly: true
       required:
       - created_at
-      - username
+      - full_name
+      - profile_updated_at
     UserProfileRequest:
       type: object
       properties:
         username:
           type: string
           minLength: 1
-          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
-            only.
-          pattern: ^[\w.@+-]+$
-          maxLength: 150
         email:
-          title: Email address
-          oneOf:
-          - type: string
-            format: email
-            maxLength: 254
-          - type: string
-            maxLength: 0
+          type: string
+          format: email
+          minLength: 1
+        first_name:
+          type: string
+        last_name:
+          type: string
+        display_name:
+          type: string
+          description: User display or screen name
+          maxLength: 100
+        bio:
+          type: string
+          description: Short bio or user description
+        phone_number:
+          type: string
+          description: Contact phone number
+          maxLength: 30
         currency:
           type: string
           minLength: 1
-          description: Primary currency ISO code (e.g. LKR, USD, EUR)
-          maxLength: 3
-      required:
-      - username
     UserSubscription:
       type: object
       properties:
@@ -6001,7 +9288,7 @@ components:
           readOnly: true
         status:
           allOf:
-          - $ref: '#/components/schemas/StatusEnum'
+          - $ref: '#/components/schemas/UserSubscriptionStatusEnum'
           readOnly: true
         effective_status:
           type: string
@@ -6040,6 +9327,18 @@ components:
       - start_date
       - status
       - updated_at
+    UserSubscriptionStatusEnum:
+      enum:
+      - ACTIVE
+      - TRIAL
+      - EXPIRED
+      - CANCELLED
+      type: string
+      description: |-
+        * `ACTIVE` - Active
+        * `TRIAL` - Trial
+        * `EXPIRED` - Expired
+        * `CANCELLED` - Cancelled
   securitySchemes:
     jwtAuth:
       type: http

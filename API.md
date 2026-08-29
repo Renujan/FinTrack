@@ -360,6 +360,86 @@ All Dashboard endpoints require `Authorization: Bearer <access_token>` header.
 
 ---
 
+### 💾 Financial Data Backup & Data Management API (`/api/backups/`)
+
+The Day 20 Data Backup system enables authenticated users to create, view, download, validate, and manage snapshots of their financial data in a structured, portable JSON format.
+
+> ⚠️ **Notice**: Full destructive data restoration is intentionally not implemented on Day 20. Safe restore preparation and preview validation are provided.
+
+| Method | Endpoint | Description | Query Parameters / Request Body |
+|---|---|---|---|
+| `GET` | `/api/backups/` | List User Backup History & Metadata | `status`, `backup_type`, `search`, `ordering` |
+| `POST` | `/api/backups/` | Create New Data Backup | `{"name": "...", "backup_type": "FULL", "include_sections": [...], "retention_days": 30}` |
+| `GET` | `/api/backups/<id>/` | Get Specific Backup Metadata & Download Link | None |
+| `DELETE` | `/api/backups/<id>/` | Safely Delete Backup File & Database Record | None |
+| `GET` | `/api/backups/<id>/download/` | Stream & Download Portable JSON Backup File | Attachment download |
+| `POST` | `/api/backups/validate-restore/` | Preview & Validate Backup Payload (No DB Mutation) | Uploaded `file` OR `json_data` payload |
+| `POST` | `/api/backups/cleanup-expired/` | Trigger Manual Retention Cleanup | None |
+
+#### Example Request: Create Backup
+```json
+{
+  "name": "August 2026 Financial Backup",
+  "backup_type": "FULL",
+  "retention_days": 30
+}
+```
+
+#### Example Response: Create Backup (201 Created)
+```json
+{
+  "id": 1,
+  "name": "August 2026 Financial Backup",
+  "status": "COMPLETED",
+  "backup_type": "FULL",
+  "file_size": 4096,
+  "record_count": 52,
+  "metadata": {
+    "section_counts": {
+      "categories": 6,
+      "transactions": 38,
+      "budgets": 3,
+      "financial_goals": 2,
+      "recurring_transactions": 3
+    },
+    "version": "1.0",
+    "retention_days": 30
+  },
+  "created_at": "2026-08-29T10:00:00Z",
+  "completed_at": "2026-08-29T10:00:01Z",
+  "expires_at": "2026-09-28T10:00:00Z",
+  "is_expired": false,
+  "download_url": "http://127.0.0.1:8000/api/backups/1/download/"
+}
+```
+
+#### Example Response: Restore Validation (`POST /api/backups/validate-restore/`)
+```json
+{
+  "valid": true,
+  "version": "1.0",
+  "supported": true,
+  "backup_type": "FULL",
+  "created_at": "2026-08-29T10:00:00Z",
+  "summary": {
+    "categories_count": 6,
+    "transactions_count": 38,
+    "budgets_count": 3,
+    "financial_goals_count": 2,
+    "recurring_transactions_count": 3,
+    "user_profile_included": true,
+    "user_preferences_included": true
+  },
+  "validation_errors": [],
+  "validation_warnings": [
+    "2 new category names found in backup that will be created during restoration."
+  ],
+  "note": "Full destructive data restoration is intentionally not implemented on Day 20."
+}
+```
+
+---
+
 ## 💻 Local Developer Setup
 
 1. **Clone repository**:
