@@ -1,7 +1,7 @@
 from decimal import Decimal
 from rest_framework import serializers
-from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency, GoalStatus, NotificationType
-from .models import Category, Transaction, Budget, RecurringTransaction, FinancialGoal, Notification, AuditLog
+from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency, GoalStatus, NotificationType, ExecutionStatus
+from .models import Category, Transaction, Budget, RecurringTransaction, RecurringTransactionExecution, FinancialGoal, Notification, AuditLog
 from .services import BudgetCalculationService, GoalCalculationService, NotificationService
 
 
@@ -184,12 +184,13 @@ class BudgetSerializer(serializers.ModelSerializer):
 class RecurringTransactionSerializer(serializers.ModelSerializer):
     """
     Serializer for RecurringTransaction model with strict validation on amount,
-    transaction_type, recurrence frequency, user-owned category validation,
-    and schedule date-range boundaries.
+    transaction_type, recurrence frequency, interval, user-owned category validation,
+    and schedule date-range boundaries. Supports 'title' as alias for 'name'.
     """
+    title = serializers.CharField(source='name', required=False, help_text='Title of the recurring transaction (alias for name)')
     category_name = serializers.ReadOnlyField(source='category.name', help_text='Name of the associated category')
     next_run_date = serializers.DateField(required=False, help_text='Next scheduled date for automated transaction execution (YYYY-MM-DD)')
-
+    interval = serializers.IntegerField(default=1, required=False, help_text='Recurrence interval multiplier (must be >= 1)')
 
     class Meta:
         model = RecurringTransaction
@@ -198,10 +199,12 @@ class RecurringTransactionSerializer(serializers.ModelSerializer):
             'category',
             'category_name',
             'name',
+            'title',
             'description',
             'amount',
             'transaction_type',
             'frequency',
+            'interval',
             'start_date',
             'end_date',
             'next_run_date',
@@ -231,6 +234,11 @@ class RecurringTransactionSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Amount must be greater than zero.")
         return value
 
+    def validate_interval(self, value):
+        if value is None or value < 1:
+            raise serializers.ValidationError("Interval must be a positive integer greater than or equal to 1.")
+        return value
+
     def validate_transaction_type(self, value):
         if value not in TransactionType.values:
             raise serializers.ValidationError(
@@ -253,9 +261,17 @@ class RecurringTransactionSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
+        # Handle title/name alias fallback
+        if 'name' not in attrs and 'title' in self.initial_data:
+            attrs['name'] = self.initial_data['title']
+
         start_date = attrs.get('start_date') or (self.instance.start_date if self.instance else None)
         end_date = attrs.get('end_date') if 'end_date' in attrs else (self.instance.end_date if self.instance else None)
         next_run_date = attrs.get('next_run_date')
+        interval = attrs.get('interval') or (self.instance.interval if self.instance else 1)
+
+        if interval < 1:
+            raise serializers.ValidationError({"interval": "Interval must be greater than or equal to 1."})
 
         if not self.instance and not next_run_date and start_date:
             attrs['next_run_date'] = start_date
@@ -273,6 +289,29 @@ class RecurringTransactionSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"next_run_date": "Next run date cannot be after end date."})
 
         return attrs
+
+
+class RecurringTransactionExecutionSerializer(serializers.ModelSerializer):
+    """
+    Serializer for RecurringTransactionExecution history records.
+    """
+    recurring_transaction_id = serializers.ReadOnlyField(source='recurring_transaction.id')
+    recurring_transaction_name = serializers.ReadOnlyField(source='recurring_transaction.name')
+    transaction_id = serializers.ReadOnlyField(source='transaction.id')
+
+    class Meta:
+        model = RecurringTransactionExecution
+        fields = [
+            'id',
+            'recurring_transaction_id',
+            'recurring_transaction_name',
+            'transaction_id',
+            'executed_at',
+            'scheduled_for',
+            'status',
+            'error_message'
+        ]
+        read_only_fields = fields
 
 
 class FinancialGoalSerializer(serializers.ModelSerializer):
