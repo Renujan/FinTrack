@@ -244,6 +244,14 @@ class RecurringTransactionService:
         ).exists()
 
     @classmethod
+    def generate_transaction_for_schedule(cls, schedule, schedule_date=None):
+        """
+        Explicit helper method to generate a standard transaction for a recurring schedule occurrence.
+        Delegates to create_transaction with duplicate prevention.
+        """
+        return cls.create_transaction(schedule, schedule_date=schedule_date)
+
+    @classmethod
     def create_transaction(cls, schedule, schedule_date=None):
         """
         Generates a standard Transaction from a RecurringTransaction schedule for schedule_date.
