@@ -145,8 +145,9 @@ import datetime
 import logging
 from django.db import transaction, IntegrityError
 from django.utils import timezone
-from .choices import RecurrenceFrequency
-from .models import RecurringTransaction
+from .choices import RecurrenceFrequency, ExecutionStatus, AuditAction, NotificationType
+from .models import RecurringTransaction, RecurringTransactionExecution, Transaction
+from .audit_services import AuditLogService
 
 logger = logging.getLogger(__name__)
 
@@ -154,34 +155,68 @@ logger = logging.getLogger(__name__)
 class RecurringTransactionService:
     """
     Service layer for recurring transaction processing, next occurrence calculation,
-    pause/resume operations, and transaction generation with duplicate protection.
+    pause/resume operations, manual execution, execution history tracking, and
+    transaction generation with duplicate protection.
     """
 
-    @staticmethod
-    def calculate_next_run_date(current_date, frequency):
+    @classmethod
+    def calculate_next_run_date(cls, current_date, frequency, interval=1):
         """
-        Calculates the next run date based on frequency while handling month-end dates,
-        leap years, and boundary edge cases safely.
+        Calculates the next run date based on frequency and interval multiplier while
+        handling month-end dates, leap years, custom intervals, and boundary edge cases safely.
         """
+        if isinstance(current_date, datetime.datetime):
+            current_date = current_date.date()
+
+        if not interval or interval < 1:
+            interval = 1
+
         if frequency == RecurrenceFrequency.DAILY:
-            return current_date + datetime.timedelta(days=1)
+            return current_date + datetime.timedelta(days=1 * interval)
         elif frequency == RecurrenceFrequency.WEEKLY:
-            return current_date + datetime.timedelta(days=7)
+            return current_date + datetime.timedelta(days=7 * interval)
         elif frequency == RecurrenceFrequency.MONTHLY:
-            year = current_date.year + (1 if current_date.month == 12 else 0)
-            month = 1 if current_date.month == 12 else current_date.month + 1
+            total_months = current_date.year * 12 + (current_date.month - 1) + interval
+            year = total_months // 12
+            month = (total_months % 12) + 1
             max_days = calendar.monthrange(year, month)[1]
             day = min(current_date.day, max_days)
             return datetime.date(year, month, day)
         elif frequency == RecurrenceFrequency.YEARLY:
-            year = current_date.year + 1
+            year = current_date.year + interval
             month = current_date.month
             day = current_date.day
             if month == 2 and day == 29 and not calendar.isleap(year):
                 day = 28
             return datetime.date(year, month, day)
+        elif frequency == RecurrenceFrequency.CUSTOM:
+            return current_date + datetime.timedelta(days=interval)
         else:
             raise ValueError(f"Unsupported recurrence frequency: {frequency}")
+
+    @classmethod
+    def calculate_next_run(cls, current_date, frequency, interval=1):
+        """
+        Alias for calculate_next_run_date.
+        """
+        return cls.calculate_next_run_date(current_date, frequency, interval)
+
+    @classmethod
+    def validate_schedule(cls, schedule_data):
+        """
+        Validates recurring schedule fields and date boundary consistency.
+        """
+        amount = schedule_data.get('amount')
+        if amount is not None and amount <= Decimal('0.00'):
+            raise ValueError("Amount must be positive.")
+        interval = schedule_data.get('interval', 1)
+        if interval < 1:
+            raise ValueError("Interval must be at least 1.")
+        start_date = schedule_data.get('start_date')
+        end_date = schedule_data.get('end_date')
+        if start_date and end_date and end_date < start_date:
+            raise ValueError("End date cannot be before start date.")
+        return True
 
     @classmethod
     def get_due_schedules(cls, target_date=None):
@@ -197,6 +232,252 @@ class RecurringTransactionService:
             is_active=True,
             next_run_date__lte=target_date
         ).select_related('category', 'user')
+
+    @classmethod
+    def check_duplicate_occurrence(cls, schedule, schedule_date):
+        """
+        Checks if a transaction has already been generated for a specific recurring schedule and occurrence date.
+        """
+        return Transaction.objects.filter(
+            recurring_transaction=schedule,
+            recurring_schedule_date=schedule_date
+        ).exists()
+
+    @classmethod
+    def create_transaction(cls, schedule, schedule_date=None):
+        """
+        Generates a standard Transaction from a RecurringTransaction schedule for schedule_date.
+        Records execution history and prevents duplicate transactions.
+        """
+        if schedule_date is None:
+            schedule_date = schedule.next_run_date
+
+        if cls.check_duplicate_occurrence(schedule, schedule_date):
+            existing_txn = Transaction.objects.filter(
+                recurring_transaction=schedule,
+                recurring_schedule_date=schedule_date
+            ).first()
+            return existing_txn
+
+        description = schedule.description if schedule.description else schedule.name
+        with transaction.atomic():
+            new_txn = Transaction.objects.create(
+                user=schedule.user,
+                category=schedule.category,
+                recurring_transaction=schedule,
+                recurring_schedule_date=schedule_date,
+                transaction_type=schedule.transaction_type,
+                amount=schedule.amount,
+                description=description,
+                date=schedule_date
+            )
+            RecurringTransactionExecution.objects.create(
+                recurring_transaction=schedule,
+                transaction=new_txn,
+                scheduled_for=schedule_date,
+                status=ExecutionStatus.SUCCESS,
+                error_message=''
+            )
+            NotificationService.create_recurring_alert(
+                schedule,
+                NotificationType.RECURRING_GENERATED,
+                transaction=new_txn,
+                schedule_date=schedule_date
+            )
+            return new_txn
+
+    @classmethod
+    def execute_now(cls, schedule, request=None):
+        """
+        Manually triggers execution of a recurring transaction on demand.
+        Creates transaction, updates execution metadata, calculates next run date,
+        and logs audit event.
+        """
+        if not schedule.is_active:
+            raise ValueError("Cannot execute a paused or inactive recurring transaction schedule.")
+
+        schedule_date = schedule.next_run_date or timezone.now().date()
+        try:
+            txn = cls.create_transaction(schedule, schedule_date=schedule_date)
+            schedule.last_run_date = schedule_date
+            next_date = cls.calculate_next_run_date(schedule_date, schedule.frequency, schedule.interval)
+            schedule.next_run_date = next_date
+
+            if schedule.end_date and schedule.next_run_date > schedule.end_date:
+                schedule.is_active = False
+                NotificationService.create_recurring_alert(
+                    schedule,
+                    NotificationType.RECURRING_EXPIRED
+                )
+
+            schedule.save(update_fields=['last_run_date', 'next_run_date', 'is_active', 'updated_at'])
+
+            AuditLogService.log_action(
+                user=schedule.user,
+                action=AuditAction.RECURRING_TRANSACTION_EXECUTED,
+                resource_type='RecurringTransaction',
+                resource_id=schedule.id,
+                metadata={'name': schedule.name, 'amount': str(schedule.amount), 'execution_date': str(schedule_date)},
+                request=request
+            )
+            return txn, schedule
+        except Exception as e:
+            err_msg = str(e)[:255]
+            RecurringTransactionExecution.objects.create(
+                recurring_transaction=schedule,
+                transaction=None,
+                scheduled_for=schedule_date,
+                status=ExecutionStatus.FAILED,
+                error_message=err_msg
+            )
+            logger.error(f"Manual execution failed for schedule {schedule.id}: {e}", exc_info=True)
+            raise
+
+    @classmethod
+    def pause_schedule(cls, schedule, request=None):
+        """
+        Pauses an active recurring transaction schedule.
+        """
+        if schedule.is_active:
+            schedule.is_active = False
+            schedule.save(update_fields=['is_active', 'updated_at'])
+            AuditLogService.log_action(
+                user=schedule.user,
+                action=AuditAction.RECURRING_TRANSACTION_PAUSED,
+                resource_type='RecurringTransaction',
+                resource_id=schedule.id,
+                metadata={'name': schedule.name},
+                request=request
+            )
+            NotificationService.create_notification(
+                user=schedule.user,
+                notification_type=NotificationType.RECURRING_TRANSACTION_PAUSED,
+                title=f"Schedule Paused: {schedule.name}",
+                message=f"Your recurring schedule '{schedule.name}' has been paused.",
+                metadata={'recurring_transaction_id': schedule.id}
+            )
+        return schedule
+
+    @classmethod
+    def resume_schedule(cls, schedule, request=None):
+        """
+        Resumes a paused recurring transaction schedule and validates next_run_date.
+        """
+        if not schedule.is_active:
+            schedule.is_active = True
+            today = timezone.now().date()
+            if schedule.next_run_date < today:
+                if schedule.end_date and today > schedule.end_date:
+                    schedule.next_run_date = schedule.end_date
+                else:
+                    schedule.next_run_date = today
+
+            schedule.save(update_fields=['is_active', 'next_run_date', 'updated_at'])
+            AuditLogService.log_action(
+                user=schedule.user,
+                action=AuditAction.RECURRING_TRANSACTION_RESUMED,
+                resource_type='RecurringTransaction',
+                resource_id=schedule.id,
+                metadata={'name': schedule.name, 'next_run_date': str(schedule.next_run_date)},
+                request=request
+            )
+            NotificationService.create_notification(
+                user=schedule.user,
+                notification_type=NotificationType.RECURRING_TRANSACTION_RESUMED,
+                title=f"Schedule Resumed: {schedule.name}",
+                message=f"Your recurring schedule '{schedule.name}' has been resumed.",
+                metadata={'recurring_transaction_id': schedule.id}
+            )
+        return schedule
+
+    @classmethod
+    def _process_single_schedule(cls, schedule, target_date):
+        """
+        Processes a single recurring schedule up to target_date.
+        Iteratively generates transactions while next_run_date <= target_date,
+        updating last_run_date and advancing next_run_date until it goes past target_date or end_date.
+        """
+        generated_count = 0
+        is_expired = False
+
+        while schedule.is_active and schedule.next_run_date <= target_date:
+            if schedule.end_date and schedule.next_run_date > schedule.end_date:
+                schedule.is_active = False
+                schedule.save(update_fields=['is_active', 'updated_at'])
+                is_expired = True
+                NotificationService.create_recurring_alert(
+                    schedule,
+                    NotificationType.RECURRING_EXPIRED
+                )
+                break
+
+            current_run_date = schedule.next_run_date
+
+            try:
+                with transaction.atomic():
+                    existing_txn = Transaction.objects.filter(
+                        recurring_transaction=schedule,
+                        recurring_schedule_date=current_run_date
+                    ).first()
+
+                    if not existing_txn:
+                        description = schedule.description if schedule.description else schedule.name
+                        new_txn = Transaction.objects.create(
+                            user=schedule.user,
+                            category=schedule.category,
+                            recurring_transaction=schedule,
+                            recurring_schedule_date=current_run_date,
+                            transaction_type=schedule.transaction_type,
+                            amount=schedule.amount,
+                            description=description,
+                            date=current_run_date
+                        )
+                        generated_count += 1
+                        RecurringTransactionExecution.objects.create(
+                            recurring_transaction=schedule,
+                            transaction=new_txn,
+                            scheduled_for=current_run_date,
+                            status=ExecutionStatus.SUCCESS,
+                            error_message=''
+                        )
+                        NotificationService.create_recurring_alert(
+                            schedule,
+                            NotificationType.RECURRING_GENERATED,
+                            transaction=new_txn,
+                            schedule_date=current_run_date
+                        )
+
+                    next_date = cls.calculate_next_run_date(current_run_date, schedule.frequency, schedule.interval)
+                    schedule.last_run_date = current_run_date
+                    schedule.next_run_date = next_date
+
+                    if schedule.end_date and schedule.next_run_date > schedule.end_date:
+                        schedule.is_active = False
+                        is_expired = True
+                        NotificationService.create_recurring_alert(
+                            schedule,
+                            NotificationType.RECURRING_EXPIRED
+                        )
+
+                    schedule.save(update_fields=['last_run_date', 'next_run_date', 'is_active', 'updated_at'])
+
+            except IntegrityError:
+                logger.warning(
+                    f"Duplicate transaction attempt for recurring schedule {schedule.id} on date {current_run_date}"
+                )
+            except Exception as e:
+                err_msg = str(e)[:255]
+                RecurringTransactionExecution.objects.create(
+                    recurring_transaction=schedule,
+                    transaction=None,
+                    scheduled_for=current_run_date,
+                    status=ExecutionStatus.FAILED,
+                    error_message=err_msg
+                )
+                logger.error(f"Error processing recurring schedule {schedule.id} for date {current_run_date}: {e}", exc_info=True)
+                break
+
+        return generated_count, is_expired
 
     @classmethod
     def process_due_recurring_transactions(cls, target_date=None):
@@ -234,104 +515,22 @@ class RecurringTransactionService:
         }
 
     @classmethod
-    def check_duplicate_occurrence(cls, schedule, schedule_date):
+    def process_due_transactions(cls, target_date=None):
         """
-        Checks if a transaction has already been generated for a specific recurring schedule and occurrence date.
+        Alias for process_due_recurring_transactions.
         """
-        return Transaction.objects.filter(
-            recurring_transaction=schedule,
-            recurring_schedule_date=schedule_date
-        ).exists()
+        return cls.process_due_recurring_transactions(target_date=target_date)
 
     @classmethod
-    def _process_single_schedule(cls, schedule, target_date):
+    def process_recurring_transaction(cls, schedule, target_date=None):
         """
         Processes a single recurring schedule up to target_date.
-        Iteratively generates transactions while next_run_date <= target_date,
-        updating last_run_date and advancing next_run_date until it goes past target_date or end_date.
         """
-        generated_count = 0
-        is_expired = False
-
-        while schedule.is_active and schedule.next_run_date <= target_date:
-            if schedule.end_date and schedule.next_run_date > schedule.end_date:
-                schedule.is_active = False
-                schedule.save(update_fields=['is_active', 'updated_at'])
-                is_expired = True
-                NotificationService.create_recurring_alert(
-                    schedule,
-                    NotificationType.RECURRING_EXPIRED
-                )
-                break
-
-            current_run_date = schedule.next_run_date
-
-            with transaction.atomic():
-                existing_txn = Transaction.objects.filter(
-                    recurring_transaction=schedule,
-                    recurring_schedule_date=current_run_date
-                ).first()
-
-                if not existing_txn:
-                    description = schedule.description if schedule.description else schedule.name
-                    try:
-                        new_txn = Transaction.objects.create(
-                            user=schedule.user,
-                            category=schedule.category,
-                            recurring_transaction=schedule,
-                            recurring_schedule_date=current_run_date,
-                            transaction_type=schedule.transaction_type,
-                            amount=schedule.amount,
-                            description=description,
-                            date=current_run_date
-                        )
-                        generated_count += 1
-                        NotificationService.create_recurring_alert(
-                            schedule,
-                            NotificationType.RECURRING_GENERATED,
-                            transaction=new_txn,
-                            schedule_date=current_run_date
-                        )
-                    except IntegrityError:
-                        logger.warning(
-                            f"Duplicate transaction attempt for recurring schedule {schedule.id} on date {current_run_date}"
-                        )
-
-                next_date = cls.calculate_next_run_date(current_run_date, schedule.frequency)
-                schedule.last_run_date = current_run_date
-                schedule.next_run_date = next_date
-
-                if schedule.end_date and schedule.next_run_date > schedule.end_date:
-                    schedule.is_active = False
-                    is_expired = True
-                    NotificationService.create_recurring_alert(
-                        schedule,
-                        NotificationType.RECURRING_EXPIRED
-                    )
-
-                schedule.save(update_fields=['last_run_date', 'next_run_date', 'is_active', 'updated_at'])
-
-        return generated_count, is_expired
-
-    @classmethod
-    def pause_schedule(cls, schedule):
-        """
-        Pauses an active recurring transaction schedule.
-        """
-        if schedule.is_active:
-            schedule.is_active = False
-            schedule.save(update_fields=['is_active', 'updated_at'])
-        return schedule
-
-    @classmethod
-    def resume_schedule(cls, schedule):
-        """
-        Resumes a paused recurring transaction schedule.
-        """
-        if not schedule.is_active:
-            schedule.is_active = True
-            schedule.save(update_fields=['is_active', 'updated_at'])
-        return schedule
+        if target_date is None:
+            target_date = timezone.now().date()
+        elif isinstance(target_date, datetime.datetime):
+            target_date = target_date.date()
+        return cls._process_single_schedule(schedule, target_date)
 
 
 class NotificationService:
