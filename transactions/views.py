@@ -465,6 +465,7 @@ class RecurringTransactionResumeView(APIView):
 class RecurringTransactionExecuteView(APIView):
     """
     Manually execute a recurring transaction schedule immediately for the authenticated user.
+    Creates normal transaction record, updates execution history, and advances next run date.
     """
     permission_classes = [permissions.IsAuthenticated]
 
