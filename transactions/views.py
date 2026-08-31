@@ -508,7 +508,7 @@ class RecurringTransactionExecuteView(APIView):
 class RecurringTransactionHistoryView(generics.ListAPIView):
     """
     List execution history entries for a specific recurring transaction schedule owned by the authenticated user.
-    Supports pagination.
+    Supports pagination and displays execution status (SUCCESS, FAILED, SKIPPED).
     """
     serializer_class = RecurringTransactionExecutionSerializer
     permission_classes = [permissions.IsAuthenticated]
