@@ -440,6 +440,38 @@ The Day 20 Data Backup system enables authenticated users to create, view, downl
 
 ---
 
+## 🔄 Recurring Transactions & Financial Scheduling API (Day 21)
+
+The Recurring Transactions API enables automated financial transaction generation according to scheduled recurrence rules.
+
+### Recurrence Frequencies & Intervals
+- `DAILY`: Executes every $N$ days (where interval multiplier $N \ge 1$, default 1).
+- `WEEKLY`: Executes every $N$ weeks (every $7N$ days).
+- `MONTHLY`: Executes every $N$ months with safe month-end boundary handling (e.g. Jan 31 $\rightarrow$ Feb 28/29).
+- `YEARLY`: Executes every $N$ years with leap year handling for Feb 29.
+- `CUSTOM`: Executes every $N$ days according to the custom `interval` parameter.
+
+### Endpoints Overview
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/recurring-transactions/` | List user's recurring schedules (supports filtering, search, pagination) |
+| `POST` | `/api/recurring-transactions/` | Create a new recurring schedule |
+| `GET` | `/api/recurring-transactions/<id>/` | Retrieve specific recurring schedule details |
+| `PATCH` | `/api/recurring-transactions/<id>/` | Update recurring schedule |
+| `DELETE` | `/api/recurring-transactions/<id>/` | Delete recurring schedule |
+| `POST` | `/api/recurring-transactions/<id>/pause/` | Pause schedule execution |
+| `POST` | `/api/recurring-transactions/<id>/resume/` | Resume schedule execution |
+| `POST` | `/api/recurring-transactions/<id>/execute/` | Trigger immediate manual schedule execution |
+| `GET` | `/api/recurring-transactions/<id>/history/` | List schedule execution history records |
+
+### Processing Command
+To run scheduled transaction processing automatically via cron/scheduler:
+```bash
+python manage.py process_recurring_transactions [--date YYYY-MM-DD]
+```
+
+---
+
 ## 💻 Local Developer Setup
 
 1. **Clone repository**:

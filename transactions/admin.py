@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Transaction, Budget, FinancialGoal, Notification, DataBackup
+from .models import Category, Transaction, Budget, RecurringTransaction, RecurringTransactionExecution, FinancialGoal, Notification, DataBackup
 
 
 @admin.register(Category)
@@ -7,6 +7,22 @@ class CategoryAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'user', 'created_at', 'updated_at')
     list_filter = ('user',)
     search_fields = ('name', 'user__email', 'user__username')
+
+
+@admin.register(RecurringTransaction)
+class RecurringTransactionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'user', 'category', 'amount', 'transaction_type', 'frequency', 'interval', 'next_run_date', 'last_run_date', 'is_active', 'created_at')
+    list_filter = ('transaction_type', 'frequency', 'is_active', 'user', 'category')
+    search_fields = ('name', 'description', 'user__email')
+    readonly_fields = ('created_at', 'updated_at', 'last_run_date')
+
+
+@admin.register(RecurringTransactionExecution)
+class RecurringTransactionExecutionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'recurring_transaction', 'status', 'scheduled_for', 'executed_at', 'transaction')
+    list_filter = ('status', 'executed_at')
+    search_fields = ('recurring_transaction__name', 'recurring_transaction__user__email', 'error_message')
+    readonly_fields = ('executed_at',)
 
 
 @admin.register(Transaction)
