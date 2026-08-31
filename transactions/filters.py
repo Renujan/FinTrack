@@ -201,11 +201,13 @@ def validate_budget_filter_params(params):
 class RecurringTransactionFilter(django_filters.FilterSet):
     """
     FilterSet for RecurringTransaction list querysets.
-    Supports type, category, frequency, is_active, start_date, end_date, next_run_date range filters.
+    Supports transaction_type/type, category, frequency, interval, is_active, start_date, end_date, next_run_date range filters.
     """
     type = django_filters.CharFilter(method='filter_by_type')
+    transaction_type = django_filters.CharFilter(method='filter_by_type')
     category = django_filters.CharFilter(method='filter_by_category')
     frequency = django_filters.CharFilter(method='filter_by_frequency')
+    interval = django_filters.NumberFilter(field_name='interval')
     is_active = django_filters.BooleanFilter(field_name='is_active')
     start_date = django_filters.DateFilter(field_name='start_date', lookup_expr='gte')
     end_date = django_filters.DateFilter(field_name='end_date', lookup_expr='lte')
@@ -213,7 +215,7 @@ class RecurringTransactionFilter(django_filters.FilterSet):
 
     class Meta:
         model = RecurringTransaction
-        fields = ['type', 'category', 'frequency', 'is_active', 'start_date', 'end_date', 'next_run_date']
+        fields = ['type', 'transaction_type', 'category', 'frequency', 'interval', 'is_active', 'start_date', 'end_date', 'next_run_date']
 
     def filter_by_type(self, queryset, name, value):
         if not value:
@@ -267,9 +269,9 @@ def validate_recurring_filter_params(params):
     if parsed_start_date and parsed_end_date and parsed_start_date > parsed_end_date:
         errors['start_date'] = ["start_date cannot be greater than end_date."]
 
-    type_val = params.get('type')
+    type_val = params.get('transaction_type') or params.get('type')
     if type_val and type_val.upper() not in TransactionType.values:
-        errors['type'] = [f"Invalid transaction type '{type_val}'. Allowed choices: {', '.join(TransactionType.values)}."]
+        errors['transaction_type'] = [f"Invalid transaction type '{type_val}'. Allowed choices: {', '.join(TransactionType.values)}."]
 
     freq_val = params.get('frequency')
     if freq_val and freq_val.upper() not in RecurrenceFrequency.values:
@@ -283,7 +285,10 @@ def validate_recurring_filter_params(params):
             'next_run_date', '-next_run_date',
             'created_at', '-created_at',
             'frequency', '-frequency',
-            'name', '-name'
+            'interval', '-interval',
+            'is_active', '-is_active',
+            'name', '-name',
+            'title', '-title'
         }
         requested_fields = [f.strip() for f in ordering_val.split(',') if f.strip()]
         invalid_fields = [f for f in requested_fields if f not in allowed_ordering]
