@@ -3,7 +3,7 @@ from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
-from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency, GoalStatus, NotificationType, AuditAction, BackupStatus, BackupType
+from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency, GoalStatus, NotificationType, AuditAction, BackupStatus, BackupType, ExecutionStatus
 
 
 class Category(models.Model):
@@ -59,6 +59,10 @@ class RecurringTransaction(models.Model):
         max_length=10,
         choices=RecurrenceFrequency.choices
     )
+    interval = models.PositiveIntegerField(
+        default=1,
+        validators=[MinValueValidator(1)]
+    )
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
     next_run_date = models.DateField()
@@ -81,13 +85,52 @@ class RecurringTransaction(models.Model):
                 name='recurring_amount_positive'
             ),
             models.CheckConstraint(
+                condition=models.Q(interval__gt=0),
+                name='recurring_interval_positive'
+            ),
+            models.CheckConstraint(
                 condition=models.Q(end_date__isnull=True) | models.Q(end_date__gte=models.F('start_date')),
                 name='recurring_start_lte_end_date'
             )
         ]
 
     def __str__(self):
-        return f"{self.name} - {self.frequency} - {self.amount} ({self.user})"
+        return f"{self.name} - {self.frequency} (x{self.interval}) - {self.amount} ({self.user})"
+
+
+class RecurringTransactionExecution(models.Model):
+    recurring_transaction = models.ForeignKey(
+        RecurringTransaction,
+        on_delete=models.CASCADE,
+        related_name='execution_history'
+    )
+    transaction = models.ForeignKey(
+        'Transaction',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='execution_records'
+    )
+    executed_at = models.DateTimeField(auto_now_add=True)
+    scheduled_for = models.DateField(null=True, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=ExecutionStatus.choices,
+        default=ExecutionStatus.SUCCESS
+    )
+    error_message = models.TextField(blank=True, default='')
+
+    class Meta:
+        ordering = ['-executed_at']
+        verbose_name = 'Recurring Transaction Execution'
+        verbose_name_plural = 'Recurring Transaction Executions'
+        indexes = [
+            models.Index(fields=['recurring_transaction', '-executed_at'], name='idx_rec_exec_tx_time'),
+            models.Index(fields=['status'], name='idx_rec_exec_status'),
+        ]
+
+    def __str__(self):
+        return f"{self.recurring_transaction.name} - {self.status} on {self.executed_at}"
 
 
 class Transaction(models.Model):
