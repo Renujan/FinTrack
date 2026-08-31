@@ -1,10 +1,13 @@
+"""
+Management command to process due recurring transactions and generate transactions for the scheduled date.
+"""
 import datetime
 from django.core.management.base import BaseCommand, CommandError
 from transactions.services import RecurringTransactionService
 
 
 class Command(BaseCommand):
-    help = 'Processes due recurring transactions and generates corresponding transaction records.'
+    help = 'Processes due recurring transactions and generates corresponding transaction records automatically.'
 
     def add_arguments(self, parser):
         parser.add_argument(
