@@ -18,7 +18,7 @@ from .filters import (
     validate_notification_filter_params,
     validate_audit_filter_params,
 )
-from .models import Category, Transaction, Budget, RecurringTransaction, FinancialGoal, Notification, AuditLog
+from .models import Category, Transaction, Budget, RecurringTransaction, RecurringTransactionExecution, FinancialGoal, Notification, AuditLog
 from .pagination import (
     StandardResultsSetPagination,
     RecurringTransactionResultsSetPagination,
@@ -31,6 +31,7 @@ from .serializers import (
     TransactionSerializer,
     BudgetSerializer,
     RecurringTransactionSerializer,
+    RecurringTransactionExecutionSerializer,
     FinancialGoalSerializer,
     NotificationSerializer,
     NotificationUpdateSerializer,
@@ -411,7 +412,7 @@ class RecurringTransactionPauseView(APIView):
 
     def post(self, request, pk):
         recurring_tx = get_object_or_404(RecurringTransaction, pk=pk, user=request.user)
-        paused_tx = RecurringTransactionService.pause_schedule(recurring_tx)
+        paused_tx = RecurringTransactionService.pause_schedule(recurring_tx, request=request)
         serializer = RecurringTransactionSerializer(paused_tx, context={'request': request})
         return response.Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -435,9 +436,84 @@ class RecurringTransactionResumeView(APIView):
 
     def post(self, request, pk):
         recurring_tx = get_object_or_404(RecurringTransaction, pk=pk, user=request.user)
-        resumed_tx = RecurringTransactionService.resume_schedule(recurring_tx)
+        resumed_tx = RecurringTransactionService.resume_schedule(recurring_tx, request=request)
         serializer = RecurringTransactionSerializer(resumed_tx, context={'request': request})
         return response.Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    tags=['Recurring Transactions'],
+    summary='Execute Recurring Schedule Manually',
+    description='Triggers immediate manual execution of a recurring transaction schedule, creating a transaction record and advancing schedule metadata.',
+    request=None,
+    responses={
+        200: inline_serializer(
+            name='RecurringExecutionResponse',
+            fields={
+                'detail': serializers.CharField(),
+                'transaction': TransactionSerializer(),
+                'recurring_transaction': RecurringTransactionSerializer(),
+            }
+        ),
+        400: OpenApiResponse(description='Schedule paused, invalid, or already executed'),
+        401: OpenApiResponse(description='Authentication required'),
+        404: OpenApiResponse(description='Recurring transaction schedule not found'),
+    }
+)
+class RecurringTransactionExecuteView(APIView):
+    """
+    Manually execute a recurring transaction schedule immediately for the authenticated user.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        recurring_tx = get_object_or_404(RecurringTransaction, pk=pk, user=request.user)
+        if not recurring_tx.is_active:
+            return response.Response(
+                {"detail": "Cannot execute a paused or inactive recurring transaction schedule."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            txn, updated_tx = RecurringTransactionService.execute_now(recurring_tx, request=request)
+            txn_data = TransactionSerializer(txn, context={'request': request}).data
+            recurring_data = RecurringTransactionSerializer(updated_tx, context={'request': request}).data
+            return response.Response(
+                {
+                    "detail": "Recurring transaction executed successfully.",
+                    "transaction": txn_data,
+                    "recurring_transaction": recurring_data
+                },
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return response.Response(
+                {"detail": f"Execution failed: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+@extend_schema(
+    tags=['Recurring Transactions'],
+    summary='List Recurring Schedule Execution History',
+    description='Retrieves execution history records for a specific recurring transaction schedule owned by the authenticated user.',
+    responses={
+        200: RecurringTransactionExecutionSerializer(many=True),
+        401: OpenApiResponse(description='Authentication required'),
+        404: OpenApiResponse(description='Recurring transaction schedule not found'),
+    }
+)
+class RecurringTransactionHistoryView(generics.ListAPIView):
+    """
+    List execution history entries for a specific recurring transaction schedule owned by the authenticated user.
+    Supports pagination.
+    """
+    serializer_class = RecurringTransactionExecutionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = RecurringTransactionResultsSetPagination
+
+    def get_queryset(self):
+        recurring_tx = get_object_or_404(RecurringTransaction, pk=self.kwargs.get('pk'), user=self.request.user)
+        return RecurringTransactionExecution.objects.filter(recurring_transaction=recurring_tx).select_related('recurring_transaction', 'transaction')
 
 
 @extend_schema(
