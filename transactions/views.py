@@ -407,6 +407,7 @@ class RecurringTransactionDetailView(generics.RetrieveUpdateDestroyAPIView):
 class RecurringTransactionPauseView(APIView):
     """
     Pause an active recurring transaction schedule for the authenticated user.
+    Prevents future automated transaction generation while preserving schedule metadata.
     """
     permission_classes = [permissions.IsAuthenticated]
 
@@ -431,6 +432,7 @@ class RecurringTransactionPauseView(APIView):
 class RecurringTransactionResumeView(APIView):
     """
     Resume a paused recurring transaction schedule for the authenticated user.
+    Validates next_run_date and marks recurrence schedule active.
     """
     permission_classes = [permissions.IsAuthenticated]
 
