@@ -642,6 +642,27 @@ class DataImportService:
             'error_summary': execution_errors[:100]
         }
 
+    @classmethod
+    def create_import_summary(cls, import_obj):
+        """
+        Builds a structured import summary dictionary suitable for UI & API reporting.
+        """
+        return {
+            'id': import_obj.id,
+            'file_name': import_obj.file_name,
+            'status': import_obj.status,
+            'total_rows': import_obj.total_rows,
+            'successful_rows': import_obj.successful_rows,
+            'failed_rows': import_obj.failed_rows,
+            'skipped_rows': import_obj.skipped_rows,
+            'duplicate_rows': import_obj.duplicate_rows,
+            'created_at': import_obj.created_at,
+            'completed_at': import_obj.completed_at,
+            'error_count': len(import_obj.error_summary or []),
+            'error_summary': import_obj.error_summary
+        }
+
+
 
 
 
