@@ -84,6 +84,11 @@ class AuditAction(models.TextChoices):
     RECURRING_TRANSACTION_RESUMED = 'RECURRING_TRANSACTION_RESUMED', _('Recurring Transaction Resumed')
     RECURRING_TRANSACTION_EXECUTED = 'RECURRING_TRANSACTION_EXECUTED', _('Recurring Transaction Executed')
     RECURRING_TRANSACTION_DELETED = 'RECURRING_TRANSACTION_DELETED', _('Recurring Transaction Deleted')
+    DATA_IMPORT_CREATED = 'DATA_IMPORT_CREATED', _('Data Import Created')
+    DATA_IMPORT_PREVIEWED = 'DATA_IMPORT_PREVIEWED', _('Data Import Previewed')
+    DATA_IMPORT_EXECUTED = 'DATA_IMPORT_EXECUTED', _('Data Import Executed')
+    DATA_IMPORT_FAILED = 'DATA_IMPORT_FAILED', _('Data Import Failed')
+    DATA_IMPORT_DELETED = 'DATA_IMPORT_DELETED', _('Data Import Deleted')
 
     @classmethod
     def is_valid_action(cls, value):
@@ -110,6 +115,19 @@ class BackupType(models.TextChoices):
     @classmethod
     def is_valid_type(cls, value):
         return value in cls.values if value else False
+
+
+class ImportStatus(models.TextChoices):
+    PENDING = 'PENDING', _('Pending')
+    PROCESSING = 'PROCESSING', _('Processing')
+    PREVIEW_READY = 'PREVIEW_READY', _('Preview Ready')
+    COMPLETED = 'COMPLETED', _('Completed')
+    FAILED = 'FAILED', _('Failed')
+
+    @classmethod
+    def is_valid_status(cls, value):
+        return value in cls.values if value else False
+
 
 
 

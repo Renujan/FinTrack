@@ -3,7 +3,7 @@ from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
-from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency, GoalStatus, NotificationType, AuditAction, BackupStatus, BackupType, ExecutionStatus
+from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency, GoalStatus, NotificationType, AuditAction, BackupStatus, BackupType, ExecutionStatus, ImportStatus
 
 
 class Category(models.Model):
@@ -433,6 +433,47 @@ class DataBackup(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.backup_type}) - {self.status} - {self.user}"
+
+
+class DataImport(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='data_imports'
+    )
+    file = models.FileField(
+        upload_to='imports/%Y/%m/',
+        null=True,
+        blank=True
+    )
+    file_name = models.CharField(max_length=255)
+    status = models.CharField(
+        max_length=20,
+        choices=ImportStatus.choices,
+        default=ImportStatus.PENDING
+    )
+    total_rows = models.IntegerField(default=0)
+    successful_rows = models.IntegerField(default=0)
+    failed_rows = models.IntegerField(default=0)
+    skipped_rows = models.IntegerField(default=0)
+    duplicate_rows = models.IntegerField(default=0)
+    error_summary = models.JSONField(default=list, blank=True)
+    preview_data = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Data Import'
+        verbose_name_plural = 'Data Imports'
+        indexes = [
+            models.Index(fields=['user', '-created_at'], name='idx_import_user_created'),
+            models.Index(fields=['user', 'status'], name='idx_import_user_status'),
+        ]
+
+    def __str__(self):
+        return f"{self.file_name} ({self.status}) - {self.user}"
+
 
 
 
