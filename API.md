@@ -472,6 +472,94 @@ python manage.py process_recurring_transactions [--date YYYY-MM-DD]
 
 ---
 
+## 📥 Financial Data Import & CSV Import API (Day 22)
+
+The Financial Data Import API allows authenticated users to import transaction data from CSV files into their finance tracker with structural validation, category matching, duplicate transaction detection, and preview execution controls.
+
+### Endpoints Overview
+
+| Method | Endpoint | Auth Required | Description |
+|---|---|---|---|
+| `POST` | `/api/imports/preview/` | Yes (`Bearer`) | Upload CSV file & receive import validation preview without creating transactions |
+| `POST` | `/api/imports/<id>/execute/` | Yes (`Bearer`) | Execute transaction creation for previewed CSV import |
+| `GET` | `/api/imports/` | Yes (`Bearer`) | List user import history with filtering, ordering & pagination |
+| `GET` | `/api/imports/<id>/` | Yes (`Bearer`) | Get details and error summary for a specific import |
+| `DELETE` | `/api/imports/<id>/` | Yes (`Bearer`) | Delete an import history record and associated CSV file |
+
+### Supported CSV Headers & Aliases
+- `title` / `description` / `name` / `details`
+- `amount` / `value` / `sum`
+- `transaction_type` / `type` / `type_name` (`INCOME`, `EXPENSE`)
+- `category` / `category_name` / `cat`
+- `date` / `txn_date` (`YYYY-MM-DD`)
+
+### Example CSV Structure
+```csv
+title,description,amount,transaction_type,category,date
+Salary,Monthly salary,150000,INCOME,Salary,2026-09-01
+Food,Lunch expense,1500,EXPENSE,Food,2026-09-01
+```
+
+#### Example Response: Import Preview (`POST /api/imports/preview/`)
+```json
+{
+  "id": 1,
+  "file_name": "september_transactions.csv",
+  "status": "PREVIEW_READY",
+  "total_rows": 50,
+  "valid_rows": 45,
+  "invalid_rows": 3,
+  "duplicate_rows": 2,
+  "unmatched_categories": ["Crypto Investment"],
+  "errors": [
+    {
+      "row": 12,
+      "field": "amount",
+      "message": "Amount must be greater than zero."
+    }
+  ],
+  "preview_rows": [
+    {
+      "row": 2,
+      "title": "Salary",
+      "description": "Salary - Monthly salary",
+      "amount": "150000.00",
+      "transaction_type": "INCOME",
+      "category": "Salary",
+      "date": "2026-09-01",
+      "is_valid": true,
+      "is_duplicate": false,
+      "errors": []
+    }
+  ]
+}
+```
+
+#### Example Response: Import Execution (`POST /api/imports/1/execute/`)
+```json
+{
+  "id": 1,
+  "file_name": "september_transactions.csv",
+  "status": "COMPLETED",
+  "total_rows": 50,
+  "successful_rows": 45,
+  "failed_rows": 3,
+  "skipped_rows": 2,
+  "duplicate_rows": 2,
+  "created_at": "2026-09-01T14:00:00Z",
+  "completed_at": "2026-09-01T14:00:02Z",
+  "error_summary": [
+    {
+      "row": 12,
+      "field": "amount",
+      "message": "Amount must be greater than zero."
+    }
+  ]
+}
+```
+
+---
+
 ## 💻 Local Developer Setup
 
 1. **Clone repository**:
