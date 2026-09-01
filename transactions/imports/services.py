@@ -465,6 +465,184 @@ class DataImportService:
             'preview_rows': preview_rows
         }
 
+    @classmethod
+    def execute_import(cls, import_id, user, options=None):
+        """
+        Executes transaction creation for an existing DataImport object.
+        Verifies ownership, state, validates rows, handles missing categories if requested,
+        skips duplicates/invalid rows, and bulk creates transactions atomically.
+        """
+        from django.db import transaction
+        from django.utils import timezone
+        from rest_framework.exceptions import ValidationError
+        from transactions.choices import TransactionType
+        from transactions.models import Category, Transaction
+        from transactions.audit_services import AuditLogService
+
+        options = options or {}
+        skip_duplicates = options.get('skip_duplicates', True)
+        create_missing_categories = options.get('create_missing_categories', False)
+
+        try:
+            import_obj = DataImport.objects.get(id=import_id, user=user)
+        except DataImport.DoesNotExist:
+            raise ValidationError({'detail': 'Import record not found or access denied.'})
+
+        if import_obj.status == ImportStatus.COMPLETED:
+            raise ValidationError({'detail': 'This data import has already been executed.'})
+
+        if not import_obj.file:
+            import_obj.status = ImportStatus.FAILED
+            import_obj.save(update_fields=['status'])
+            raise ValidationError({'detail': 'Associated import CSV file is missing.'})
+
+        file_obj = import_obj.file
+        file_obj.seek(0)
+        is_valid_file, file_errors, rows, header_map = CSVValidationService.validate_file(file_obj)
+
+        if not is_valid_file:
+            import_obj.status = ImportStatus.FAILED
+            import_obj.error_summary = file_errors
+            import_obj.save(update_fields=['status', 'error_summary'])
+            raise ValidationError({'detail': 'CSV file failed validation during execution.', 'errors': file_errors})
+
+        data_rows = rows[1:]
+        cats = list(Category.objects.filter(user=user))
+        cat_cache = {
+            'by_name': {c.name.lower(): c for c in cats},
+            'by_id': {str(c.id): c for c in cats}
+        }
+
+        user_txns = set(
+            Transaction.objects.filter(user=user).values_list(
+                'date', 'amount', 'transaction_type', 'category_id', 'description'
+            )
+        )
+
+        intra_hashes = set()
+        to_create = []
+        failed_count = 0
+        skipped_count = 0
+        successful_count = 0
+        duplicate_count = 0
+        execution_errors = []
+
+        for line_num, row in enumerate(data_rows, start=2):
+            if not row or not any(cell.strip() for cell in row):
+                continue
+
+            date_raw = row[header_map['date']].strip() if header_map['date'] < len(row) else ''
+            amount_raw = row[header_map['amount']].strip() if header_map['amount'] < len(row) else ''
+            type_raw = row[header_map['transaction_type']].strip() if header_map['transaction_type'] < len(row) else ''
+            category_raw = row[header_map['category']].strip() if header_map['category'] < len(row) else ''
+            desc_raw = row[header_map['description']].strip() if header_map['description'] < len(row) else ''
+
+            title_raw = ''
+            if 'title' in [col.strip().lower() for col in rows[0]]:
+                t_idx = [col.strip().lower() for col in rows[0]].index('title')
+                if t_idx < len(row):
+                    title_raw = row[t_idx].strip()
+
+            row_eval = CSVRowValidationService.validate_row_fields(
+                line_num, date_raw, amount_raw, type_raw, category_raw, desc_raw, title_raw
+            )
+            if row_eval['errors']:
+                failed_count += 1
+                execution_errors.extend(row_eval['errors'])
+                continue
+
+            parsed_date = row_eval['parsed_date']
+            parsed_amount = row_eval['parsed_amount']
+            upper_type = row_eval['parsed_type']
+            final_description = row_eval['final_description']
+
+            category_obj, _, cat_err = CategoryMatchingService.match_category(
+                user=user,
+                category_raw=category_raw,
+                create_if_missing=create_missing_categories,
+                cache=cat_cache
+            )
+
+            if not category_obj:
+                failed_count += 1
+                execution_errors.append({'row': line_num, 'field': 'category', 'message': cat_err})
+                continue
+
+            fingerprint = DuplicateDetectionService.generate_row_fingerprint(
+                user.id, parsed_date, parsed_amount, upper_type, category_obj.id, final_description
+            )
+
+            is_dup = (fingerprint in intra_hashes) or (
+                (parsed_date, parsed_amount, upper_type, category_obj.id, final_description) in user_txns
+            )
+
+            if is_dup:
+                duplicate_count += 1
+                if skip_duplicates:
+                    skipped_count += 1
+                    continue
+                else:
+                    failed_count += 1
+                    execution_errors.append({'row': line_num, 'field': 'duplicate', 'message': 'Duplicate row skipped.'})
+                    continue
+
+            intra_hashes.add(fingerprint)
+            to_create.append(Transaction(
+                user=user,
+                category=category_obj,
+                transaction_type=upper_type,
+                amount=parsed_amount,
+                description=final_description,
+                date=parsed_date
+            ))
+
+        with transaction.atomic():
+            if to_create:
+                created_txns = Transaction.objects.bulk_create(to_create)
+                successful_count = len(created_txns)
+
+            import_obj.status = ImportStatus.COMPLETED
+            import_obj.successful_rows = successful_count
+            import_obj.failed_rows = failed_count
+            import_obj.skipped_rows = skipped_count
+            import_obj.duplicate_rows = duplicate_count
+            import_obj.error_summary = execution_errors[:100]
+            import_obj.completed_at = timezone.now()
+            import_obj.save(update_fields=[
+                'status', 'successful_rows', 'failed_rows', 'skipped_rows',
+                'duplicate_rows', 'error_summary', 'completed_at'
+            ])
+
+        AuditLogService.log_action(
+            user=user,
+            action='DATA_IMPORT_EXECUTED',
+            resource_type='DataImport',
+            resource_id=str(import_obj.id),
+            metadata={
+                'file_name': import_obj.file_name,
+                'total_rows': import_obj.total_rows,
+                'successful_rows': successful_count,
+                'failed_rows': failed_count,
+                'skipped_rows': skipped_count,
+                'duplicate_rows': duplicate_count
+            }
+        )
+
+        return {
+            'id': import_obj.id,
+            'file_name': import_obj.file_name,
+            'status': import_obj.status,
+            'total_rows': import_obj.total_rows,
+            'successful_rows': successful_count,
+            'failed_rows': failed_count,
+            'skipped_rows': skipped_count,
+            'duplicate_rows': duplicate_count,
+            'created_at': import_obj.created_at,
+            'completed_at': import_obj.completed_at,
+            'error_summary': execution_errors[:100]
+        }
+
+
 
 
 
