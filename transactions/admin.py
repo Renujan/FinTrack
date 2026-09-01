@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Transaction, Budget, RecurringTransaction, RecurringTransactionExecution, FinancialGoal, Notification, DataBackup
+from .models import Category, Transaction, Budget, RecurringTransaction, RecurringTransactionExecution, FinancialGoal, Notification, DataBackup, DataImport
 
 
 @admin.register(Category)
@@ -60,5 +60,14 @@ class DataBackupAdmin(admin.ModelAdmin):
     list_filter = ('status', 'backup_type', 'created_at')
     search_fields = ('name', 'user__email', 'user__username')
     readonly_fields = ('created_at', 'completed_at', 'file_size', 'record_count')
+
+
+@admin.register(DataImport)
+class DataImportAdmin(admin.ModelAdmin):
+    list_display = ('id', 'file_name', 'user', 'status', 'total_rows', 'successful_rows', 'failed_rows', 'skipped_rows', 'duplicate_rows', 'created_at', 'completed_at')
+    list_filter = ('status', 'created_at')
+    search_fields = ('file_name', 'user__email', 'user__username')
+    readonly_fields = ('created_at', 'completed_at', 'total_rows', 'successful_rows', 'failed_rows', 'skipped_rows', 'duplicate_rows')
+
 
 

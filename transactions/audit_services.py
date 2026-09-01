@@ -109,3 +109,24 @@ class AuditLogService:
     @classmethod
     def log_restore_validated(cls, user, metadata=None, request=None):
         return cls.log_action(user=user, action=AuditAction.RESTORE_VALIDATED, resource_type='DataBackup', resource_id='', metadata=metadata, request=request)
+
+    @classmethod
+    def log_import_created(cls, user, resource_id='', metadata=None, request=None):
+        return cls.log_action(user=user, action=AuditAction.DATA_IMPORT_CREATED, resource_type='DataImport', resource_id=resource_id, metadata=metadata, request=request)
+
+    @classmethod
+    def log_import_previewed(cls, user, resource_id='', metadata=None, request=None):
+        return cls.log_action(user=user, action=AuditAction.DATA_IMPORT_PREVIEWED, resource_type='DataImport', resource_id=resource_id, metadata=metadata, request=request)
+
+    @classmethod
+    def log_import_executed(cls, user, resource_id='', metadata=None, request=None):
+        return cls.log_action(user=user, action=AuditAction.DATA_IMPORT_EXECUTED, resource_type='DataImport', resource_id=resource_id, metadata=metadata, request=request)
+
+    @classmethod
+    def log_import_failed(cls, user, resource_id='', metadata=None, request=None):
+        return cls.log_action(user=user, action=AuditAction.DATA_IMPORT_FAILED, resource_type='DataImport', resource_id=resource_id, metadata=metadata, request=request)
+
+    @classmethod
+    def log_import_deleted(cls, user, resource_id='', metadata=None, request=None):
+        return cls.log_action(user=user, action=AuditAction.DATA_IMPORT_DELETED, resource_type='DataImport', resource_id=resource_id, metadata=metadata, request=request)
+
