@@ -171,3 +171,49 @@ class CSVRowValidationService:
             'errors': row_errors
         }
 
+
+class CategoryMatchingService:
+    """
+    Service layer providing safe user-isolated category matching (by name or ID),
+    unmatched category discovery, and controlled missing category creation.
+    """
+
+    @classmethod
+    def match_category(cls, user, category_raw, create_if_missing=False, cache=None):
+        """
+        Attempts to match category_raw against user categories.
+        Returns tuple: (category_obj, is_newly_created, error_message)
+        """
+        from transactions.models import Category
+
+        if not category_raw or not str(category_raw).strip():
+            return None, False, 'Category field is required.'
+
+        cat_str = str(category_raw).strip()
+
+        if cache is None:
+            user_cats_by_name = {c.name.lower(): c for c in Category.objects.filter(user=user)}
+            user_cats_by_id = {str(c.id): c for c in Category.objects.filter(user=user)}
+        else:
+            user_cats_by_name = cache.get('by_name', {})
+            user_cats_by_id = cache.get('by_id', {})
+
+        # Direct ID match
+        if cat_str.isdigit() and cat_str in user_cats_by_id:
+            return user_cats_by_id[cat_str], False, None
+
+        # Case-insensitive name match
+        if cat_str.lower() in user_cats_by_name:
+            return user_cats_by_name[cat_str.lower()], False, None
+
+        # Category not found
+        if create_if_missing:
+            new_cat = Category.objects.create(user=user, name=cat_str[:100])
+            if cache is not None:
+                cache['by_name'][new_cat.name.lower()] = new_cat
+                cache['by_id'][str(new_cat.id)] = new_cat
+            return new_cat, True, None
+
+        return None, False, f"Category '{cat_str}' does not exist for this user."
+
+
