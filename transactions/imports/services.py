@@ -217,3 +217,37 @@ class CategoryMatchingService:
         return None, False, f"Category '{cat_str}' does not exist for this user."
 
 
+class DuplicateDetectionService:
+    """
+    Service layer providing intra-file and database transaction duplicate detection
+    using field comparisons (date, amount, transaction_type, category, title/description).
+    """
+
+    @classmethod
+    def generate_row_fingerprint(cls, user_id, parsed_date, parsed_amount, parsed_type, category_identifier, description):
+        """
+        Generates SHA-256 hash fingerprint for transaction uniqueness comparison.
+        """
+        import hashlib
+        raw_str = f"{user_id}:{parsed_date}:{parsed_amount:.2f}:{parsed_type}:{category_identifier}:{description.strip().lower()}"
+        return hashlib.sha256(raw_str.encode('utf-8')).hexdigest()
+
+    @classmethod
+    def check_duplicate_in_db(cls, user, parsed_date, parsed_amount, parsed_type, category_obj, description):
+        """
+        Queries database for existing duplicate transaction belonging to user.
+        """
+        from transactions.models import Transaction
+        if not category_obj:
+            return False
+        return Transaction.objects.filter(
+            user=user,
+            date=parsed_date,
+            amount=parsed_amount,
+            transaction_type=parsed_type,
+            category=category_obj,
+            description=description
+        ).exists()
+
+
+
