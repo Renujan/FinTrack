@@ -174,22 +174,32 @@ class DataImportListAPIView(APIView):
 class DataImportDetailAPIView(APIView):
     """
     GET /api/imports/<id>/
-    Retrieves detail of a specific import operation.
+    Retrieves detail of a specific import operation for the authenticated user.
     """
     permission_classes = [permissions.IsAuthenticated]
     throttle_classes = [ImportExportRateThrottle]
 
+    def get_object(self, pk, user):
+        """
+        Enforce strict user isolation: prevent cross-user IDOR access.
+        """
+        return get_object_or_404(DataImport, pk=pk, user=user)
+
     def get(self, request, pk, *args, **kwargs):
-        import_obj = get_object_or_404(DataImport, pk=pk, user=request.user)
+        import_obj = self.get_object(pk, request.user)
         serializer = DataImportSerializer(import_obj)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        data = dict(serializer.data)
+        # Standardize error summary payload formatting for frontend consumption
+        if 'error_summary' in data and isinstance(data['error_summary'], list):
+            data['error_count'] = len(data['error_summary'])
+        return Response(data, status=status.HTTP_200_OK)
 
     def delete(self, request, pk, *args, **kwargs):
         """
         DELETE /api/imports/<id>/
         Deletes a data import record and its uploaded CSV file.
         """
-        import_obj = get_object_or_404(DataImport, pk=pk, user=request.user)
+        import_obj = self.get_object(pk, request.user)
         import_id = import_obj.id
         file_name = import_obj.file_name
 
@@ -210,3 +220,4 @@ class DataImportDetailAPIView(APIView):
         )
 
         return Response({'message': 'Data import record deleted successfully.'}, status=status.HTTP_200_OK)
+
