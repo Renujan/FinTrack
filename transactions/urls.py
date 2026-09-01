@@ -65,6 +65,12 @@ from .backups.views import (
     BackupRestoreValidateView,
     BackupCleanupExpiredView,
 )
+from .imports.views import (
+    DataImportPreviewAPIView,
+    DataImportExecuteAPIView,
+    DataImportListAPIView,
+    DataImportDetailAPIView,
+)
 
 app_name = 'transactions'
 
@@ -122,6 +128,11 @@ urlpatterns = [
     path('reports/top-categories/', TopCategoriesReportAPIView.as_view(), name='reports-top-categories'),
 
     path('import/transactions/', TransactionImportAPIView.as_view(), name='import-transactions'),
+
+    path('imports/preview/', DataImportPreviewAPIView.as_view(), name='data-import-preview'),
+    path('imports/<int:pk>/execute/', DataImportExecuteAPIView.as_view(), name='data-import-execute'),
+    path('imports/', DataImportListAPIView.as_view(), name='data-import-list'),
+    path('imports/<int:pk>/', DataImportDetailAPIView.as_view(), name='data-import-detail'),
 
     path('dashboard/', DashboardAPIView.as_view(), name='dashboard-overview'),
     path('dashboard/summary/', DashboardSummaryDetailAPIView.as_view(), name='dashboard-summary'),
