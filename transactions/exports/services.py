@@ -52,6 +52,58 @@ class DataExportService:
         return export_obj
 
     @classmethod
+    def collect_export_data(cls, user, export_type, filters=None):
+        """
+        Collects and filters user financial data based on export_type.
+        Returns a tuple of (data_dict_or_list, total_record_count).
+        """
+        filters = filters or {}
+        start_date = filters.get('start_date')
+        end_date = filters.get('end_date')
+        category_id = filters.get('category')
+        transaction_type = filters.get('transaction_type')
+
+        if export_type == ExportType.TRANSACTIONS:
+            txns_data, count = cls._collect_transactions(user, start_date, end_date, category_id, transaction_type)
+            return txns_data, count
+
+        elif export_type == ExportType.CATEGORIES:
+            cats_data, count = cls._collect_categories(user)
+            return cats_data, count
+
+        elif export_type == ExportType.BUDGETS:
+            budgets_data, count = cls._collect_budgets(user, category_id)
+            return budgets_data, count
+
+        elif export_type == ExportType.GOALS:
+            goals_data, count = cls._collect_goals(user)
+            return goals_data, count
+
+        elif export_type == ExportType.RECURRING_TRANSACTIONS:
+            recurring_data, count = cls._collect_recurring(user, category_id, transaction_type)
+            return recurring_data, count
+
+        elif export_type == ExportType.FULL_FINANCIAL_DATA:
+            txns, c_txns = cls._collect_transactions(user, start_date, end_date, category_id, transaction_type)
+            cats, c_cats = cls._collect_categories(user)
+            budgets, c_budgets = cls._collect_budgets(user, category_id)
+            goals, c_goals = cls._collect_goals(user)
+            recurring, c_rec = cls._collect_recurring(user, category_id, transaction_type)
+
+            full_data = {
+                'transactions': txns,
+                'categories': cats,
+                'budgets': budgets,
+                'goals': goals,
+                'recurring_transactions': recurring,
+            }
+            total_count = c_txns + c_cats + c_budgets + c_goals + c_rec
+            return full_data, total_count
+
+        else:
+            raise ValueError(f"Unsupported export type: {export_type}")
+
+    @classmethod
     def _collect_transactions(cls, user, start_date=None, end_date=None, category_id=None, transaction_type=None):
         qs = Transaction.objects.filter(user=user).select_related('category').order_by('-date', '-created_at')
         if start_date:
