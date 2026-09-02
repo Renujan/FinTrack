@@ -89,6 +89,11 @@ class AuditAction(models.TextChoices):
     DATA_IMPORT_EXECUTED = 'DATA_IMPORT_EXECUTED', _('Data Import Executed')
     DATA_IMPORT_FAILED = 'DATA_IMPORT_FAILED', _('Data Import Failed')
     DATA_IMPORT_DELETED = 'DATA_IMPORT_DELETED', _('Data Import Deleted')
+    DATA_EXPORT_CREATED = 'DATA_EXPORT_CREATED', _('Data Export Created')
+    DATA_EXPORT_COMPLETED = 'DATA_EXPORT_COMPLETED', _('Data Export Completed')
+    DATA_EXPORT_DOWNLOADED = 'DATA_EXPORT_DOWNLOADED', _('Data Export Downloaded')
+    DATA_EXPORT_DELETED = 'DATA_EXPORT_DELETED', _('Data Export Deleted')
+    DATA_EXPORT_FAILED = 'DATA_EXPORT_FAILED', _('Data Export Failed')
 
     @classmethod
     def is_valid_action(cls, value):
@@ -127,6 +132,41 @@ class ImportStatus(models.TextChoices):
     @classmethod
     def is_valid_status(cls, value):
         return value in cls.values if value else False
+
+
+class ExportStatus(models.TextChoices):
+    PENDING = 'PENDING', _('Pending')
+    PROCESSING = 'PROCESSING', _('Processing')
+    COMPLETED = 'COMPLETED', _('Completed')
+    FAILED = 'FAILED', _('Failed')
+    EXPIRED = 'EXPIRED', _('Expired')
+
+    @classmethod
+    def is_valid_status(cls, value):
+        return value in cls.values if value else False
+
+
+class ExportType(models.TextChoices):
+    TRANSACTIONS = 'TRANSACTIONS', _('Transactions')
+    CATEGORIES = 'CATEGORIES', _('Categories')
+    BUDGETS = 'BUDGETS', _('Budgets')
+    GOALS = 'GOALS', _('Goals')
+    RECURRING_TRANSACTIONS = 'RECURRING_TRANSACTIONS', _('Recurring Transactions')
+    FULL_FINANCIAL_DATA = 'FULL_FINANCIAL_DATA', _('Full Financial Data')
+
+    @classmethod
+    def is_valid_type(cls, value):
+        return value in cls.values if value else False
+
+
+class ExportFormat(models.TextChoices):
+    CSV = 'CSV', _('CSV')
+    JSON = 'JSON', _('JSON')
+
+    @classmethod
+    def is_valid_format(cls, value):
+        return value in cls.values if value else False
+
 
 
 

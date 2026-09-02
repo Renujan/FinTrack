@@ -3,7 +3,7 @@ from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
-from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency, GoalStatus, NotificationType, AuditAction, BackupStatus, BackupType, ExecutionStatus, ImportStatus
+from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency, GoalStatus, NotificationType, AuditAction, BackupStatus, BackupType, ExecutionStatus, ImportStatus, ExportStatus, ExportType, ExportFormat
 
 
 class Category(models.Model):
@@ -473,6 +473,72 @@ class DataImport(models.Model):
 
     def __str__(self):
         return f"{self.file_name} ({self.status}) - {self.user}"
+
+
+class DataExport(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='data_exports'
+    )
+    name = models.CharField(max_length=255)
+    export_type = models.CharField(
+        max_length=50,
+        choices=ExportType.choices,
+        default=ExportType.FULL_FINANCIAL_DATA
+    )
+    format = models.CharField(
+        max_length=10,
+        choices=ExportFormat.choices,
+        default=ExportFormat.JSON
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=ExportStatus.choices,
+        default=ExportStatus.PENDING
+    )
+    file = models.FileField(
+        upload_to='exports/%Y/%m/',
+        null=True,
+        blank=True
+    )
+    file_name = models.CharField(max_length=255, blank=True)
+    file_size = models.BigIntegerField(default=0)
+    record_count = models.IntegerField(default=0)
+    filters = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Data Export'
+        verbose_name_plural = 'Data Exports'
+        indexes = [
+            models.Index(fields=['user', '-created_at'], name='idx_export_user_created'),
+            models.Index(fields=['user', 'status'], name='idx_export_user_status'),
+            models.Index(fields=['expires_at'], name='idx_export_expires_at'),
+        ]
+
+    @property
+    def is_expired(self):
+        if self.expires_at and timezone.now() > self.expires_at:
+            return True
+        return self.status == ExportStatus.EXPIRED
+
+    def mark_expired(self):
+        if self.status != ExportStatus.EXPIRED:
+            self.status = ExportStatus.EXPIRED
+            if self.file:
+                try:
+                    self.file.delete(save=False)
+                except Exception:
+                    pass
+            self.save(update_fields=['status'])
+
+    def __str__(self):
+        return f"{self.name} ({self.export_type}/{self.format}) - {self.status} - {self.user}"
+
 
 
 
