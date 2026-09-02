@@ -71,6 +71,13 @@ from .imports.views import (
     DataImportListAPIView,
     DataImportDetailAPIView,
 )
+from .exports.views import (
+    DataExportListCreateView,
+    DataExportDetailView,
+    DataExportDownloadView,
+    DataExportCleanupExpiredView,
+)
+
 
 app_name = 'transactions'
 
@@ -133,6 +140,12 @@ urlpatterns = [
     path('imports/<int:pk>/execute/', DataImportExecuteAPIView.as_view(), name='data-import-execute'),
     path('imports/', DataImportListAPIView.as_view(), name='data-import-list'),
     path('imports/<int:pk>/', DataImportDetailAPIView.as_view(), name='data-import-detail'),
+
+    path('exports/', DataExportListCreateView.as_view(), name='export-list-create'),
+    path('exports/<int:pk>/', DataExportDetailView.as_view(), name='export-detail'),
+    path('exports/<int:pk>/download/', DataExportDownloadView.as_view(), name='export-download'),
+    path('exports/cleanup-expired/', DataExportCleanupExpiredView.as_view(), name='export-cleanup-expired'),
+
 
     path('dashboard/', DashboardAPIView.as_view(), name='dashboard-overview'),
     path('dashboard/summary/', DashboardSummaryDetailAPIView.as_view(), name='dashboard-summary'),
