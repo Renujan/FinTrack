@@ -11,7 +11,7 @@ from django.db import transaction as db_transaction
 from django.utils import timezone
 from django.utils.text import slugify
 
-from transactions.models import DataExport, Transaction
+from transactions.models import DataExport, Transaction, Category
 from transactions.choices import ExportStatus, ExportType, ExportFormat
 from transactions.audit_services import AuditLogService
 
@@ -76,6 +76,19 @@ class DataExportService:
                 'created_at': t.created_at.isoformat() if t.created_at else None,
             })
         return txns, len(txns)
+
+    @classmethod
+    def _collect_categories(cls, user):
+        qs = Category.objects.filter(user=user).order_by('name')
+        cats = []
+        for c in qs.iterator():
+            cats.append({
+                'id': c.id,
+                'name': c.name,
+                'created_at': c.created_at.isoformat() if c.created_at else None,
+                'updated_at': c.updated_at.isoformat() if c.updated_at else None,
+            })
+        return cats, len(cats)
 
     @classmethod
     def save_export_file(cls, export_obj, file_bytes, extension):
