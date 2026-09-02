@@ -216,6 +216,98 @@ class DataExportService:
         return recurring, len(recurring)
 
     @classmethod
+    def generate_csv(cls, data, export_type):
+        """
+        Generates CSV binary content (UTF-8 encoded) for collected data.
+        """
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        if export_type == ExportType.TRANSACTIONS:
+            writer.writerow(['ID', 'Title', 'Amount', 'Transaction Type', 'Category', 'Date', 'Created At'])
+            for row in data:
+                writer.writerow([
+                    row['id'], row['title'], row['amount'], row['transaction_type'],
+                    row['category_name'], row['date'], row['created_at']
+                ])
+
+        elif export_type == ExportType.CATEGORIES:
+            writer.writerow(['ID', 'Name', 'Created At', 'Updated At'])
+            for row in data:
+                writer.writerow([row['id'], row['name'], row['created_at'], row['updated_at']])
+
+        elif export_type == ExportType.BUDGETS:
+            writer.writerow(['ID', 'Name', 'Category', 'Amount', 'Period', 'Start Date', 'End Date', 'Spent Amount', 'Remaining Amount', 'Is Exceeded', 'Created At'])
+            for row in data:
+                writer.writerow([
+                    row['id'], row['name'], row['category_name'], row['amount'], row['period'],
+                    row['start_date'], row['end_date'], row['spent_amount'], row['remaining_amount'],
+                    row['is_exceeded'], row['created_at']
+                ])
+
+        elif export_type == ExportType.GOALS:
+            writer.writerow(['ID', 'Name', 'Target Amount', 'Current Amount', 'Target Date', 'Status', 'Percentage Completed', 'Created At'])
+            for row in data:
+                writer.writerow([
+                    row['id'], row['name'], row['target_amount'], row['current_amount'],
+                    row['target_date'], row['status'], row['percentage_completed'], row['created_at']
+                ])
+
+        elif export_type == ExportType.RECURRING_TRANSACTIONS:
+            writer.writerow(['ID', 'Title', 'Amount', 'Transaction Type', 'Frequency', 'Category', 'Next Run Date', 'Is Active', 'Created At'])
+            for row in data:
+                writer.writerow([
+                    row['id'], row['title'], row['amount'], row['transaction_type'],
+                    row['frequency'], row['category_name'], row['next_run_date'], row['is_active'], row['created_at']
+                ])
+
+        elif export_type == ExportType.FULL_FINANCIAL_DATA:
+            # Multi-section CSV export
+            writer.writerow(['=== CATEGORIES ==='])
+            writer.writerow(['ID', 'Name', 'Created At', 'Updated At'])
+            for row in data.get('categories', []):
+                writer.writerow([row['id'], row['name'], row['created_at'], row['updated_at']])
+            writer.writerow([])
+
+            writer.writerow(['=== TRANSACTIONS ==='])
+            writer.writerow(['ID', 'Title', 'Amount', 'Transaction Type', 'Category', 'Date', 'Created At'])
+            for row in data.get('transactions', []):
+                writer.writerow([
+                    row['id'], row['title'], row['amount'], row['transaction_type'],
+                    row['category_name'], row['date'], row['created_at']
+                ])
+            writer.writerow([])
+
+            writer.writerow(['=== BUDGETS ==='])
+            writer.writerow(['ID', 'Name', 'Category', 'Amount', 'Period', 'Start Date', 'End Date', 'Spent Amount', 'Remaining Amount', 'Is Exceeded', 'Created At'])
+            for row in data.get('budgets', []):
+                writer.writerow([
+                    row['id'], row['name'], row['category_name'], row['amount'], row['period'],
+                    row['start_date'], row['end_date'], row['spent_amount'], row['remaining_amount'],
+                    row['is_exceeded'], row['created_at']
+                ])
+            writer.writerow([])
+
+            writer.writerow(['=== FINANCIAL GOALS ==='])
+            writer.writerow(['ID', 'Name', 'Target Amount', 'Current Amount', 'Target Date', 'Status', 'Percentage Completed', 'Created At'])
+            for row in data.get('goals', []):
+                writer.writerow([
+                    row['id'], row['name'], row['target_amount'], row['current_amount'],
+                    row['target_date'], row['status'], row['percentage_completed'], row['created_at']
+                ])
+            writer.writerow([])
+
+            writer.writerow(['=== RECURRING TRANSACTIONS ==='])
+            writer.writerow(['ID', 'Title', 'Amount', 'Transaction Type', 'Frequency', 'Category', 'Next Run Date', 'Is Active', 'Created At'])
+            for row in data.get('recurring_transactions', []):
+                writer.writerow([
+                    row['id'], row['title'], row['amount'], row['transaction_type'],
+                    row['frequency'], row['category_name'], row['next_run_date'], row['is_active'], row['created_at']
+                ])
+
+        return output.getvalue().encode('utf-8')
+
+    @classmethod
     def save_export_file(cls, export_obj, file_bytes, extension):
         """
         Saves generated export file bytes to DataExport file field.
