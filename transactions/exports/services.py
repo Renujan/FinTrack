@@ -11,9 +11,10 @@ from django.db import transaction as db_transaction
 from django.utils import timezone
 from django.utils.text import slugify
 
-from transactions.models import DataExport, Transaction, Category
+from transactions.models import DataExport, Transaction, Category, Budget, FinancialGoal, RecurringTransaction
 from transactions.choices import ExportStatus, ExportType, ExportFormat
 from transactions.audit_services import AuditLogService
+from transactions.services import BudgetCalculationService, GoalCalculationService
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +90,78 @@ class DataExportService:
                 'updated_at': c.updated_at.isoformat() if c.updated_at else None,
             })
         return cats, len(cats)
+
+    @classmethod
+    def _collect_budgets(cls, user, category_id=None):
+        qs = Budget.objects.filter(user=user).select_related('category').order_by('-start_date')
+        if category_id:
+            qs = qs.filter(category_id=category_id)
+
+        budgets = []
+        for b in qs.iterator():
+            spent = BudgetCalculationService.calculate_spent_amount(b)
+            remaining = b.amount - spent
+            is_exceeded = spent > b.amount
+            budgets.append({
+                'id': b.id,
+                'name': b.name,
+                'category_id': b.category_id,
+                'category_name': b.category.name if b.category else 'All Categories',
+                'amount': str(b.amount),
+                'period': b.period,
+                'start_date': b.start_date.isoformat() if b.start_date else None,
+                'end_date': b.end_date.isoformat() if b.end_date else None,
+                'spent_amount': str(spent),
+                'remaining_amount': str(remaining),
+                'is_exceeded': is_exceeded,
+                'created_at': b.created_at.isoformat() if b.created_at else None,
+            })
+        return budgets, len(budgets)
+
+    @classmethod
+    def _collect_goals(cls, user):
+        qs = FinancialGoal.objects.filter(user=user).select_related('category').order_by('target_date')
+        goals = []
+        for g in qs.iterator():
+            pct = GoalCalculationService.calculate_progress_percentage(g)
+            goals.append({
+                'id': g.id,
+                'name': g.name,
+                'category_id': g.category_id,
+                'category_name': g.category.name if g.category else 'General',
+                'target_amount': str(g.target_amount),
+                'current_amount': str(g.current_amount),
+                'target_date': g.target_date.isoformat() if g.target_date else None,
+                'status': g.status,
+                'percentage_completed': float(pct),
+                'created_at': g.created_at.isoformat() if g.created_at else None,
+            })
+        return goals, len(goals)
+
+    @classmethod
+    def _collect_recurring(cls, user, category_id=None, transaction_type=None):
+        qs = RecurringTransaction.objects.filter(user=user).select_related('category').order_by('next_run_date')
+        if category_id:
+            qs = qs.filter(category_id=category_id)
+        if transaction_type:
+            qs = qs.filter(transaction_type=transaction_type)
+
+        recurring = []
+        for r in qs.iterator():
+            recurring.append({
+                'id': r.id,
+                'title': r.name,
+                'name': r.name,
+                'amount': str(r.amount),
+                'transaction_type': r.transaction_type,
+                'frequency': r.frequency,
+                'category_id': r.category_id,
+                'category_name': r.category.name if r.category else 'Uncategorized',
+                'next_run_date': r.next_run_date.isoformat() if r.next_run_date else None,
+                'is_active': r.is_active,
+                'created_at': r.created_at.isoformat() if r.created_at else None,
+            })
+        return recurring, len(recurring)
 
     @classmethod
     def save_export_file(cls, export_obj, file_bytes, extension):
