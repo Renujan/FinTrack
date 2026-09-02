@@ -11,7 +11,7 @@ from django.db import transaction as db_transaction
 from django.utils import timezone
 from django.utils.text import slugify
 
-from transactions.models import DataExport
+from transactions.models import DataExport, Transaction
 from transactions.choices import ExportStatus, ExportType, ExportFormat
 from transactions.audit_services import AuditLogService
 
@@ -49,6 +49,33 @@ class DataExportService:
 
         AuditLogService.log_export_created(user=user, resource_id=export_obj.id, metadata={'export_type': export_type, 'format': format}, request=request)
         return export_obj
+
+    @classmethod
+    def _collect_transactions(cls, user, start_date=None, end_date=None, category_id=None, transaction_type=None):
+        qs = Transaction.objects.filter(user=user).select_related('category').order_by('-date', '-created_at')
+        if start_date:
+            qs = qs.filter(date__gte=start_date)
+        if end_date:
+            qs = qs.filter(date__lte=end_date)
+        if category_id:
+            qs = qs.filter(category_id=category_id)
+        if transaction_type:
+            qs = qs.filter(transaction_type=transaction_type)
+
+        txns = []
+        for t in qs.iterator():
+            txns.append({
+                'id': t.id,
+                'title': t.description,
+                'description': t.description,
+                'amount': str(t.amount),
+                'transaction_type': t.transaction_type,
+                'category_id': t.category_id,
+                'category_name': t.category.name if t.category else 'Uncategorized',
+                'date': t.date.isoformat() if t.date else None,
+                'created_at': t.created_at.isoformat() if t.created_at else None,
+            })
+        return txns, len(txns)
 
     @classmethod
     def save_export_file(cls, export_obj, file_bytes, extension):
