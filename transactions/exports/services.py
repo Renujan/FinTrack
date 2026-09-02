@@ -11,14 +11,42 @@ from django.db import transaction as db_transaction
 from django.utils import timezone
 from django.utils.text import slugify
 
-from transactions.models import DataExport, Transaction, Category, Budget, FinancialGoal, RecurringTransaction
-from transactions.choices import ExportStatus, ExportType, ExportFormat
+from transactions.models import (
+    Category,
+    Transaction,
+    Budget,
+    FinancialGoal,
+    RecurringTransaction,
+    DataExport,
+)
+from transactions.choices import (
+    ExportStatus,
+    ExportType,
+    ExportFormat,
+    AuditAction,
+)
 from transactions.audit_services import AuditLogService
 from transactions.services import BudgetCalculationService, GoalCalculationService
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_RETENTION_DAYS = 7
+
+
+class DecimalAndDateEncoder(json.JSONEncoder):
+    """
+    JSON encoder for Decimal, Date, DateTime, and UUID types.
+    """
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return str(obj)
+        if isinstance(obj, (datetime, date)):
+            return obj.isoformat()
+        if hasattr(obj, 'isoformat'):
+            return obj.isoformat()
+        if isinstance(obj, uuid.UUID):
+            return str(obj)
+        return super().default(obj)
 
 
 class DataExportService:
@@ -49,7 +77,38 @@ class DataExportService:
         )
 
         AuditLogService.log_export_created(user=user, resource_id=export_obj.id, metadata={'export_type': export_type, 'format': format}, request=request)
-        return export_obj
+
+        try:
+            export_obj.status = ExportStatus.PROCESSING
+            export_obj.save(update_fields=['status'])
+
+            # Collect data
+            raw_data, total_records = cls.collect_export_data(user, export_type, filters)
+
+            # Generate formatted file content
+            if format == ExportFormat.CSV:
+                file_bytes, extension = cls.generate_csv(raw_data, export_type), 'csv'
+            else:
+                file_bytes, extension = cls.generate_json(raw_data, export_type, metadata={'filters': filters, 'record_count': total_records}), 'json'
+
+            # Save file to storage
+            cls.save_export_file(export_obj, file_bytes, extension)
+
+            export_obj.status = ExportStatus.COMPLETED
+            export_obj.record_count = total_records
+            export_obj.completed_at = timezone.now()
+            export_obj.save(update_fields=['status', 'record_count', 'completed_at', 'file', 'file_name', 'file_size'])
+
+            AuditLogService.log_export_completed(user=user, resource_id=export_obj.id, metadata={'record_count': total_records, 'file_size': export_obj.file_size}, request=request)
+
+            return export_obj
+
+        except Exception as e:
+            logger.error(f"Failed to generate financial data export #{export_obj.id}: {e}", exc_info=True)
+            export_obj.status = ExportStatus.FAILED
+            export_obj.save(update_fields=['status'])
+            AuditLogService.log_export_failed(user=user, resource_id=export_obj.id, metadata={'error': str(e)}, request=request)
+            raise e
 
     @classmethod
     def collect_export_data(cls, user, export_type, filters=None):
@@ -306,6 +365,21 @@ class DataExportService:
                 ])
 
         return output.getvalue().encode('utf-8')
+
+    @classmethod
+    def generate_json(cls, data, export_type, metadata=None):
+        """
+        Generates structured JSON binary content (UTF-8 encoded) for collected data.
+        """
+        payload = {
+            "version": "1.0",
+            "generated_at": timezone.now().isoformat(),
+            "export_type": export_type,
+            "metadata": metadata or {},
+            "data": data
+        }
+        json_str = json.dumps(payload, indent=2, cls=DecimalAndDateEncoder)
+        return json_str.encode('utf-8')
 
     @classmethod
     def save_export_file(cls, export_obj, file_bytes, extension):
