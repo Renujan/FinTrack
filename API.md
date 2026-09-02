@@ -560,7 +560,99 @@ Food,Lunch expense,1500,EXPENSE,Food,2026-09-01
 
 ---
 
+## 📤 Day 23 — Financial Data Export API (`/api/exports/`)
+
+The Financial Data Export API enables authenticated users to export user-owned financial data (Transactions, Categories, Budgets, Goals, Recurring Transactions, or Full Financial Data) in clean, portable CSV and JSON formats.
+
+### Difference Between Data Backup vs. Data Export
+
+| Feature | Data Backup (Day 20) | Financial Data Export (Day 23) |
+|---|---|---|
+| **Purpose** | Disaster recovery, full state preservation & system restore | User download, external analysis, reporting, spreadsheet viewing |
+| **Supported Formats** | Proprietary JSON Backup Schema v1.0 | CSV, JSON |
+| **Scope** | Complete account data snapshot including settings | Scoped datasets or full financial data with custom filtering |
+| **Filters** | None (Full/Transactions/Selected) | Date range (`start_date`, `end_date`), category, transaction type |
+| **Download Use-case** | Importing back into system via Restore API | Opening in Excel, Google Sheets, or 3rd-party analytics tools |
+
+### Export Endpoints Summary
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/exports/` | Yes (`Bearer`) | List export history and statuses for authenticated user |
+| `POST` | `/api/exports/` | Yes (`Bearer`) | Create and process a new data export operation |
+| `GET` | `/api/exports/{id}/` | Yes (`Bearer`) | Retrieve export status, metadata, record count, and download link |
+| `DELETE` | `/api/exports/{id}/` | Yes (`Bearer`) | Delete export record and purge backing file from storage |
+| `GET` | `/api/exports/{id}/download/` | Yes (`Bearer`) | Securely download the generated export file (CSV or JSON) |
+| `POST` | `/api/exports/cleanup-expired/` | Yes (`Bearer`) | Trigger maintenance cleanup of expired export files |
+
+### Supported Export Types & Formats
+
+- **Export Types**: `TRANSACTIONS`, `CATEGORIES`, `BUDGETS`, `GOALS`, `RECURRING_TRANSACTIONS`, `FULL_FINANCIAL_DATA`
+- **Formats**: `CSV`, `JSON`
+
+### Filtering Options
+
+- `start_date`: `YYYY-MM-DD` (filters transactions/records on or after start date)
+- `end_date`: `YYYY-MM-DD` (filters transactions/records on or before end date; validated `start_date <= end_date`)
+- `category`: Category ID integer
+- `transaction_type`: `INCOME` or `EXPENSE`
+
+### 1. Request Data Export (`POST /api/exports/`)
+
+```json
+{
+  "name": "Q3 Transactions Export",
+  "export_type": "TRANSACTIONS",
+  "format": "CSV",
+  "start_date": "2026-07-01",
+  "end_date": "2026-09-30",
+  "category": 4,
+  "transaction_type": "EXPENSE"
+}
+```
+
+#### Response (`201 Created`):
+```json
+{
+  "id": 1,
+  "name": "Q3 Transactions Export",
+  "export_type": "TRANSACTIONS",
+  "format": "CSV",
+  "status": "COMPLETED",
+  "file_name": "q3_transactions_export_1.csv",
+  "file_size": 4208,
+  "record_count": 45,
+  "filters": {
+    "start_date": "2026-07-01",
+    "end_date": "2026-09-30",
+    "category": 4,
+    "transaction_type": "EXPENSE"
+  },
+  "created_at": "2026-09-02T19:58:05Z",
+  "completed_at": "2026-09-02T19:58:06Z",
+  "expires_at": "2026-09-09T19:58:05Z",
+  "is_expired": false,
+  "download_url": "http://127.0.0.1:8000/api/exports/1/download/"
+}
+```
+
+### 2. Download Export File (`GET /api/exports/{id}/download/`)
+
+Returns direct binary file attachment with content disposition:
+- CSV: `Content-Type: text/csv`, `Content-Disposition: attachment; filename="q3_transactions_export_1.csv"`
+- JSON: `Content-Type: application/json`, `Content-Disposition: attachment; filename="full_financial_export_2.json"`
+
+### Retention Management Command
+
+Purge expired files (past `expires_at` timestamp) using CLI:
+```bash
+python manage.py cleanup_expired_exports
+```
+
+---
+
 ## 💻 Local Developer Setup
+
 
 1. **Clone repository**:
    ```bash
