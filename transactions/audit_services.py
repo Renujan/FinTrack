@@ -130,3 +130,24 @@ class AuditLogService:
     def log_import_deleted(cls, user, resource_id='', metadata=None, request=None):
         return cls.log_action(user=user, action=AuditAction.DATA_IMPORT_DELETED, resource_type='DataImport', resource_id=resource_id, metadata=metadata, request=request)
 
+    @classmethod
+    def log_export_created(cls, user, resource_id='', metadata=None, request=None):
+        return cls.log_action(user=user, action=AuditAction.DATA_EXPORT_CREATED, resource_type='DataExport', resource_id=resource_id, metadata=metadata, request=request)
+
+    @classmethod
+    def log_export_completed(cls, user, resource_id='', metadata=None, request=None):
+        return cls.log_action(user=user, action=AuditAction.DATA_EXPORT_COMPLETED, resource_type='DataExport', resource_id=resource_id, metadata=metadata, request=request)
+
+    @classmethod
+    def log_export_downloaded(cls, user, resource_id='', metadata=None, request=None):
+        return cls.log_action(user=user, action=AuditAction.DATA_EXPORT_DOWNLOADED, resource_type='DataExport', resource_id=resource_id, metadata=metadata, request=request)
+
+    @classmethod
+    def log_export_deleted(cls, user, resource_id='', metadata=None, request=None):
+        return cls.log_action(user=user, action=AuditAction.DATA_EXPORT_DELETED, resource_type='DataExport', resource_id=resource_id, metadata=metadata, request=request)
+
+    @classmethod
+    def log_export_failed(cls, user, resource_id='', metadata=None, request=None):
+        return cls.log_action(user=user, action=AuditAction.DATA_EXPORT_FAILED, resource_type='DataExport', resource_id=resource_id, metadata=metadata, request=request)
+
+
