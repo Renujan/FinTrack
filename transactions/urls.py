@@ -22,14 +22,7 @@ from .views import (
     AuditLogListView,
     AuditLogDetailView,
 )
-from .analytics.views import (
-    DashboardSummaryAPIView,
-    FinancialTrendsAPIView,
-    MonthlySummaryAPIView,
-    CategoryAnalyticsAPIView,
-    PeriodComparisonAPIView,
-    BudgetAnalyticsAPIView,
-)
+from .analytics.views import DashboardSummaryAPIView
 from .export_import.views import (
     TransactionExportAPIView,
     CategoryExportAPIView,
