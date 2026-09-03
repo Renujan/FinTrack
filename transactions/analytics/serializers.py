@@ -21,3 +21,13 @@ class IncomeExpenseAnalyticsSerializer(serializers.Serializer):
     transaction_count = serializers.IntegerField()
     income_count = serializers.IntegerField()
     expense_count = serializers.IntegerField()
+
+
+class CategoryAnalyticsItemSerializer(serializers.Serializer):
+    category = serializers.CharField()
+    category_id = serializers.IntegerField(allow_null=True)
+    amount = serializers.FloatField()
+    spent = serializers.FloatField(required=False)
+    percentage = serializers.FloatField()
+    percentage_of_total = serializers.FloatField(required=False)
+    transaction_count = serializers.IntegerField()

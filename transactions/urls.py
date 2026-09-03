@@ -22,7 +22,7 @@ from .views import (
     AuditLogListView,
     AuditLogDetailView,
 )
-from .analytics.views import DashboardSummaryAPIView, IncomeExpenseAnalyticsAPIView
+from .analytics.views import DashboardSummaryAPIView, IncomeExpenseAnalyticsAPIView, CategoryAnalyticsAPIView
 from .export_import.views import (
     TransactionExportAPIView,
     CategoryExportAPIView,
@@ -106,6 +106,7 @@ urlpatterns = [
 
     path('analytics/summary/', DashboardSummaryAPIView.as_view(), name='analytics-summary'),
     path('analytics/income-expenses/', IncomeExpenseAnalyticsAPIView.as_view(), name='analytics-income-expenses'),
+    path('analytics/categories/', CategoryAnalyticsAPIView.as_view(), name='analytics-categories'),
     path('analytics/trends/', FinancialTrendsAPIView.as_view(), name='analytics-trends'),
     path('analytics/monthly/', MonthlySummaryAPIView.as_view(), name='analytics-monthly'),
     path('analytics/categories/', CategoryAnalyticsAPIView.as_view(), name='analytics-categories'),
