@@ -651,6 +651,38 @@ python manage.py cleanup_expired_exports
 
 ---
 
+## 📊 Financial Analytics & Dashboard API (Day 24)
+
+Base URL: `/api/analytics/`
+
+All Financial Analytics endpoints require `Authorization: Bearer <access_token>` header and strictly isolate data to the authenticated user.
+
+### Endpoints Summary
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/analytics/summary/` | Overall dashboard summary (income, expenses, net balance, savings rate) |
+| `GET` | `/api/analytics/income-expenses/` | Income and expense totals for date range & filters |
+| `GET` | `/api/analytics/categories/` | Spending breakdown by expense category |
+| `GET` | `/api/analytics/income-categories/` | Income breakdown by income category |
+| `GET` | `/api/analytics/daily/` | Daily financial trends (`TruncDay`) |
+| `GET` | `/api/analytics/monthly/` | Monthly financial trends (`TruncMonth`) |
+| `GET` | `/api/analytics/budget-performance/` | Budget utilization and exceed status |
+| `GET` | `/api/analytics/top-categories/` | Top spending categories (with `limit`) |
+| `GET` | `/api/analytics/recent-transactions/` | Recent transactions overview (with `limit`) |
+
+### Common Analytics Query Parameters
+
+| Parameter | Type | Description | Example |
+|---|---|---|---|
+| `start_date` | Date (`YYYY-MM-DD`) | Filter transactions starting from date | `2026-09-01` |
+| `end_date` | Date (`YYYY-MM-DD`) | Filter transactions ending at date | `2026-09-30` |
+| `category` | String/Integer | Filter by Category ID or Category Name | `Groceries` or `3` |
+| `transaction_type` | String | `INCOME` or `EXPENSE` | `EXPENSE` |
+| `limit` | Integer | Limit number of results (1–100) | `5` |
+
+---
+
 ## 💻 Local Developer Setup
 
 
