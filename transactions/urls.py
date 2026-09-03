@@ -22,7 +22,7 @@ from .views import (
     AuditLogListView,
     AuditLogDetailView,
 )
-from .analytics.views import DashboardSummaryAPIView
+from .analytics.views import DashboardSummaryAPIView, IncomeExpenseAnalyticsAPIView
 from .export_import.views import (
     TransactionExportAPIView,
     CategoryExportAPIView,
@@ -105,6 +105,7 @@ urlpatterns = [
     path('audit-logs/<int:pk>/', AuditLogDetailView.as_view(), name='audit-log-detail'),
 
     path('analytics/summary/', DashboardSummaryAPIView.as_view(), name='analytics-summary'),
+    path('analytics/income-expenses/', IncomeExpenseAnalyticsAPIView.as_view(), name='analytics-income-expenses'),
     path('analytics/trends/', FinancialTrendsAPIView.as_view(), name='analytics-trends'),
     path('analytics/monthly/', MonthlySummaryAPIView.as_view(), name='analytics-monthly'),
     path('analytics/categories/', CategoryAnalyticsAPIView.as_view(), name='analytics-categories'),
