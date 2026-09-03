@@ -41,3 +41,11 @@ class IncomeCategoryAnalyticsItemSerializer(serializers.Serializer):
     percentage = serializers.FloatField()
     percentage_of_total = serializers.FloatField(required=False)
     transaction_count = serializers.IntegerField()
+
+
+class DailyTrendItemSerializer(serializers.Serializer):
+    date = serializers.CharField()
+    income = serializers.FloatField()
+    expenses = serializers.FloatField()
+    net = serializers.FloatField()
+    transaction_count = serializers.IntegerField()

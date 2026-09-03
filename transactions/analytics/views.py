@@ -6,7 +6,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes,
 from finance_tracker.throttling import AnalyticsRateThrottle
 from transactions.audit_services import AuditLogService
 from .services import FinancialAnalyticsService, parse_and_validate_analytics_filters
-from .serializers import SummaryAnalyticsSerializer, IncomeExpenseAnalyticsSerializer, CategoryAnalyticsItemSerializer, IncomeCategoryAnalyticsItemSerializer
+from .serializers import SummaryAnalyticsSerializer, IncomeExpenseAnalyticsSerializer, CategoryAnalyticsItemSerializer, IncomeCategoryAnalyticsItemSerializer, DailyTrendItemSerializer
 
 
 @extend_schema(
@@ -133,3 +133,33 @@ class IncomeCategoryAnalyticsAPIView(APIView):
         )
         AuditLogService.log_analytics_viewed(request.user, metadata={'endpoint': 'income-categories'}, request=request)
         return Response(income_categories, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    tags=['Analytics'],
+    summary='Daily Financial Trends',
+    description='Returns daily aggregated income, expense, and net balance trends for historical analysis.',
+    parameters=[
+        OpenApiParameter(name='start_date', type=OpenApiTypes.DATE, description='Start date filter (YYYY-MM-DD)'),
+        OpenApiParameter(name='end_date', type=OpenApiTypes.DATE, description='End date filter (YYYY-MM-DD)'),
+    ],
+    responses={
+        200: OpenApiResponse(response=DailyTrendItemSerializer(many=True), description='Daily trend metrics'),
+        400: OpenApiResponse(description='Invalid filter parameters'),
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
+class DailyTrendsAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [AnalyticsRateThrottle]
+
+    def get(self, request, *args, **kwargs):
+        start_date, end_date, category, _, _ = parse_and_validate_analytics_filters(request.query_params)
+        daily = FinancialAnalyticsService.get_daily_trends(
+            user=request.user,
+            start_date=start_date,
+            end_date=end_date,
+            category=category
+        )
+        AuditLogService.log_analytics_viewed(request.user, metadata={'endpoint': 'daily'}, request=request)
+        return Response(daily, status=status.HTTP_200_OK)
