@@ -60,6 +60,31 @@ class MonthlyTrendItemSerializer(serializers.Serializer):
     transaction_count = serializers.IntegerField()
 
 
+class TrendItemSerializer(serializers.Serializer):
+    period = serializers.CharField()
+    income = serializers.FloatField()
+    expenses = serializers.FloatField()
+    net = serializers.FloatField()
+    transaction_count = serializers.IntegerField()
+
+
+class PeriodMetricSerializer(serializers.Serializer):
+    start_date = serializers.CharField()
+    end_date = serializers.CharField()
+    income = serializers.FloatField()
+    expenses = serializers.FloatField()
+    net_balance = serializers.FloatField()
+    transaction_count = serializers.IntegerField()
+
+
+class PeriodComparisonSerializer(serializers.Serializer):
+    current_period = PeriodMetricSerializer()
+    previous_period = PeriodMetricSerializer()
+    income_change = serializers.FloatField()
+    expense_change = serializers.FloatField()
+    net_change = serializers.FloatField()
+
+
 class BudgetSummaryItemSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
