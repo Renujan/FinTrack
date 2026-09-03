@@ -80,3 +80,13 @@ class BudgetAnalyticsSerializer(serializers.Serializer):
     total_budget_spending = serializers.FloatField()
     overall_budget_utilization = serializers.FloatField()
     budgets_summary = serializers.ListField(child=BudgetSummaryItemSerializer())
+
+
+class RecentTransactionAnalyticsSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    title = serializers.CharField()
+    amount = serializers.FloatField()
+    transaction_type = serializers.CharField()
+    date = serializers.CharField()
+    category_id = serializers.IntegerField(allow_null=True)
+    category_name = serializers.CharField(allow_null=True)

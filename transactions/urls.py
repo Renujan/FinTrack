@@ -22,7 +22,7 @@ from .views import (
     AuditLogListView,
     AuditLogDetailView,
 )
-from .analytics.views import DashboardSummaryAPIView, IncomeExpenseAnalyticsAPIView, CategoryAnalyticsAPIView, IncomeCategoryAnalyticsAPIView, DailyTrendsAPIView, MonthlyTrendsAPIView, MonthlySummaryAPIView, BudgetPerformanceAPIView, BudgetAnalyticsAPIView
+from .analytics.views import DashboardSummaryAPIView, IncomeExpenseAnalyticsAPIView, CategoryAnalyticsAPIView, IncomeCategoryAnalyticsAPIView, DailyTrendsAPIView, MonthlyTrendsAPIView, MonthlySummaryAPIView, BudgetPerformanceAPIView, BudgetAnalyticsAPIView, TopCategoriesAnalyticsAPIView, RecentTransactionsAnalyticsAPIView
 from .export_import.views import (
     TransactionExportAPIView,
     CategoryExportAPIView,
@@ -112,6 +112,8 @@ urlpatterns = [
     path('analytics/monthly/', MonthlyTrendsAPIView.as_view(), name='analytics-monthly'),
     path('analytics/budgets/', BudgetAnalyticsAPIView.as_view(), name='analytics-budgets'),
     path('analytics/budget-performance/', BudgetPerformanceAPIView.as_view(), name='analytics-budget-performance'),
+    path('analytics/top-categories/', TopCategoriesAnalyticsAPIView.as_view(), name='analytics-top-categories'),
+    path('analytics/recent-transactions/', RecentTransactionsAnalyticsAPIView.as_view(), name='analytics-recent-transactions'),
     path('analytics/trends/', FinancialTrendsAPIView.as_view(), name='analytics-trends'),
     path('analytics/monthly/', MonthlySummaryAPIView.as_view(), name='analytics-monthly'),
     path('analytics/categories/', CategoryAnalyticsAPIView.as_view(), name='analytics-categories'),
@@ -120,6 +122,8 @@ urlpatterns = [
     path('analytics/monthly/', MonthlyTrendsAPIView.as_view(), name='analytics-monthly'),
     path('analytics/budgets/', BudgetAnalyticsAPIView.as_view(), name='analytics-budgets'),
     path('analytics/budget-performance/', BudgetPerformanceAPIView.as_view(), name='analytics-budget-performance'),
+    path('analytics/top-categories/', TopCategoriesAnalyticsAPIView.as_view(), name='analytics-top-categories'),
+    path('analytics/recent-transactions/', RecentTransactionsAnalyticsAPIView.as_view(), name='analytics-recent-transactions'),
     path('analytics/comparison/', PeriodComparisonAPIView.as_view(), name='analytics-comparison'),
     path('analytics/budgets/', BudgetAnalyticsAPIView.as_view(), name='analytics-budgets'),
 
