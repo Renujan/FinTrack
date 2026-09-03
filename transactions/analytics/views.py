@@ -6,7 +6,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes,
 from finance_tracker.throttling import AnalyticsRateThrottle
 from transactions.audit_services import AuditLogService
 from .services import FinancialAnalyticsService, parse_and_validate_analytics_filters
-from .serializers import SummaryAnalyticsSerializer, IncomeExpenseAnalyticsSerializer, CategoryAnalyticsItemSerializer
+from .serializers import SummaryAnalyticsSerializer, IncomeExpenseAnalyticsSerializer, CategoryAnalyticsItemSerializer, IncomeCategoryAnalyticsItemSerializer
 
 
 @extend_schema(
@@ -101,3 +101,35 @@ class CategoryAnalyticsAPIView(APIView):
         )
         AuditLogService.log_analytics_viewed(request.user, metadata={'endpoint': 'categories'}, request=request)
         return Response(categories, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    tags=['Analytics'],
+    summary='Income Category Analytics',
+    description='Returns income breakdown by category for income transactions including amounts, percentages, and transaction counts.',
+    parameters=[
+        OpenApiParameter(name='start_date', type=OpenApiTypes.DATE, description='Start date filter (YYYY-MM-DD)'),
+        OpenApiParameter(name='end_date', type=OpenApiTypes.DATE, description='End date filter (YYYY-MM-DD)'),
+        OpenApiParameter(name='limit', type=OpenApiTypes.INT, description='Limit top N categories (1-100)'),
+    ],
+    responses={
+        200: OpenApiResponse(response=IncomeCategoryAnalyticsItemSerializer(many=True), description='Income category breakdown'),
+        400: OpenApiResponse(description='Invalid filter parameters'),
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
+class IncomeCategoryAnalyticsAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [AnalyticsRateThrottle]
+
+    def get(self, request, *args, **kwargs):
+        start_date, end_date, category, _, limit = parse_and_validate_analytics_filters(request.query_params)
+        income_categories = FinancialAnalyticsService.get_income_breakdown(
+            user=request.user,
+            start_date=start_date,
+            end_date=end_date,
+            category=category,
+            limit=limit
+        )
+        AuditLogService.log_analytics_viewed(request.user, metadata={'endpoint': 'income-categories'}, request=request)
+        return Response(income_categories, status=status.HTTP_200_OK)

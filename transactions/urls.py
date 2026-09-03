@@ -22,7 +22,7 @@ from .views import (
     AuditLogListView,
     AuditLogDetailView,
 )
-from .analytics.views import DashboardSummaryAPIView, IncomeExpenseAnalyticsAPIView, CategoryAnalyticsAPIView
+from .analytics.views import DashboardSummaryAPIView, IncomeExpenseAnalyticsAPIView, CategoryAnalyticsAPIView, IncomeCategoryAnalyticsAPIView
 from .export_import.views import (
     TransactionExportAPIView,
     CategoryExportAPIView,
@@ -107,9 +107,11 @@ urlpatterns = [
     path('analytics/summary/', DashboardSummaryAPIView.as_view(), name='analytics-summary'),
     path('analytics/income-expenses/', IncomeExpenseAnalyticsAPIView.as_view(), name='analytics-income-expenses'),
     path('analytics/categories/', CategoryAnalyticsAPIView.as_view(), name='analytics-categories'),
+    path('analytics/income-categories/', IncomeCategoryAnalyticsAPIView.as_view(), name='analytics-income-categories'),
     path('analytics/trends/', FinancialTrendsAPIView.as_view(), name='analytics-trends'),
     path('analytics/monthly/', MonthlySummaryAPIView.as_view(), name='analytics-monthly'),
     path('analytics/categories/', CategoryAnalyticsAPIView.as_view(), name='analytics-categories'),
+    path('analytics/income-categories/', IncomeCategoryAnalyticsAPIView.as_view(), name='analytics-income-categories'),
     path('analytics/comparison/', PeriodComparisonAPIView.as_view(), name='analytics-comparison'),
     path('analytics/budgets/', BudgetAnalyticsAPIView.as_view(), name='analytics-budgets'),
 
