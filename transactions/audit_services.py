@@ -150,4 +150,9 @@ class AuditLogService:
     def log_export_failed(cls, user, resource_id='', metadata=None, request=None):
         return cls.log_action(user=user, action=AuditAction.DATA_EXPORT_FAILED, resource_type='DataExport', resource_id=resource_id, metadata=metadata, request=request)
 
+    @classmethod
+    def log_analytics_viewed(cls, user, metadata=None, request=None):
+        return cls.log_action(user=user, action=AuditAction.ANALYTICS_VIEWED, resource_type='Analytics', resource_id='', metadata=metadata, request=request)
+
+
 

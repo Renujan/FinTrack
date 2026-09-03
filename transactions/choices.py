@@ -94,6 +94,8 @@ class AuditAction(models.TextChoices):
     DATA_EXPORT_DOWNLOADED = 'DATA_EXPORT_DOWNLOADED', _('Data Export Downloaded')
     DATA_EXPORT_DELETED = 'DATA_EXPORT_DELETED', _('Data Export Deleted')
     DATA_EXPORT_FAILED = 'DATA_EXPORT_FAILED', _('Data Export Failed')
+    ANALYTICS_VIEWED = 'ANALYTICS_VIEWED', _('Analytics Viewed')
+
 
     @classmethod
     def is_valid_action(cls, value):
