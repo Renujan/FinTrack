@@ -6,7 +6,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes,
 from finance_tracker.throttling import AnalyticsRateThrottle
 from transactions.audit_services import AuditLogService
 from .services import FinancialAnalyticsService, parse_and_validate_analytics_filters
-from .serializers import SummaryAnalyticsSerializer, IncomeExpenseAnalyticsSerializer, CategoryAnalyticsItemSerializer, IncomeCategoryAnalyticsItemSerializer, DailyTrendItemSerializer, MonthlyTrendItemSerializer
+from .serializers import SummaryAnalyticsSerializer, IncomeExpenseAnalyticsSerializer, CategoryAnalyticsItemSerializer, IncomeCategoryAnalyticsItemSerializer, DailyTrendItemSerializer, MonthlyTrendItemSerializer, BudgetAnalyticsSerializer
 
 
 @extend_schema(
@@ -196,3 +196,35 @@ class MonthlyTrendsAPIView(APIView):
 
 
 MonthlySummaryAPIView = MonthlyTrendsAPIView
+
+
+@extend_schema(
+    tags=['Analytics'],
+    summary='Budget Performance Analytics',
+    description='Returns budget progress, spent amounts, remaining limits, percentage used, and exceed status by integrating BudgetCalculationService.',
+    parameters=[
+        OpenApiParameter(name='start_date', type=OpenApiTypes.DATE, description='Start date filter (YYYY-MM-DD)'),
+        OpenApiParameter(name='end_date', type=OpenApiTypes.DATE, description='End date filter (YYYY-MM-DD)'),
+    ],
+    responses={
+        200: OpenApiResponse(response=BudgetAnalyticsSerializer, description='Budget performance report'),
+        400: OpenApiResponse(description='Invalid parameters'),
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
+class BudgetPerformanceAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [AnalyticsRateThrottle]
+
+    def get(self, request, *args, **kwargs):
+        start_date, end_date, _, _, _ = parse_and_validate_analytics_filters(request.query_params)
+        budgets = FinancialAnalyticsService.get_budget_performance(
+            user=request.user,
+            start_date=start_date,
+            end_date=end_date
+        )
+        AuditLogService.log_analytics_viewed(request.user, metadata={'endpoint': 'budget-performance'}, request=request)
+        return Response(budgets, status=status.HTTP_200_OK)
+
+
+BudgetAnalyticsAPIView = BudgetPerformanceAPIView

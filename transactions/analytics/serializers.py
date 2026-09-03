@@ -58,3 +58,25 @@ class MonthlyTrendItemSerializer(serializers.Serializer):
     net = serializers.FloatField()
     net_balance = serializers.FloatField(required=False)
     transaction_count = serializers.IntegerField()
+
+
+class BudgetSummaryItemSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    category_name = serializers.CharField(allow_null=True)
+    is_overall = serializers.BooleanField()
+    budget_amount = serializers.FloatField()
+    spent_amount = serializers.FloatField()
+    remaining_amount = serializers.FloatField()
+    percentage_used = serializers.FloatField()
+    is_exceeded = serializers.BooleanField()
+
+
+class BudgetAnalyticsSerializer(serializers.Serializer):
+    total_budgets = serializers.IntegerField()
+    active_budgets_count = serializers.IntegerField()
+    exceeded_budgets_count = serializers.IntegerField()
+    total_budgeted_amount = serializers.FloatField()
+    total_budget_spending = serializers.FloatField()
+    overall_budget_utilization = serializers.FloatField()
+    budgets_summary = serializers.ListField(child=BudgetSummaryItemSerializer())
