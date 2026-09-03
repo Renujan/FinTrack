@@ -6,7 +6,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes,
 from finance_tracker.throttling import AnalyticsRateThrottle
 from transactions.audit_services import AuditLogService
 from .services import FinancialAnalyticsService, parse_and_validate_analytics_filters
-from .serializers import SummaryAnalyticsSerializer, IncomeExpenseAnalyticsSerializer, CategoryAnalyticsItemSerializer, IncomeCategoryAnalyticsItemSerializer, DailyTrendItemSerializer
+from .serializers import SummaryAnalyticsSerializer, IncomeExpenseAnalyticsSerializer, CategoryAnalyticsItemSerializer, IncomeCategoryAnalyticsItemSerializer, DailyTrendItemSerializer, MonthlyTrendItemSerializer
 
 
 @extend_schema(
@@ -163,3 +163,36 @@ class DailyTrendsAPIView(APIView):
         )
         AuditLogService.log_analytics_viewed(request.user, metadata={'endpoint': 'daily'}, request=request)
         return Response(daily, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    tags=['Analytics'],
+    summary='Monthly Financial Trends',
+    description='Returns monthly aggregated income, expense, and net balance trends across year boundaries.',
+    parameters=[
+        OpenApiParameter(name='start_date', type=OpenApiTypes.DATE, description='Start date filter (YYYY-MM-DD)'),
+        OpenApiParameter(name='end_date', type=OpenApiTypes.DATE, description='End date filter (YYYY-MM-DD)'),
+    ],
+    responses={
+        200: OpenApiResponse(response=MonthlyTrendItemSerializer(many=True), description='Monthly trend metrics'),
+        400: OpenApiResponse(description='Invalid filter parameters'),
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
+class MonthlyTrendsAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [AnalyticsRateThrottle]
+
+    def get(self, request, *args, **kwargs):
+        start_date, end_date, category, _, _ = parse_and_validate_analytics_filters(request.query_params)
+        monthly = FinancialAnalyticsService.get_monthly_trends(
+            user=request.user,
+            start_date=start_date,
+            end_date=end_date,
+            category=category
+        )
+        AuditLogService.log_analytics_viewed(request.user, metadata={'endpoint': 'monthly'}, request=request)
+        return Response(monthly, status=status.HTTP_200_OK)
+
+
+MonthlySummaryAPIView = MonthlyTrendsAPIView

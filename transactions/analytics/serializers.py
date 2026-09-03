@@ -49,3 +49,12 @@ class DailyTrendItemSerializer(serializers.Serializer):
     expenses = serializers.FloatField()
     net = serializers.FloatField()
     transaction_count = serializers.IntegerField()
+
+
+class MonthlyTrendItemSerializer(serializers.Serializer):
+    month = serializers.CharField()
+    income = serializers.FloatField()
+    expenses = serializers.FloatField()
+    net = serializers.FloatField()
+    net_balance = serializers.FloatField(required=False)
+    transaction_count = serializers.IntegerField()
