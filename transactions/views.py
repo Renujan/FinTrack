@@ -622,6 +622,25 @@ class FinancialGoalDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 @extend_schema(
     tags=['Financial Goals'],
+    summary='Goals Aggregate Summary',
+    description='Retrieves aggregate financial goal statistics for the authenticated user.',
+    responses={
+        200: FinancialGoalSummarySerializer,
+        401: OpenApiResponse(description='Authentication required'),
+    }
+)
+class FinancialGoalSummaryView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        summary = FinancialGoalService.get_goal_summary(request.user)
+        serializer = FinancialGoalSummarySerializer(summary)
+        return response.Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+@extend_schema(
+    tags=['Financial Goals'],
     summary='List or Create Goal Contributions',
     description='Lists contributions made towards a goal or adds a new contribution.',
     responses={
