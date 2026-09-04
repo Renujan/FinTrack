@@ -677,6 +677,91 @@ class GoalContributionDetailView(APIView):
         return response.Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@extend_schema(
+    tags=['Financial Goals'],
+    summary='Complete Financial Goal',
+    description='Marks a financial goal as completed.',
+    request=None,
+    responses={
+        200: FinancialGoalSerializer,
+        401: OpenApiResponse(description='Authentication required'),
+        404: OpenApiResponse(description='Goal not found'),
+    }
+)
+class FinancialGoalCompleteView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        goal = get_object_or_404(FinancialGoal, pk=pk, user=request.user)
+        updated_goal = FinancialGoalService.complete_goal(goal, user=request.user, request=request)
+        serializer = FinancialGoalSerializer(updated_goal, context={'request': request})
+        return response.Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    tags=['Financial Goals'],
+    summary='Pause Financial Goal',
+    description='Pauses progress monitoring for a financial goal.',
+    request=None,
+    responses={
+        200: FinancialGoalSerializer,
+        401: OpenApiResponse(description='Authentication required'),
+        404: OpenApiResponse(description='Goal not found'),
+    }
+)
+class FinancialGoalPauseView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        goal = get_object_or_404(FinancialGoal, pk=pk, user=request.user)
+        updated_goal = FinancialGoalService.pause_goal(goal, user=request.user, request=request)
+        serializer = FinancialGoalSerializer(updated_goal, context={'request': request})
+        return response.Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    tags=['Financial Goals'],
+    summary='Resume Financial Goal',
+    description='Resumes progress monitoring of a paused financial goal.',
+    request=None,
+    responses={
+        200: FinancialGoalSerializer,
+        401: OpenApiResponse(description='Authentication required'),
+        404: OpenApiResponse(description='Goal not found'),
+    }
+)
+class FinancialGoalResumeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        goal = get_object_or_404(FinancialGoal, pk=pk, user=request.user)
+        updated_goal = FinancialGoalService.resume_goal(goal, user=request.user, request=request)
+        serializer = FinancialGoalSerializer(updated_goal, context={'request': request})
+        return response.Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    tags=['Financial Goals'],
+    summary='Cancel Financial Goal',
+    description='Cancels a financial goal.',
+    request=None,
+    responses={
+        200: FinancialGoalSerializer,
+        401: OpenApiResponse(description='Authentication required'),
+        404: OpenApiResponse(description='Goal not found'),
+    }
+)
+class FinancialGoalCancelView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        goal = get_object_or_404(FinancialGoal, pk=pk, user=request.user)
+        updated_goal = FinancialGoalService.cancel_goal(goal, user=request.user, request=request)
+        serializer = FinancialGoalSerializer(updated_goal, context={'request': request})
+        return response.Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
 
 
 @extend_schema(
