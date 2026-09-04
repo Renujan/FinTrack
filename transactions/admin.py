@@ -1,5 +1,28 @@
 from django.contrib import admin
-from .models import Category, Transaction, Budget, RecurringTransaction, RecurringTransactionExecution, FinancialGoal, Notification, DataBackup, DataImport, DataExport
+from .models import Category, Transaction, Budget, RecurringTransaction, RecurringTransactionExecution, FinancialGoal, GoalContribution, Notification, DataBackup, DataImport, DataExport
+
+
+class GoalContributionInline(admin.TabularInline):
+    model = GoalContribution
+    extra = 1
+    readonly_fields = ('created_at',)
+
+
+@admin.register(FinancialGoal)
+class FinancialGoalAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'user', 'category', 'target_amount', 'current_amount', 'goal_type', 'status', 'priority', 'target_date', 'is_active', 'created_at')
+    list_filter = ('status', 'goal_type', 'priority', 'is_active', 'user', 'category')
+    search_fields = ('name', 'description', 'user__email', 'user__username')
+    readonly_fields = ('created_at', 'updated_at', 'completed_at')
+    inlines = [GoalContributionInline]
+
+
+@admin.register(GoalContribution)
+class GoalContributionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'goal', 'amount', 'contribution_date', 'created_at')
+    list_filter = ('contribution_date', 'created_at')
+    search_fields = ('goal__name', 'goal__user__email', 'note')
+    readonly_fields = ('created_at',)
 
 
 @admin.register(Category)
@@ -38,12 +61,6 @@ class BudgetAdmin(admin.ModelAdmin):
     list_filter = ('period', 'user', 'category')
     search_fields = ('name', 'user__email')
 
-
-@admin.register(FinancialGoal)
-class FinancialGoalAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'user', 'category', 'target_amount', 'target_date', 'is_active', 'created_at')
-    list_filter = ('is_active', 'user', 'category')
-    search_fields = ('name', 'description', 'user__email')
 
 
 @admin.register(Notification)
