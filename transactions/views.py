@@ -620,6 +620,64 @@ class FinancialGoalDetailView(generics.RetrieveUpdateDestroyAPIView):
         AuditLogService.log_delete(self.request.user, 'FinancialGoal', g_id, metadata=meta, request=self.request)
 
 
+@extend_schema(
+    tags=['Financial Goals'],
+    summary='List or Create Goal Contributions',
+    description='Lists contributions made towards a goal or adds a new contribution.',
+    responses={
+        200: GoalContributionSerializer(many=True),
+        201: GoalContributionSerializer,
+        400: OpenApiResponse(description='Validation error'),
+        401: OpenApiResponse(description='Authentication required'),
+        404: OpenApiResponse(description='Goal not found'),
+    }
+)
+class GoalContributionListCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk):
+        goal = get_object_or_404(FinancialGoal, pk=pk, user=request.user)
+        contributions = goal.contributions.all()
+        serializer = GoalContributionSerializer(contributions, many=True)
+        return response.Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request, pk):
+        goal = get_object_or_404(FinancialGoal, pk=pk, user=request.user)
+        serializer = GoalContributionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        contribution = FinancialGoalService.add_contribution(
+            goal=goal,
+            amount=serializer.validated_data['amount'],
+            note=serializer.validated_data.get('note', ''),
+            contribution_date=serializer.validated_data.get('contribution_date'),
+            user=request.user,
+            request=request
+        )
+        res_serializer = GoalContributionSerializer(contribution)
+        return response.Response(res_serializer.data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(
+    tags=['Financial Goals'],
+    summary='Delete Goal Contribution',
+    description='Removes a contribution made towards a goal and recalculates current goal amount.',
+    responses={
+        204: OpenApiResponse(description='Contribution deleted'),
+        401: OpenApiResponse(description='Authentication required'),
+        404: OpenApiResponse(description='Goal or contribution not found'),
+    }
+)
+class GoalContributionDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, goal_pk, pk):
+        goal = get_object_or_404(FinancialGoal, pk=goal_pk, user=request.user)
+        contribution = get_object_or_404(GoalContribution, pk=pk, goal=goal)
+        FinancialGoalService.remove_contribution(contribution, user=request.user, request=request)
+        return response.Response(status=status.HTTP_204_NO_CONTENT)
+
+
+
 
 @extend_schema(
     tags=['Notifications'],
