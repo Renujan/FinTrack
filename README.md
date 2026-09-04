@@ -907,6 +907,40 @@ Day 18 introduces a complete **User Profile & Account Settings API**, allowing a
 
 ---
 
+## 🎯 Day 25 — Financial Goals & Savings Management API
+
+Day 25 builds a comprehensive **Financial Goals & Savings Management API** on the Django REST Framework architecture.
+
+### 1. Key Models & Services
+- **`FinancialGoal`**: Represents user financial goals (`user`, `name`, `description`, `category`, `target_amount`, `current_amount`, `target_date`, `goal_type`, `status`, `priority`, `is_active`, `completed_at`, `created_at`, `updated_at`).
+  - Goal Types: `SAVINGS`, `EMERGENCY_FUND`, `PURCHASE`, `TRAVEL`, `INVESTMENT`, `DEBT_REPAYMENT`, `OTHER`.
+  - Goal Statuses: `ACTIVE`, `COMPLETED`, `PAUSED`, `CANCELLED`, `OVERDUE`.
+  - Goal Priorities: `LOW`, `MEDIUM`, `HIGH`.
+- **`GoalContribution`**: Tracks individual savings contributions made towards a financial goal (`goal`, `amount`, `note`, `contribution_date`, `created_at`).
+- **`FinancialGoalService`**: Business logic layer managing goal CRUD operations, status state machine transitions (`complete`, `pause`, `resume`, `cancel`), contribution additions/removals with dynamic balance recalculations, user notifications, audit logging, and progress forecasting.
+
+### 2. Endpoints Overview
+
+| Method | Endpoint | Auth Required | Description |
+|---|---|---|---|
+| `GET` | `/api/goals/` | Yes (`Bearer`) | List user financial goals with search, filtering, and ordering |
+| `POST` | `/api/goals/` | Yes (`Bearer`) | Create a new financial goal (enforces subscription limits) |
+| `GET` | `/api/goals/summary/` | Yes (`Bearer`) | Overall aggregate goal statistics (counts, totals, progress %) |
+| `GET` | `/api/goals/<id>/` | Yes (`Bearer`) | Retrieve specific financial goal details |
+| `PUT` | `/api/goals/<id>/` | Yes (`Bearer`) | Full update of a financial goal |
+| `PATCH` | `/api/goals/<id>/` | Yes (`Bearer`) | Partial update of a financial goal |
+| `DELETE` | `/api/goals/<id>/` | Yes (`Bearer`) | Delete a financial goal |
+| `GET` | `/api/goals/<id>/contributions/` | Yes (`Bearer`) | List contributions for a specific goal |
+| `POST` | `/api/goals/<id>/contributions/` | Yes (`Bearer`) | Add savings contribution towards a goal |
+| `DELETE` | `/api/goals/<id>/contributions/<contrib_id>/` | Yes (`Bearer`) | Remove a savings contribution from a goal |
+| `POST` | `/api/goals/<id>/complete/` | Yes (`Bearer`) | Mark a financial goal as completed |
+| `POST` | `/api/goals/<id>/pause/` | Yes (`Bearer`) | Pause progress monitoring for a goal |
+| `POST` | `/api/goals/<id>/resume/` | Yes (`Bearer`) | Resume monitoring for a paused goal |
+| `POST` | `/api/goals/<id>/cancel/` | Yes (`Bearer`) | Cancel a financial goal |
+| `GET` | `/api/goals/<id>/progress/` | Yes (`Bearer`) | Detailed progress & savings projections forecast |
+
+---
+
 ## 📄 License
 MIT License
 
