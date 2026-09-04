@@ -150,11 +150,19 @@ Content-Type: application/json
 ### 🎯 Financial Goals (`/api/goals/`)
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/goals/` | List savings goals with completion percentage |
-| `POST` | `/api/goals/` | Create financial savings goal |
-| `GET/PUT/PATCH/DELETE` | `/api/goals/{id}/` | Manage financial goal |
-| `POST` | `/api/goals/{id}/pause/` | Pause savings goal |
-| `POST` | `/api/goals/{id}/resume/` | Resume savings goal |
+| `GET` | `/api/goals/` | List savings goals with search, filtering, and ordering |
+| `POST` | `/api/goals/` | Create financial savings goal (enforces plan limits) |
+| `GET` | `/api/goals/summary/` | Aggregate goal statistics summary (counts, target, saved, progress %) |
+| `GET/PUT/PATCH/DELETE` | `/api/goals/{id}/` | Manage individual financial goal |
+| `GET` | `/api/goals/{id}/contributions/` | List contributions made towards a goal |
+| `POST` | `/api/goals/{id}/contributions/` | Add savings contribution towards a goal |
+| `DELETE` | `/api/goals/{goal_id}/contributions/{id}/` | Remove a savings contribution from a goal |
+| `POST` | `/api/goals/{id}/complete/` | Mark savings goal as completed |
+| `POST` | `/api/goals/{id}/pause/` | Pause savings goal monitoring |
+| `POST` | `/api/goals/{id}/resume/` | Resume paused savings goal |
+| `POST` | `/api/goals/{id}/cancel/` | Cancel savings goal |
+| `GET` | `/api/goals/{id}/progress/` | Savings progress forecast & required monthly/weekly/daily saving |
+
 
 ### 🔔 Notifications (`/api/notifications/`)
 | Method | Endpoint | Description |
@@ -680,6 +688,70 @@ All Financial Analytics endpoints require `Authorization: Bearer <access_token>`
 | `category` | String/Integer | Filter by Category ID or Category Name | `Groceries` or `3` |
 | `transaction_type` | String | `INCOME` or `EXPENSE` | `EXPENSE` |
 | `limit` | Integer | Limit number of results (1–100) | `5` |
+
+---
+
+## 🎯 Financial Goals & Savings Management API (Day 25)
+
+Base URL: `/api/goals/`
+
+All Financial Goals endpoints require `Authorization: Bearer <access_token>` header and strictly isolate data to the authenticated user.
+
+### Endpoints Overview
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/goals/` | List user financial goals (`status`, `goal_type`, `priority`, `target_date`, `ordering`) |
+| `POST` | `/api/goals/` | Create new financial goal (`name`, `target_amount`, `target_date`, `goal_type`, `priority`) |
+| `GET` | `/api/goals/summary/` | Overall aggregate goal statistics (total, active, completed, target, saved, remaining, %) |
+| `GET` | `/api/goals/<id>/` | Retrieve detailed financial goal information |
+| `PUT` | `/api/goals/<id>/` | Full update of a financial goal |
+| `PATCH` | `/api/goals/<id>/` | Partial update of a financial goal |
+| `DELETE` | `/api/goals/<id>/` | Delete a financial goal |
+| `GET` | `/api/goals/<id>/contributions/` | List savings contributions for a goal |
+| `POST` | `/api/goals/<id>/contributions/` | Record savings contribution towards a goal (`amount`, `note`, `contribution_date`) |
+| `DELETE` | `/api/goals/<goal_id>/contributions/<id>/` | Delete a contribution and update goal current amount |
+| `POST` | `/api/goals/<id>/complete/` | Action endpoint to mark goal as COMPLETED |
+| `POST` | `/api/goals/<id>/pause/` | Action endpoint to PAUSE goal monitoring |
+| `POST` | `/api/goals/<id>/resume/` | Action endpoint to RESUME goal monitoring |
+| `POST` | `/api/goals/<id>/cancel/` | Action endpoint to CANCEL goal |
+| `GET` | `/api/goals/<id>/progress/` | Get progress forecast (required monthly/weekly/daily savings rate & completion date) |
+
+### Goal Model Choice Values
+
+- **Goal Types (`goal_type`)**: `SAVINGS`, `EMERGENCY_FUND`, `PURCHASE`, `TRAVEL`, `INVESTMENT`, `DEBT_REPAYMENT`, `OTHER`
+- **Goal Statuses (`status`)**: `ACTIVE`, `COMPLETED`, `PAUSED`, `CANCELLED`, `OVERDUE`
+- **Goal Priorities (`priority`)**: `LOW`, `MEDIUM`, `HIGH`
+
+### Example Goal Creation Request
+```http
+POST /api/goals/
+Content-Type: application/json
+Authorization: Bearer <access_token>
+
+{
+  "name": "Emergency Fund 2026",
+  "description": "6 months of living expenses saved in high-yield account",
+  "target_amount": "10000.00",
+  "current_amount": "1500.00",
+  "target_date": "2026-12-31",
+  "goal_type": "EMERGENCY_FUND",
+  "priority": "HIGH"
+}
+```
+
+### Example Contribution Request
+```http
+POST /api/goals/1/contributions/
+Content-Type: application/json
+Authorization: Bearer <access_token>
+
+{
+  "amount": "500.00",
+  "note": "September monthly savings allocation",
+  "contribution_date": "2026-09-04"
+}
+```
 
 ---
 
