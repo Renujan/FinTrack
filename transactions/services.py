@@ -1,9 +1,10 @@
 from decimal import Decimal
 import datetime
-from django.db.models import Sum, Q
+from django.db import transaction
+from django.db.models import Sum, Count, Q
 from django.utils import timezone
-from .choices import TransactionType, GoalStatus, NotificationType
-from .models import Transaction, Budget, FinancialGoal, Notification, RecurringTransaction
+from .choices import TransactionType, GoalStatus, GoalType, GoalPriority, NotificationType
+from .models import Transaction, Budget, FinancialGoal, GoalContribution, Notification, RecurringTransaction
 
 
 class BudgetCalculationService:
@@ -66,12 +67,339 @@ class BudgetCalculationService:
         }
 
 
+class FinancialGoalService:
+    """
+    Comprehensive business logic service layer for Financial Goals and Savings Management.
+    Handles goal creation, updates, status transitions, contribution processing, progress calculations,
+    and forecast analytics with strict Decimal arithmetic and user data isolation.
+    """
+
+    @classmethod
+    def calculate_remaining_amount(cls, goal):
+        return max(Decimal('0.00'), goal.target_amount - goal.current_amount)
+
+    @classmethod
+    def calculate_percentage(cls, goal):
+        if goal.target_amount <= Decimal('0.00'):
+            return 0.0
+        pct = (goal.current_amount / goal.target_amount) * Decimal('100.0')
+        return round(float(pct), 2)
+
+    @classmethod
+    def calculate_progress(cls, goal):
+        return cls.calculate_percentage(goal)
+
+    @classmethod
+    def calculate_required_monthly_saving(cls, goal):
+        remaining = cls.calculate_remaining_amount(goal)
+        if remaining <= Decimal('0.00'):
+            return Decimal('0.00')
+
+        today = timezone.now().date()
+        if goal.target_date <= today:
+            return remaining
+
+        days_remaining = (goal.target_date - today).days
+        months_remaining = max(Decimal('1.00'), Decimal(days_remaining) / Decimal('30.4375'))
+        return round(remaining / months_remaining, 2)
+
+    @classmethod
+    @transaction.atomic
+    def create_goal(cls, user, data, request=None):
+        target_amount = Decimal(str(data['target_amount']))
+        if target_amount <= Decimal('0.00'):
+            raise ValueError("Target amount must be positive.")
+
+        initial_current = Decimal(str(data.get('current_amount', '0.00')))
+        if initial_current < Decimal('0.00'):
+            raise ValueError("Current amount cannot be negative.")
+
+        goal = FinancialGoal.objects.create(
+            user=user,
+            name=data['name'].strip() if isinstance(data['name'], str) else data['name'],
+            description=data.get('description', ''),
+            category=data.get('category'),
+            target_amount=target_amount,
+            current_amount=initial_current,
+            target_date=data['target_date'],
+            goal_type=data.get('goal_type', GoalType.SAVINGS),
+            status=data.get('status', GoalStatus.ACTIVE),
+            priority=data.get('priority', GoalPriority.MEDIUM),
+            is_active=data.get('is_active', True)
+        )
+
+        if goal.current_amount >= goal.target_amount and goal.status != GoalStatus.COMPLETED:
+            goal.status = GoalStatus.COMPLETED
+            goal.completed_at = timezone.now()
+            goal.save(update_fields=['status', 'completed_at', 'updated_at'])
+
+        AuditLogService.log_create(
+            user,
+            'FinancialGoal',
+            goal.id,
+            metadata={'name': goal.name, 'target_amount': str(goal.target_amount)},
+            request=request
+        )
+        return goal
+
+    @classmethod
+    @transaction.atomic
+    def update_goal(cls, goal, data, request=None):
+        for field in ['name', 'description', 'category', 'target_date', 'goal_type', 'priority', 'status', 'is_active']:
+            if field in data:
+                val = data[field]
+                if field == 'name' and isinstance(val, str):
+                    val = val.strip()
+                setattr(goal, field, val)
+
+        if 'target_amount' in data:
+            new_target = Decimal(str(data['target_amount']))
+            if new_target <= Decimal('0.00'):
+                raise ValueError("Target amount must be positive.")
+            goal.target_amount = new_target
+
+        if 'current_amount' in data:
+            new_current = Decimal(str(data['current_amount']))
+            if new_current < Decimal('0.00'):
+                raise ValueError("Current amount cannot be negative.")
+            goal.current_amount = new_current
+
+        if goal.current_amount >= goal.target_amount and goal.status in [GoalStatus.ACTIVE, GoalStatus.OVERDUE]:
+            goal.status = GoalStatus.COMPLETED
+            if not goal.completed_at:
+                goal.completed_at = timezone.now()
+        elif goal.current_amount < goal.target_amount and goal.status == GoalStatus.COMPLETED:
+            goal.status = GoalStatus.ACTIVE
+            goal.completed_at = None
+
+        goal.save()
+        AuditLogService.log_update(
+            goal.user,
+            'FinancialGoal',
+            goal.id,
+            metadata={'name': goal.name, 'target_amount': str(goal.target_amount)},
+            request=request
+        )
+        return goal
+
+    @classmethod
+    @transaction.atomic
+    def add_contribution(cls, goal, amount, note='', contribution_date=None, user=None, request=None):
+        amt = Decimal(str(amount))
+        if amt <= Decimal('0.00'):
+            raise ValueError("Contribution amount must be positive.")
+
+        if contribution_date is None:
+            contribution_date = timezone.now().date()
+
+        contribution = GoalContribution.objects.create(
+            goal=goal,
+            amount=amt,
+            note=note,
+            contribution_date=contribution_date
+        )
+
+        goal.current_amount += amt
+        was_completed = (goal.status == GoalStatus.COMPLETED)
+        if goal.current_amount >= goal.target_amount and not was_completed:
+            goal.status = GoalStatus.COMPLETED
+            goal.completed_at = timezone.now()
+            NotificationService.create_notification(
+                user=goal.user,
+                notification_type=NotificationType.GOAL_COMPLETED,
+                title=f"Goal Completed: {goal.name}!",
+                message=f"Congratulations! You have reached your financial goal '{goal.name}' target of ${goal.target_amount}.",
+                metadata={'goal_id': goal.id, 'goal_name': goal.name, 'target_amount': str(goal.target_amount)}
+            )
+
+        goal.save()
+
+        user_for_log = user or goal.user
+        AuditLogService.log_create(
+            user_for_log,
+            'GoalContribution',
+            contribution.id,
+            metadata={'goal_id': goal.id, 'goal_name': goal.name, 'amount': str(amt)},
+            request=request
+        )
+        return contribution
+
+    @classmethod
+    @transaction.atomic
+    def remove_contribution(cls, contribution, user=None, request=None):
+        goal = contribution.goal
+        amt = contribution.amount
+        contribution_id = contribution.id
+
+        new_current = max(Decimal('0.00'), goal.current_amount - amt)
+        goal.current_amount = new_current
+
+        if goal.status == GoalStatus.COMPLETED and goal.current_amount < goal.target_amount:
+            goal.status = GoalStatus.ACTIVE
+            goal.completed_at = None
+
+        goal.save()
+        contribution.delete()
+
+        user_for_log = user or goal.user
+        AuditLogService.log_delete(
+            user_for_log,
+            'GoalContribution',
+            contribution_id,
+            metadata={'goal_id': goal.id, 'goal_name': goal.name, 'amount': str(amt)},
+            request=request
+        )
+
+    @classmethod
+    @transaction.atomic
+    def complete_goal(cls, goal, user=None, request=None):
+        goal.status = GoalStatus.COMPLETED
+        if not goal.completed_at:
+            goal.completed_at = timezone.now()
+        goal.is_active = True
+        goal.save(update_fields=['status', 'completed_at', 'is_active', 'updated_at'])
+
+        user_for_log = user or goal.user
+        NotificationService.create_notification(
+            user=goal.user,
+            notification_type=NotificationType.GOAL_COMPLETED,
+            title=f"Goal Completed: {goal.name}",
+            message=f"Financial goal '{goal.name}' has been marked as completed.",
+            metadata={'goal_id': goal.id, 'goal_name': goal.name}
+        )
+        AuditLogService.log_update(user_for_log, 'FinancialGoal', goal.id, metadata={'action': 'complete', 'name': goal.name}, request=request)
+        return goal
+
+    @classmethod
+    @transaction.atomic
+    def pause_goal(cls, goal, user=None, request=None):
+        goal.status = GoalStatus.PAUSED
+        goal.is_active = False
+        goal.save(update_fields=['status', 'is_active', 'updated_at'])
+
+        user_for_log = user or goal.user
+        AuditLogService.log_update(user_for_log, 'FinancialGoal', goal.id, metadata={'action': 'pause', 'name': goal.name}, request=request)
+        return goal
+
+    @classmethod
+    @transaction.atomic
+    def resume_goal(cls, goal, user=None, request=None):
+        today = timezone.now().date()
+        if goal.current_amount >= goal.target_amount:
+            goal.status = GoalStatus.COMPLETED
+        elif goal.target_date < today:
+            goal.status = GoalStatus.OVERDUE
+        else:
+            goal.status = GoalStatus.ACTIVE
+        goal.is_active = True
+        goal.save(update_fields=['status', 'is_active', 'updated_at'])
+
+        user_for_log = user or goal.user
+        AuditLogService.log_update(user_for_log, 'FinancialGoal', goal.id, metadata={'action': 'resume', 'name': goal.name}, request=request)
+        return goal
+
+    @classmethod
+    @transaction.atomic
+    def cancel_goal(cls, goal, user=None, request=None):
+        goal.status = GoalStatus.CANCELLED
+        goal.is_active = False
+        goal.save(update_fields=['status', 'is_active', 'updated_at'])
+
+        user_for_log = user or goal.user
+        AuditLogService.log_update(user_for_log, 'FinancialGoal', goal.id, metadata={'action': 'cancel', 'name': goal.name}, request=request)
+        return goal
+
+    @classmethod
+    def get_goal_summary(cls, user):
+        qs = FinancialGoal.objects.filter(user=user)
+        total_goals = qs.count()
+
+        active_goals = qs.filter(status=GoalStatus.ACTIVE).count()
+        completed_goals = qs.filter(status=GoalStatus.COMPLETED).count()
+        paused_goals = qs.filter(status=GoalStatus.PAUSED).count()
+        cancelled_goals = qs.filter(status=GoalStatus.CANCELLED).count()
+
+        agg = qs.aggregate(
+            total_target=Sum('target_amount'),
+            total_saved=Sum('current_amount')
+        )
+        total_target_amount = agg['total_target'] if agg['total_target'] is not None else Decimal('0.00')
+        total_saved_amount = agg['total_saved'] if agg['total_saved'] is not None else Decimal('0.00')
+        total_remaining_amount = max(Decimal('0.00'), total_target_amount - total_saved_amount)
+
+        if total_target_amount > Decimal('0.00'):
+            overall_progress = round(float((total_saved_amount / total_target_amount) * Decimal('100.0')), 2)
+        else:
+            overall_progress = 0.0
+
+        return {
+            'total_goals': total_goals,
+            'active_goals': active_goals,
+            'completed_goals': completed_goals,
+            'paused_goals': paused_goals,
+            'cancelled_goals': cancelled_goals,
+            'total_target_amount': total_target_amount,
+            'total_saved_amount': total_saved_amount,
+            'total_remaining_amount': total_remaining_amount,
+            'overall_progress_percentage': overall_progress,
+        }
+
+    @classmethod
+    def get_goal_progress_forecast(cls, goal):
+        today = timezone.now().date()
+        target_amount = goal.target_amount
+        current_amount = goal.current_amount
+        remaining_amount = max(Decimal('0.00'), target_amount - current_amount)
+        pct = cls.calculate_percentage(goal)
+
+        if goal.target_date >= today:
+            days_remaining = (goal.target_date - today).days
+        else:
+            days_remaining = 0
+
+        if remaining_amount <= Decimal('0.00') or goal.status == GoalStatus.COMPLETED:
+            req_monthly = Decimal('0.00')
+            req_weekly = Decimal('0.00')
+            req_daily = Decimal('0.00')
+            projected_completion_date = goal.completed_at.date() if goal.completed_at else today
+        elif days_remaining <= 0:
+            req_monthly = remaining_amount
+            req_weekly = round(remaining_amount / Decimal('4.33'), 2)
+            req_daily = round(remaining_amount / Decimal('30.0'), 2)
+            projected_completion_date = None
+        else:
+            months = max(Decimal('1.00'), Decimal(days_remaining) / Decimal('30.4375'))
+            weeks = max(Decimal('1.00'), Decimal(days_remaining) / Decimal('7.0'))
+            days = Decimal(days_remaining)
+
+            req_monthly = round(remaining_amount / months, 2)
+            req_weekly = round(remaining_amount / weeks, 2)
+            req_daily = round(remaining_amount / days, 2)
+            projected_completion_date = goal.target_date
+
+        return {
+            'goal_id': goal.id,
+            'goal_name': goal.name,
+            'target_amount': target_amount,
+            'current_amount': current_amount,
+            'remaining_amount': remaining_amount,
+            'progress_percentage': pct,
+            'days_remaining': days_remaining,
+            'required_monthly_saving': req_monthly,
+            'required_weekly_saving': req_weekly,
+            'required_daily_saving': req_daily,
+            'projected_completion_date': projected_completion_date,
+            'status': goal.status,
+            'priority': goal.priority,
+            'goal_type': goal.goal_type,
+        }
+
+
 class GoalCalculationService:
     """
     Service layer for calculating progress metrics and dynamic status for financial goals.
     Calculates current_amount, remaining_amount, percentage_complete, is_completed, and status.
-    Goal progress is based on INCOME transactions belonging to the goal's user with date <= target_date.
-    If the goal specifies a category, contributions are restricted to that category.
+    Goal progress uses GoalContribution records if present, or falls back to goal.current_amount or income transactions.
     """
 
     @staticmethod
@@ -99,8 +427,13 @@ class GoalCalculationService:
     @classmethod
     def calculate_current_amount(cls, goal):
         """
-        Calculates total income saved towards a specific financial goal.
+        Calculates total saved amount towards a specific financial goal.
+        If goal has direct contributions or current_amount > 0, returns goal.current_amount.
+        Otherwise falls back to income transactions sum.
         """
+        if goal.current_amount > Decimal('0.00') or goal.contributions.exists():
+            return goal.current_amount
+
         result = cls.get_goal_transactions(goal).aggregate(total=Sum('amount'))
         return result['total'] if result['total'] is not None else Decimal('0.00')
 
@@ -118,10 +451,12 @@ class GoalCalculationService:
         else:
             percentage_complete = 0.0
 
-        is_completed = current_amount >= target_amount
+        is_completed = current_amount >= target_amount or goal.status == GoalStatus.COMPLETED
 
         today = timezone.now().date()
-        if is_completed:
+        if goal.status in [GoalStatus.PAUSED, GoalStatus.CANCELLED, GoalStatus.COMPLETED]:
+            status_val = goal.status
+        elif is_completed:
             status_val = GoalStatus.COMPLETED
         elif not goal.is_active:
             status_val = GoalStatus.PAUSED
@@ -138,6 +473,7 @@ class GoalCalculationService:
             'is_completed': is_completed,
             'status': status_val,
         }
+
 
 
 import calendar
