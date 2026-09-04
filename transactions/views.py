@@ -761,6 +761,27 @@ class FinancialGoalCancelView(APIView):
         return response.Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    tags=['Financial Goals'],
+    summary='Goal Progress and Forecast',
+    description='Retrieves progress metrics, required savings rate, and projection forecast for a goal.',
+    responses={
+        200: GoalProgressForecastSerializer,
+        401: OpenApiResponse(description='Authentication required'),
+        404: OpenApiResponse(description='Goal not found'),
+    }
+)
+class FinancialGoalProgressView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk):
+        goal = get_object_or_404(FinancialGoal, pk=pk, user=request.user)
+        forecast = FinancialGoalService.get_goal_progress_forecast(goal)
+        serializer = GoalProgressForecastSerializer(forecast)
+        return response.Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
 
 
 
