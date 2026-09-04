@@ -44,6 +44,35 @@ class GoalStatus(models.TextChoices):
     COMPLETED = 'COMPLETED', _('Completed')
     OVERDUE = 'OVERDUE', _('Overdue')
     PAUSED = 'PAUSED', _('Paused')
+    CANCELLED = 'CANCELLED', _('Cancelled')
+
+    @classmethod
+    def is_valid_status(cls, value):
+        return value in cls.values if value else False
+
+
+class GoalType(models.TextChoices):
+    SAVINGS = 'SAVINGS', _('Savings')
+    EMERGENCY_FUND = 'EMERGENCY_FUND', _('Emergency Fund')
+    PURCHASE = 'PURCHASE', _('Purchase')
+    TRAVEL = 'TRAVEL', _('Travel')
+    INVESTMENT = 'INVESTMENT', _('Investment')
+    DEBT_REPAYMENT = 'DEBT_REPAYMENT', _('Debt Repayment')
+    OTHER = 'OTHER', _('Other')
+
+    @classmethod
+    def is_valid_type(cls, value):
+        return value in cls.values if value else False
+
+
+class GoalPriority(models.TextChoices):
+    LOW = 'LOW', _('Low')
+    MEDIUM = 'MEDIUM', _('Medium')
+    HIGH = 'HIGH', _('High')
+
+    @classmethod
+    def is_valid_priority(cls, value):
+        return value in cls.values if value else False
 
 
 class NotificationType(models.TextChoices):

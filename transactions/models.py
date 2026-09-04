@@ -3,7 +3,7 @@ from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
-from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency, GoalStatus, NotificationType, AuditAction, BackupStatus, BackupType, ExecutionStatus, ImportStatus, ExportStatus, ExportType, ExportFormat
+from .choices import TransactionType, BudgetPeriod, RecurrenceFrequency, GoalStatus, GoalType, GoalPriority, NotificationType, AuditAction, BackupStatus, BackupType, ExecutionStatus, ImportStatus, ExportStatus, ExportType, ExportFormat
 
 
 class Category(models.Model):
@@ -272,8 +272,30 @@ class FinancialGoal(models.Model):
         decimal_places=2,
         validators=[MinValueValidator(Decimal('0.01'))]
     )
+    current_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))]
+    )
     target_date = models.DateField()
+    goal_type = models.CharField(
+        max_length=30,
+        choices=GoalType.choices,
+        default=GoalType.SAVINGS
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=GoalStatus.choices,
+        default=GoalStatus.ACTIVE
+    )
+    priority = models.CharField(
+        max_length=10,
+        choices=GoalPriority.choices,
+        default=GoalPriority.MEDIUM
+    )
     is_active = models.BooleanField(default=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -283,16 +305,59 @@ class FinancialGoal(models.Model):
             models.Index(fields=['user', 'target_date'], name='idx_goal_user_target_date'),
             models.Index(fields=['user', 'category'], name='idx_goal_user_category'),
             models.Index(fields=['user', 'is_active'], name='idx_goal_user_is_active'),
+            models.Index(fields=['user', 'status'], name='idx_goal_user_status'),
+            models.Index(fields=['user', 'goal_type'], name='idx_goal_user_goal_type'),
+            models.Index(fields=['user', 'priority'], name='idx_goal_user_priority'),
+            models.Index(fields=['user', 'created_at'], name='idx_goal_user_created'),
         ]
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(target_amount__gt=0),
                 name='goal_target_amount_positive'
+            ),
+            models.CheckConstraint(
+                condition=models.Q(current_amount__gte=0),
+                name='goal_current_amount_non_negative'
             )
         ]
 
     def __str__(self):
-        return f"{self.name} - {self.target_amount} ({self.user})"
+        return f"{self.name} - {self.current_amount}/{self.target_amount} ({self.user})"
+
+
+class GoalContribution(models.Model):
+    goal = models.ForeignKey(
+        FinancialGoal,
+        on_delete=models.CASCADE,
+        related_name='contributions'
+    )
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))]
+    )
+    note = models.TextField(blank=True, default='')
+    contribution_date = models.DateField(default=timezone.now)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-contribution_date', '-created_at']
+        verbose_name = 'Goal Contribution'
+        verbose_name_plural = 'Goal Contributions'
+        indexes = [
+            models.Index(fields=['goal', '-contribution_date'], name='idx_contrib_goal_date'),
+            models.Index(fields=['goal', '-created_at'], name='idx_contrib_goal_created'),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0),
+                name='contribution_amount_positive'
+            )
+        ]
+
+    def __str__(self):
+        return f"Contribution {self.amount} to {self.goal.name} ({self.contribution_date})"
+
 
 
 class Notification(models.Model):
