@@ -302,12 +302,14 @@ def validate_recurring_filter_params(params):
 class FinancialGoalFilter(django_filters.FilterSet):
     """
     FilterSet for FinancialGoal list querysets.
-    Supports category (ID or name), is_active, status, target_date, start_target_date, end_target_date,
-    is_completed, and is_overdue filters.
+    Supports category (ID or name), is_active, status, goal_type, priority, target_date,
+    start_target_date, end_target_date, is_completed, and is_overdue filters.
     """
     category = django_filters.CharFilter(method='filter_by_category')
     is_active = django_filters.BooleanFilter(field_name='is_active')
     status = django_filters.CharFilter(method='filter_by_status')
+    goal_type = django_filters.CharFilter(field_name='goal_type', lookup_expr='iexact')
+    priority = django_filters.CharFilter(field_name='priority', lookup_expr='iexact')
     target_date = django_filters.DateFilter(field_name='target_date')
     start_target_date = django_filters.DateFilter(field_name='target_date', lookup_expr='gte')
     end_target_date = django_filters.DateFilter(field_name='target_date', lookup_expr='lte')
@@ -316,7 +318,10 @@ class FinancialGoalFilter(django_filters.FilterSet):
 
     class Meta:
         model = FinancialGoal
-        fields = ['category', 'is_active', 'status', 'target_date', 'start_target_date', 'end_target_date', 'is_completed', 'is_overdue']
+        fields = [
+            'category', 'is_active', 'status', 'goal_type', 'priority',
+            'target_date', 'start_target_date', 'end_target_date', 'is_completed', 'is_overdue'
+        ]
 
     def filter_by_category(self, queryset, name, value):
         if not value:
@@ -333,32 +338,22 @@ class FinancialGoalFilter(django_filters.FilterSet):
             raise serializers.ValidationError({
                 'status': f"Invalid goal status '{value}'. Allowed choices are: {', '.join(GoalStatus.values)}."
             })
-        matching_ids = []
-        for goal in queryset:
-            metrics = GoalCalculationService.calculate_goal_metrics(goal)
-            if metrics['status'] == val_upper:
-                matching_ids.append(goal.id)
-        return queryset.filter(id__in=matching_ids)
+        return queryset.filter(status=val_upper)
 
     def filter_by_is_completed(self, queryset, name, value):
         if value is None:
             return queryset
-        matching_ids = []
-        for goal in queryset:
-            metrics = GoalCalculationService.calculate_goal_metrics(goal)
-            if metrics['is_completed'] == value:
-                matching_ids.append(goal.id)
-        return queryset.filter(id__in=matching_ids)
+        if value:
+            return queryset.filter(models.Q(status=GoalStatus.COMPLETED) | models.Q(current_amount__gte=models.F('target_amount')))
+        return queryset.exclude(models.Q(status=GoalStatus.COMPLETED) | models.Q(current_amount__gte=models.F('target_amount')))
 
     def filter_by_is_overdue(self, queryset, name, value):
         if value is None:
             return queryset
-        matching_ids = []
-        for goal in queryset:
-            metrics = GoalCalculationService.calculate_goal_metrics(goal)
-            if (metrics['status'] == GoalStatus.OVERDUE) == value:
-                matching_ids.append(goal.id)
-        return queryset.filter(id__in=matching_ids)
+        today = timezone.now().date()
+        if value:
+            return queryset.filter(target_date__lt=today).exclude(status=GoalStatus.COMPLETED)
+        return queryset.exclude(target_date__lt=today, status__ne=GoalStatus.COMPLETED)
 
 
 def validate_goal_filter_params(params):
@@ -393,11 +388,15 @@ def validate_goal_filter_params(params):
     if ordering_val:
         allowed_ordering = {
             'target_amount', '-target_amount',
+            'current_amount', '-current_amount',
             'target_date', '-target_date',
             'created_at', '-created_at',
             'percentage_complete', '-percentage_complete',
             'progress_percentage', '-progress_percentage',
-            'name', '-name'
+            'name', '-name',
+            'priority', '-priority',
+            'goal_type', '-goal_type',
+            'status', '-status'
         }
         requested_fields = [f.strip() for f in ordering_val.split(',') if f.strip()]
         invalid_fields = [f for f in requested_fields if f not in allowed_ordering]
@@ -406,6 +405,7 @@ def validate_goal_filter_params(params):
 
     if errors:
         raise serializers.ValidationError(errors)
+
 
 
 class NotificationFilter(django_filters.FilterSet):
